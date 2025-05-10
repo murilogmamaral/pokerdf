@@ -26,11 +26,11 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Build release distributions
-        run: |
-          # NOTE: put your own distribution build steps here.
-          python -m pip install build
-          python -m build
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Build release distributions with Poetry
+        run: poetry build
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
