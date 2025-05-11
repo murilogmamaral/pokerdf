@@ -10,22 +10,68 @@ Currently supports PokerStars. Make sure hand histories are saved in English.
 
 Converting raw hand histories into structured data is the first step toward building a solid poker strategy and maximizing ROI. What are the optimal VPIP, PFR, and C-BET frequencies for No Limit Hold'em 6-Max? In which specific situations is a 3-Bet most profitable? When is bluffing a clear mistake? Once your data is organized in a Pandas DataFrame, the analytical explorations become unlimited, opening new possibilities to fine-tune your decision-making.
 
+In the processed DataFrame, each row corresponds to a specific player in a specific hand, containing all relevant information about that instance of the game. Below, you’ll find an example of hand history before and after processing.
+
+#### Before
+```
+PokerStars Hand #219372022626: Tournament #3026510091, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/14 10:33:59 BRT [2020/10/14 9:33:59 ET]
+Table '3026510091 1' 3-max Seat #1 is the button
+Seat 1: VillainA (500 in chips) 
+Seat 2: garciamurilo (500 in chips) 
+Seat 3: VillainB (500 in chips) 
+garciamurilo: posts small blind 10
+VillainB: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [6h Ks]
+VillainB is disconnected 
+VillainA: folds 
+garciamurilo: calls 10
+VillainB: checks 
+*** FLOP *** [4d Qs Qd]
+garciamurilo: checks 
+VillainB: checks 
+*** TURN *** [4d Qs Qd] [3s]
+garciamurilo: checks 
+VillainB: bets 20
+garciamurilo: folds 
+Uncalled bet (20) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Board [4d Qs Qd 3s]
+Seat 1: VillainA (button) folded before Flop (didn't bet)
+Seat 2: garciamurilo (small blind) folded on the Turn
+Seat 3: VillainB (big blind) collected (40)
+```
+
+#### After
+
+|    | Modality             |   TableSize | BuyIn       |    TournID |   TableID |       HandID | LocalTime           | Level   | Ante   | Blinds      | Owner        | OwnersHand   |   Playing | Player       |   Seat | PostedAnte   | Position    |   PostedBlind |   Stack | PreflopAction        | FlopAction       | TurnAction                 | RiverAction     | AnteAllIn   | PreflopAllIn   | FlopAllIn   | TurnAllIn   | RiverAllIn   | BoardFlop           | BoardTurn              | BoardRiver   | ShowDown    | CardCombination   | Result     |   Balance |   FinalRank | Prize   |
+|----|----------------------|-------------|-------------|------------|-----------|--------------|---------------------|---------|--------|-------------|--------------|--------------|-----------|--------------|--------|--------------|-------------|---------------|---------|----------------------|------------------|----------------------------|------------------|-------------|----------------|-------------|-------------|--------------|----------------------|------------------------|--------------|-------------|-------------------|------------|-----------|-------------|---------|
+|  0 | USD Hold'em No Limit |           3 | $1.84+$0.16 | 3026510091 |         1 | 219372022626 | 2020-10-14 10:33:59 | I       | None   | [10.0, 20.0] | garciamurilo | ['6h', 'Ks'] |         3 | VillainA     |      1 | None         | button      |           nan |     500 | ['folds', '']        | ['', '']         | ['', '']                   | ['', '']         | False       | False          | False       | False       | False        | ['4d', 'Qs', 'Qd']   | ['4d', 'Qs', 'Qd', '3s'] | []           | [None, None] | None              | folded     |       nan |          -1 | None    |
+|  1 | USD Hold'em No Limit |           3 | $1.84+$0.16 | 3026510091 |         1 | 219372022626 | 2020-10-14 10:33:59 | I       | None   | [10.0, 20.0] | garciamurilo | ['6h', 'Ks'] |         3 | garciamurilo |      2 | None         | small blind |            10 |     500 | ['calls', '10']      | ['checks', '']    | ['checks', ''], ['folds', ''] | ['', '']         | False       | False          | False       | False       | False        | ['4d', 'Qs', 'Qd']   | ['4d', 'Qs', 'Qd', '3s'] | []           | [None, None] | None              | folded     |       nan |          -1 | None    |
+|  2 | USD Hold'em No Limit |           3 | $1.84+$0.16 | 3026510091 |         1 | 219372022626 | 2020-10-14 10:33:59 | I       | None   | [10.0, 20.0] | garciamurilo | ['6h', 'Ks'] |         3 | VillainB     |      3 | None         | big blind   |            20 |     500 | ['checks', '']       | ['checks', '']    | ['bets', '20']             | ['', '']         | False       | False          | False       | False       | False        | ['4d', 'Qs', 'Qd']   | ['4d', 'Qs', 'Qd', '3s'] | []           | [None, None] | None              | non-sd win |        40 |          -1 | None    |
+
+#### Data Modeling
+For advanced analytics, you will need to transform the data and explore different data models. The final structure of your data may vary depending on the specific goals of your project.
+
+
 ## Installation
 ```
 pip install pokerdf
 ```
 
 ## Usage
-Navigate to the folder where you want to save the output:
+First, navigate to the directory where you want to save the output:
 ```
 cd output_directory
 ```
-Then, run the package like this:
+Then, run the package to convert all your hand history files:
 ```
 pokerdf convert /path/to/handhistory/folder
 ```
-
-Once the process is concluded, you will find something like this:
+After the process completes, you’ll see an output similar to the following:
 ```
 output_directory/
 └── output/
@@ -47,7 +93,10 @@ output_directory/
 4. The file `fail.txt` provides detailed information about any files that failed to process. This file is only generated if there are failures.
 5. The file `success.txt` lists all successfully converted files. 
 
-## DataFrame structure
+#### Incremental pipeline
+You may want to build a pipeline to incrementally feed your table with new hand history data. In that case, you can import the `convert_txt_to_tabular_data` function and use it in your workflows. Refer to the docstrings and explore its usage within the package to better understand how it works.
+
+## Metadata
 | Column            | Description                                                  | Example                           | Data Type       |
 |-------------------|--------------------------------------------------------------|-----------------------------------|-----------------|
 | Modality          | The type of game being played                                | Hold'em No Limit                  | string          |
