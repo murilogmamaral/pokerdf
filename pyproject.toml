@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pokerdf"
-version = "1.0.1"
+version = "1.0.2"
 description = "Converts poker hand history files to pandas DataFrames."
 authors = ["Murilo Amaral <murilogmamaral@gmail.com>"]
 readme = "README.md"
@@ -24,8 +24,7 @@ pytest = "^7.0.1"
 pokerdf = "pokerdf.main:main"
 
 [tool.poetry.urls]
-homepage = "https://gitlab.com/murilogmamaral/pokerdf"
-repository = "https://gitlab.com/murilogmamaral/pokerdf"
+repository = "https://github.com/murilogmamaral/pokerdf"
 
 [tool.flake8]
 max-line-length = 120
