@@ -381,7 +381,7 @@ class RegexPatterns:
             list: List with the stack of the player (for example, ['500']).
         """
         # Pattern to extract
-        regex = rf"Seat \d+: {player} \((\d+) in chips\)"
+        regex = rf"Seat \d+: {player} \((\d+) in chips"
 
         # Get the first content of a played hand
         target = hand[0]
