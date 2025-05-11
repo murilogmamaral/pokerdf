@@ -10,39 +10,39 @@ Currently supports PokerStars. Make sure hand histories are saved in English.
 
 Converting raw hand histories into structured data is the first step toward building a solid poker strategy and maximizing ROI. What are the optimal VPIP, PFR, and C-BET frequencies for No Limit Hold'em 6-Max? In which specific situations is a 3-Bet most profitable? When is bluffing a clear mistake? Once your data is organized in a Pandas DataFrame, the analytical explorations become unlimited, opening new possibilities to fine-tune your decision-making.
 
-In the processed DataFrame, each row corresponds to a specific player in a specific hand, containing all relevant information about that instance of the game. Below, you’ll find an example of the hand history before and after processing.
+In the processed DataFrame, each row corresponds to a specific player in a specific hand, containing all relevant information about that instance of the game. Below, you’ll find an example of hand history before and after processing.
 
 ### Before
 ```
 PokerStars Hand #219372022626: Tournament #3026510091, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/14 10:33:59 BRT [2020/10/14 9:33:59 ET]
 Table '3026510091 1' 3-max Seat #1 is the button
-Seat 1: LadyLorein (500 in chips) 
+Seat 1: VillainA (500 in chips) 
 Seat 2: garciamurilo (500 in chips) 
-Seat 3: WinkHD15 (500 in chips) 
+Seat 3: VillainB (500 in chips) 
 garciamurilo: posts small blind 10
-WinkHD15: posts big blind 20
+VillainB: posts big blind 20
 *** HOLE CARDS ***
 Dealt to garciamurilo [6h Ks]
-WinkHD15 is disconnected 
-LadyLorein: folds 
+VillainB is disconnected 
+VillainA: folds 
 garciamurilo: calls 10
-WinkHD15: checks 
+VillainB: checks 
 *** FLOP *** [4d Qs Qd]
 garciamurilo: checks 
-WinkHD15: checks 
+VillainB: checks 
 *** TURN *** [4d Qs Qd] [3s]
 garciamurilo: checks 
-WinkHD15: bets 20
+VillainB: bets 20
 garciamurilo: folds 
-Uncalled bet (20) returned to WinkHD15
-WinkHD15 collected 40 from pot
-WinkHD15: doesn't show hand 
+Uncalled bet (20) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
 *** SUMMARY ***
 Total pot 40 | Rake 0 
 Board [4d Qs Qd 3s]
-Seat 1: LadyLorein (button) folded before Flop (didn't bet)
+Seat 1: VillainA (button) folded before Flop (didn't bet)
 Seat 2: garciamurilo (small blind) folded on the Turn
-Seat 3: WinkHD15 (big blind) collected (40)
+Seat 3: VillainB (big blind) collected (40)
 ```
 
 ### After
