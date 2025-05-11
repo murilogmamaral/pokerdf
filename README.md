@@ -12,7 +12,7 @@ Converting raw hand histories into structured data is the first step toward buil
 
 In the processed DataFrame, each row corresponds to a specific player in a specific hand, containing all relevant information about that instance of the game. Below, you’ll find an example of hand history before and after processing.
 
-### Before
+#### Before
 ```
 PokerStars Hand #219372022626: Tournament #3026510091, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/14 10:33:59 BRT [2020/10/14 9:33:59 ET]
 Table '3026510091 1' 3-max Seat #1 is the button
@@ -45,7 +45,7 @@ Seat 2: garciamurilo (small blind) folded on the Turn
 Seat 3: VillainB (big blind) collected (40)
 ```
 
-### After
+#### After
 
 |    | Modality             |   TableSize | BuyIn       |    TournID |   TableID |       HandID | LocalTime           | Level   | Ante   | Blinds      | Owner        | OwnersHand   |   Playing | Player       |   Seat | PostedAnte   | Position    |   PostedBlind |   Stack | PreflopAction        | FlopAction       | TurnAction                 | RiverAction     | AnteAllIn   | PreflopAllIn   | FlopAllIn   | TurnAllIn   | RiverAllIn   | BoardFlop           | BoardTurn              | BoardRiver   | ShowDown    | CardCombination   | Result     |   Balance |   FinalRank | Prize   |
 |----|----------------------|-------------|-------------|------------|-----------|--------------|---------------------|---------|--------|-------------|--------------|--------------|-----------|--------------|--------|--------------|-------------|---------------|---------|----------------------|------------------|----------------------------|------------------|-------------|----------------|-------------|-------------|--------------|----------------------|------------------------|--------------|-------------|-------------------|------------|-----------|-------------|---------|
@@ -53,7 +53,7 @@ Seat 3: VillainB (big blind) collected (40)
 |  1 | USD Hold'em No Limit |           3 | $1.84+$0.16 | 3026510091 |         1 | 219372022626 | 2020-10-14 10:33:59 | I       | None   | [10.0, 20.0] | garciamurilo | ['6h', 'Ks'] |         3 | garciamurilo |      2 | None         | small blind |            10 |     500 | ['calls', '10']      | ['checks', '']    | ['checks', ''], ['folds', ''] | ['', '']         | False       | False          | False       | False       | False        | ['4d', 'Qs', 'Qd']   | ['4d', 'Qs', 'Qd', '3s'] | []           | [None, None] | None              | folded     |       nan |          -1 | None    |
 |  2 | USD Hold'em No Limit |           3 | $1.84+$0.16 | 3026510091 |         1 | 219372022626 | 2020-10-14 10:33:59 | I       | None   | [10.0, 20.0] | garciamurilo | ['6h', 'Ks'] |         3 | VillainB     |      3 | None         | big blind   |            20 |     500 | ['checks', '']       | ['checks', '']    | ['bets', '20']             | ['', '']         | False       | False          | False       | False       | False        | ['4d', 'Qs', 'Qd']   | ['4d', 'Qs', 'Qd', '3s'] | []           | [None, None] | None              | non-sd win |        40 |          -1 | None    |
 
-### Data Modeling
+#### Data Modeling
 For advanced analytics, you will need to transform the data and explore different data models. The final structure of your data may vary depending on the specific goals of your project.
 
 
