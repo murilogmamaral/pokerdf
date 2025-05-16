@@ -2,8 +2,8 @@ from pokerdf.core.read_and_convert import convert_txt_to_tabular_data
 import pandas as pd
 
 
-def test_read_and_convert() -> None:
-    """Test the read_and_convert function in a broad way."""
+def test_convert_txt_to_tabular_data() -> None:
+    """Test the convert_txt_to_tabular_data function in a broad way."""
     # Convert txt to pd.DataFrame
     txt_path = "tests/input/HH20250516 T99999 No Limit Hold_em US$ 1,84 + US$ 0,16.txt"
     df_converted = convert_txt_to_tabular_data(txt_path).reset_index(drop=True)

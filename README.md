@@ -53,8 +53,13 @@ Seat 3: VillainB (big blind) collected (40)
 |  1 | USD Hold'em No Limit |           3 | $1.84+$0.16 | 3026510091 |         1 | 219372022626 | 2020-10-14 10:33:59 | I       | None   | [10.0, 20.0] | garciamurilo | ['6h', 'Ks'] |         3 | garciamurilo |      2 | None         | small blind |            10 |     500 | ['calls', '10']      | ['checks', '']    | ['checks', ''], ['folds', ''] | ['', '']         | False       | False          | False       | False       | False        | ['4d', 'Qs', 'Qd']   | ['4d', 'Qs', 'Qd', '3s'] | []           | [None, None] | None              | folded     |       nan |          -1 | None    |
 |  2 | USD Hold'em No Limit |           3 | $1.84+$0.16 | 3026510091 |         1 | 219372022626 | 2020-10-14 10:33:59 | I       | None   | [10.0, 20.0] | garciamurilo | ['6h', 'Ks'] |         3 | VillainB     |      3 | None         | big blind   |            20 |     500 | ['checks', '']       | ['checks', '']    | ['bets', '20']             | ['', '']         | False       | False          | False       | False       | False        | ['4d', 'Qs', 'Qd']   | ['4d', 'Qs', 'Qd', '3s'] | []           | [None, None] | None              | non-sd win |        40 |          -1 | None    |
 
+<br>
+
 #### Data Modeling
-For advanced analytics, you will need to transform the data and explore different data models. The final structure of your data may vary depending on the specific goals of your project.
+For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of relational data model split into five tables that may be useful for most cases.  
+<br>
+
+![pokerdm](https://github.com/user-attachments/assets/8936f540-51c7-4a1d-a5b1-bc9fc73c4313)
 
 
 ## Installation
