@@ -1,0 +1,1933 @@
+PokerStars Hand #11111: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:22:15 BRT [2020/10/11 2:22:15 ET]
+Table '99999 1' 3-max Seat #1 is the button
+Seat 1: VillainA (500 in chips) 
+Seat 2: garciamurilo (500 in chips) 
+Seat 3: VillainB (500 in chips) 
+garciamurilo: posts small blind 10
+VillainB: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [3s Jh]
+VillainA: folds 
+garciamurilo: folds 
+Uncalled bet (10) returned to VillainB
+VillainB collected 20 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 20 | Rake 0 
+Seat 1: VillainA (button) folded before Flop (didn't bet)
+Seat 2: garciamurilo (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (20)
+
+
+
+PokerStars Hand #219269851097: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:22:21 BRT [2020/10/11 2:22:21 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 1: VillainA (500 in chips) 
+Seat 2: garciamurilo (490 in chips) 
+Seat 3: VillainB (510 in chips) 
+VillainB: posts small blind 10
+VillainA: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [2d 6s]
+garciamurilo: folds 
+VillainB: raises 20 to 40
+VillainA: calls 20
+*** FLOP *** [4d Tc 7s]
+VillainB: bets 80
+VillainA: folds 
+Uncalled bet (80) returned to VillainB
+VillainB collected 80 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 80 | Rake 0 
+Board [4d Tc 7s]
+Seat 1: VillainA (big blind) folded on the Flop
+Seat 2: garciamurilo (button) folded before Flop (didn't bet)
+Seat 3: VillainB (small blind) collected (80)
+
+
+
+PokerStars Hand #219269854149: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:22:37 BRT [2020/10/11 2:22:37 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 1: VillainA (460 in chips) 
+Seat 2: garciamurilo (490 in chips) 
+Seat 3: VillainB (550 in chips) 
+VillainA: posts small blind 10
+garciamurilo: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [3s 9c]
+VillainB: folds 
+VillainA: raises 40 to 60
+garciamurilo: folds 
+Uncalled bet (40) returned to VillainA
+VillainA collected 40 from pot
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 1: VillainA (small blind) collected (40)
+Seat 2: garciamurilo (big blind) folded before Flop
+Seat 3: VillainB (button) folded before Flop (didn't bet)
+
+
+
+PokerStars Hand #219269855467: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:22:44 BRT [2020/10/11 2:22:44 ET]
+Table '99999 1' 3-max Seat #1 is the button
+Seat 1: VillainA (480 in chips) 
+Seat 2: garciamurilo (470 in chips) 
+Seat 3: VillainB (550 in chips) 
+garciamurilo: posts small blind 10
+VillainB: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [Ah Qs]
+VillainA: folds 
+garciamurilo: raises 20 to 40
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 1: VillainA (button) folded before Flop (didn't bet)
+Seat 2: garciamurilo (small blind) collected (40)
+Seat 3: VillainB (big blind) folded before Flop
+
+
+
+PokerStars Hand #219269856394: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:22:49 BRT [2020/10/11 2:22:49 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 1: VillainA (480 in chips) 
+Seat 2: garciamurilo (490 in chips) 
+Seat 3: VillainB (530 in chips) 
+VillainB: posts small blind 10
+VillainA: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qs 2d]
+garciamurilo: folds 
+VillainB: raises 40 to 60
+VillainA: folds 
+Uncalled bet (40) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 1: VillainA (big blind) folded before Flop
+Seat 2: garciamurilo (button) folded before Flop (didn't bet)
+Seat 3: VillainB (small blind) collected (40)
+
+
+
+PokerStars Hand #219269857629: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:22:56 BRT [2020/10/11 2:22:56 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 1: VillainA (460 in chips) 
+Seat 2: garciamurilo (490 in chips) 
+Seat 3: VillainB (550 in chips) 
+VillainA: posts small blind 10
+garciamurilo: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qd 4s]
+VillainB: folds 
+VillainA: calls 10
+garciamurilo: checks 
+*** FLOP *** [7h 4d 7d]
+VillainA: bets 20
+garciamurilo: raises 20 to 40
+VillainA: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 80 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 80 | Rake 0 
+Board [7h 4d 7d]
+Seat 1: VillainA (small blind) folded on the Flop
+Seat 2: garciamurilo (big blind) collected (80)
+Seat 3: VillainB (button) folded before Flop (didn't bet)
+
+
+
+PokerStars Hand #219269860615: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:23:12 BRT [2020/10/11 2:23:12 ET]
+Table '99999 1' 3-max Seat #1 is the button
+Seat 1: VillainA (420 in chips) 
+Seat 2: garciamurilo (530 in chips) 
+Seat 3: VillainB (550 in chips) 
+garciamurilo: posts small blind 10
+VillainB: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [7c 6c]
+VillainA: folds 
+garciamurilo: calls 10
+VillainB: checks 
+*** FLOP *** [5c Ah 8d]
+garciamurilo: bets 20
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Board [5c Ah 8d]
+Seat 1: VillainA (button) folded before Flop (didn't bet)
+Seat 2: garciamurilo (small blind) collected (40)
+Seat 3: VillainB (big blind) folded on the Flop
+
+
+
+PokerStars Hand #219269863356: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:23:27 BRT [2020/10/11 2:23:27 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 1: VillainA (420 in chips) 
+Seat 2: garciamurilo (550 in chips) 
+Seat 3: VillainB (530 in chips) 
+VillainB: posts small blind 10
+VillainA: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [9h Js]
+garciamurilo: folds 
+VillainB: calls 10
+VillainA: checks 
+*** FLOP *** [Ts 7s 4d]
+VillainB: bets 40
+VillainA: folds 
+Uncalled bet (40) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Board [Ts 7s 4d]
+Seat 1: VillainA (big blind) folded on the Flop
+Seat 2: garciamurilo (button) folded before Flop (didn't bet)
+Seat 3: VillainB (small blind) collected (40)
+
+
+
+PokerStars Hand #219269865715: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:23:40 BRT [2020/10/11 2:23:40 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 1: VillainA (400 in chips) 
+Seat 2: garciamurilo (550 in chips) 
+Seat 3: VillainB (550 in chips) 
+VillainA: posts small blind 10
+garciamurilo: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [As 2s]
+VillainB: folds 
+VillainA: folds 
+Uncalled bet (10) returned to garciamurilo
+garciamurilo collected 20 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 20 | Rake 0 
+Seat 1: VillainA (small blind) folded before Flop
+Seat 2: garciamurilo (big blind) collected (20)
+Seat 3: VillainB (button) folded before Flop (didn't bet)
+
+
+
+PokerStars Hand #219269866589: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:23:44 BRT [2020/10/11 2:23:44 ET]
+Table '99999 1' 3-max Seat #1 is the button
+Seat 1: VillainA (390 in chips) 
+Seat 2: garciamurilo (560 in chips) 
+Seat 3: VillainB (550 in chips) 
+garciamurilo: posts small blind 10
+VillainB: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [8h Kh]
+VillainA: folds 
+garciamurilo: calls 10
+VillainB: checks 
+*** FLOP *** [Jh 5s 4s]
+garciamurilo: checks 
+VillainB: checks 
+*** TURN *** [Jh 5s 4s] [Jc]
+garciamurilo: checks 
+VillainB: checks 
+*** RIVER *** [Jh 5s 4s Jc] [2h]
+garciamurilo: checks 
+VillainB: checks 
+*** SHOW DOWN ***
+garciamurilo: shows [8h Kh] (a pair of Jacks)
+VillainB: mucks hand 
+garciamurilo collected 40 from pot
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Board [Jh 5s 4s Jc 2h]
+Seat 1: VillainA (button) folded before Flop (didn't bet)
+Seat 2: garciamurilo (small blind) showed [8h Kh] and won (40) with a pair of Jacks
+Seat 3: VillainB (big blind) mucked [7h Td]
+
+
+
+PokerStars Hand #219269869169: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:23:58 BRT [2020/10/11 2:23:58 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 1: VillainA (390 in chips) 
+Seat 2: garciamurilo (580 in chips) 
+Seat 3: VillainB (530 in chips) 
+VillainB: posts small blind 10
+VillainA: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [3h 8s]
+garciamurilo: folds 
+VillainB: folds 
+Uncalled bet (10) returned to VillainA
+VillainA collected 20 from pot
+*** SUMMARY ***
+Total pot 20 | Rake 0 
+Seat 1: VillainA (big blind) collected (20)
+Seat 2: garciamurilo (button) folded before Flop (didn't bet)
+Seat 3: VillainB (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269870266: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:24:04 BRT [2020/10/11 2:24:04 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 1: VillainA (400 in chips) 
+Seat 2: garciamurilo (580 in chips) 
+Seat 3: VillainB (520 in chips) 
+VillainA: posts small blind 10
+garciamurilo: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [4c 6d]
+VillainB: folds 
+VillainA: folds 
+Uncalled bet (10) returned to garciamurilo
+garciamurilo collected 20 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 20 | Rake 0 
+Seat 1: VillainA (small blind) folded before Flop
+Seat 2: garciamurilo (big blind) collected (20)
+Seat 3: VillainB (button) folded before Flop (didn't bet)
+
+
+
+PokerStars Hand #219269871324: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:24:10 BRT [2020/10/11 2:24:10 ET]
+Table '99999 1' 3-max Seat #1 is the button
+Seat 1: VillainA (390 in chips) 
+Seat 2: garciamurilo (590 in chips) 
+Seat 3: VillainB (520 in chips) 
+garciamurilo: posts small blind 10
+VillainB: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [6c 6h]
+VillainA: raises 20 to 40
+garciamurilo: folds 
+VillainB: folds 
+Uncalled bet (20) returned to VillainA
+VillainA collected 50 from pot
+*** SUMMARY ***
+Total pot 50 | Rake 0 
+Seat 1: VillainA (button) collected (50)
+Seat 2: garciamurilo (small blind) folded before Flop
+Seat 3: VillainB (big blind) folded before Flop
+
+
+
+PokerStars Hand #219269873773: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:24:23 BRT [2020/10/11 2:24:23 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 1: VillainA (420 in chips) 
+Seat 2: garciamurilo (580 in chips) 
+Seat 3: VillainB (500 in chips) 
+VillainB: posts small blind 10
+VillainA: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [6h 9s]
+garciamurilo: folds 
+VillainB: raises 20 to 40
+VillainA: raises 380 to 420 and is all-in
+VillainB: folds 
+Uncalled bet (380) returned to VillainA
+VillainA collected 80 from pot
+*** SUMMARY ***
+Total pot 80 | Rake 0 
+Seat 1: VillainA (big blind) collected (80)
+Seat 2: garciamurilo (button) folded before Flop (didn't bet)
+Seat 3: VillainB (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269876884: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:24:40 BRT [2020/10/11 2:24:40 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 1: VillainA (460 in chips) 
+Seat 2: garciamurilo (580 in chips) 
+Seat 3: VillainB (460 in chips) 
+VillainA: posts small blind 10
+garciamurilo: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [7h 9s]
+VillainB: folds 
+VillainA: folds 
+Uncalled bet (10) returned to garciamurilo
+garciamurilo collected 20 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 20 | Rake 0 
+Seat 1: VillainA (small blind) folded before Flop
+Seat 2: garciamurilo (big blind) collected (20)
+Seat 3: VillainB (button) folded before Flop (didn't bet)
+
+
+
+PokerStars Hand #219269878113: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:24:47 BRT [2020/10/11 2:24:47 ET]
+Table '99999 1' 3-max Seat #1 is the button
+Seat 1: VillainA (450 in chips) 
+Seat 2: garciamurilo (590 in chips) 
+Seat 3: VillainB (460 in chips) 
+garciamurilo: posts small blind 10
+VillainB: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [Tc 4d]
+VillainA: folds 
+garciamurilo: folds 
+Uncalled bet (10) returned to VillainB
+VillainB collected 20 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 20 | Rake 0 
+Seat 1: VillainA (button) folded before Flop (didn't bet)
+Seat 2: garciamurilo (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (20)
+
+
+
+PokerStars Hand #219269879108: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:24:52 BRT [2020/10/11 2:24:52 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 1: VillainA (450 in chips) 
+Seat 2: garciamurilo (580 in chips) 
+Seat 3: VillainB (470 in chips) 
+VillainB: posts small blind 10
+VillainA: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [2s 5d]
+garciamurilo: folds 
+VillainB: raises 60 to 80
+VillainA: raises 370 to 450 and is all-in
+VillainB: calls 370
+*** FLOP *** [Qc 9c Kh]
+*** TURN *** [Qc 9c Kh] [3d]
+*** RIVER *** [Qc 9c Kh 3d] [9h]
+*** SHOW DOWN ***
+VillainB: shows [Ac Qh] (two pair, Queens and Nines)
+VillainA: shows [Ah 8h] (a pair of Nines)
+VillainB collected 900 from pot
+VillainA finished the tournament in 3rd place
+*** SUMMARY ***
+Total pot 900 | Rake 0 
+Board [Qc 9c Kh 3d 9h]
+Seat 1: VillainA (big blind) showed [Ah 8h] and lost with a pair of Nines
+Seat 2: garciamurilo (button) folded before Flop (didn't bet)
+Seat 3: VillainB (small blind) showed [Ac Qh] and won (900) with two pair, Queens and Nines
+
+
+
+PokerStars Hand #219269883094: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level I (10/20) - 2020/10/11 3:25:13 BRT [2020/10/11 2:25:13 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (580 in chips) 
+Seat 3: VillainB (920 in chips) 
+VillainB: posts small blind 10
+garciamurilo: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [Td 5c]
+VillainB: raises 20 to 40
+garciamurilo: folds 
+Uncalled bet (20) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) folded before Flop
+Seat 3: VillainB (button) (small blind) collected (40)
+
+
+
+PokerStars Hand #219269886692: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:25:33 BRT [2020/10/11 2:25:33 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (560 in chips) 
+Seat 3: VillainB (940 in chips) 
+garciamurilo: posts small blind 15
+VillainB: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qs 6h]
+garciamurilo: calls 15
+VillainB: checks 
+*** FLOP *** [7s Qd 6c]
+VillainB: checks 
+garciamurilo: checks 
+*** TURN *** [7s Qd 6c] [Kc]
+VillainB: checks 
+garciamurilo: checks 
+*** RIVER *** [7s Qd 6c Kc] [As]
+VillainB: checks 
+garciamurilo: bets 30
+VillainB: folds 
+Uncalled bet (30) returned to garciamurilo
+garciamurilo collected 60 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Board [7s Qd 6c Kc As]
+Seat 2: garciamurilo (button) (small blind) collected (60)
+Seat 3: VillainB (big blind) folded on the River
+
+
+
+PokerStars Hand #219269889924: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:25:50 BRT [2020/10/11 2:25:50 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (590 in chips) 
+Seat 3: VillainB (910 in chips) 
+VillainB: posts small blind 15
+garciamurilo: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qs 6c]
+VillainB: folds 
+Uncalled bet (15) returned to garciamurilo
+garciamurilo collected 30 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 30 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (30)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269890547: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:25:53 BRT [2020/10/11 2:25:53 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (605 in chips) 
+Seat 3: VillainB (895 in chips) 
+garciamurilo: posts small blind 15
+VillainB: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [9s Jd]
+garciamurilo: calls 15
+VillainB: checks 
+*** FLOP *** [Tc 3s 8s]
+VillainB: bets 30
+garciamurilo: calls 30
+*** TURN *** [Tc 3s 8s] [4c]
+VillainB: bets 30
+garciamurilo: calls 30
+*** RIVER *** [Tc 3s 8s 4c] [Ah]
+VillainB: bets 30
+garciamurilo: raises 160 to 190
+VillainB: folds 
+Uncalled bet (160) returned to garciamurilo
+garciamurilo collected 240 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 240 | Rake 0 
+Board [Tc 3s 8s 4c Ah]
+Seat 2: garciamurilo (button) (small blind) collected (240)
+Seat 3: VillainB (big blind) folded on the River
+
+
+
+PokerStars Hand #219269893253: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:26:08 BRT [2020/10/11 2:26:08 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (725 in chips) 
+Seat 3: VillainB (775 in chips) 
+VillainB: posts small blind 15
+garciamurilo: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qd 6h]
+VillainB: folds 
+Uncalled bet (15) returned to garciamurilo
+garciamurilo collected 30 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 30 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (30)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269893866: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:26:11 BRT [2020/10/11 2:26:11 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (740 in chips) 
+Seat 3: VillainB (760 in chips) 
+garciamurilo: posts small blind 15
+VillainB: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [9s 3d]
+garciamurilo: calls 15
+VillainB: checks 
+*** FLOP *** [2s Qh 8s]
+VillainB: checks 
+garciamurilo: checks 
+*** TURN *** [2s Qh 8s] [5h]
+VillainB: bets 30
+garciamurilo: folds 
+Uncalled bet (30) returned to VillainB
+VillainB collected 60 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Board [2s Qh 8s 5h]
+Seat 2: garciamurilo (button) (small blind) folded on the Turn
+Seat 3: VillainB (big blind) collected (60)
+
+
+
+PokerStars Hand #219269896455: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:26:25 BRT [2020/10/11 2:26:25 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (710 in chips) 
+Seat 3: VillainB (790 in chips) 
+VillainB: posts small blind 15
+garciamurilo: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [6h 2c]
+VillainB: folds 
+Uncalled bet (15) returned to garciamurilo
+garciamurilo collected 30 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 30 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (30)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269897085: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:26:28 BRT [2020/10/11 2:26:28 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (725 in chips) 
+Seat 3: VillainB (775 in chips) 
+garciamurilo: posts small blind 15
+VillainB: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [2c 5s]
+garciamurilo: calls 15
+VillainB: raises 60 to 90
+garciamurilo: folds 
+Uncalled bet (60) returned to VillainB
+VillainB collected 60 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (60)
+
+
+
+PokerStars Hand #219269898277: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:26:34 BRT [2020/10/11 2:26:34 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (695 in chips) 
+Seat 3: VillainB (805 in chips) 
+VillainB: posts small blind 15
+garciamurilo: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [5h Jh]
+VillainB: calls 15
+garciamurilo: checks 
+*** FLOP *** [6d Qd 3s]
+garciamurilo: bets 30
+VillainB: folds 
+Uncalled bet (30) returned to garciamurilo
+garciamurilo collected 60 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Board [6d Qd 3s]
+Seat 2: garciamurilo (big blind) collected (60)
+Seat 3: VillainB (button) (small blind) folded on the Flop
+
+
+
+PokerStars Hand #219269899921: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:26:43 BRT [2020/10/11 2:26:43 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (725 in chips) 
+Seat 3: VillainB (775 in chips) 
+garciamurilo: posts small blind 15
+VillainB: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qd 3h]
+garciamurilo: calls 15
+VillainB: checks 
+*** FLOP *** [6s 4h Th]
+VillainB: checks 
+garciamurilo: checks 
+*** TURN *** [6s 4h Th] [7c]
+VillainB: bets 30
+garciamurilo: folds 
+Uncalled bet (30) returned to VillainB
+VillainB collected 60 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Board [6s 4h Th 7c]
+Seat 2: garciamurilo (button) (small blind) folded on the Turn
+Seat 3: VillainB (big blind) collected (60)
+
+
+
+PokerStars Hand #219269902584: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:26:57 BRT [2020/10/11 2:26:57 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (695 in chips) 
+Seat 3: VillainB (805 in chips) 
+VillainB: posts small blind 15
+garciamurilo: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [8d Qh]
+VillainB: folds 
+Uncalled bet (15) returned to garciamurilo
+garciamurilo collected 30 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 30 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (30)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269903263: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:27:01 BRT [2020/10/11 2:27:01 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (710 in chips) 
+Seat 3: VillainB (790 in chips) 
+garciamurilo: posts small blind 15
+VillainB: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [Kd 7h]
+garciamurilo: calls 15
+VillainB: raises 60 to 90
+garciamurilo: calls 60
+*** FLOP *** [7c 2s 9s]
+VillainB: checks 
+garciamurilo: bets 216
+VillainB: folds 
+Uncalled bet (216) returned to garciamurilo
+garciamurilo collected 180 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 180 | Rake 0 
+Board [7c 2s 9s]
+Seat 2: garciamurilo (button) (small blind) collected (180)
+Seat 3: VillainB (big blind) folded on the Flop
+
+
+
+PokerStars Hand #219269905458: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:27:13 BRT [2020/10/11 2:27:13 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (800 in chips) 
+Seat 3: VillainB (700 in chips) 
+VillainB: posts small blind 15
+garciamurilo: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [6h 7d]
+VillainB: raises 30 to 60
+garciamurilo: calls 30
+*** FLOP *** [5d Jh Kh]
+garciamurilo: checks 
+VillainB: bets 120
+garciamurilo: folds 
+Uncalled bet (120) returned to VillainB
+VillainB collected 120 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 120 | Rake 0 
+Board [5d Jh Kh]
+Seat 2: garciamurilo (big blind) folded on the Flop
+Seat 3: VillainB (button) (small blind) collected (120)
+
+
+
+PokerStars Hand #219269907313: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:27:23 BRT [2020/10/11 2:27:23 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (740 in chips) 
+Seat 3: VillainB (760 in chips) 
+garciamurilo: posts small blind 15
+VillainB: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [Th 5h]
+garciamurilo: calls 15
+VillainB: checks 
+*** FLOP *** [Kc Tc 7s]
+VillainB: checks 
+garciamurilo: bets 30
+VillainB: folds 
+Uncalled bet (30) returned to garciamurilo
+garciamurilo collected 60 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Board [Kc Tc 7s]
+Seat 2: garciamurilo (button) (small blind) collected (60)
+Seat 3: VillainB (big blind) folded on the Flop
+
+
+
+PokerStars Hand #219269908648: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:27:30 BRT [2020/10/11 2:27:30 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (770 in chips) 
+Seat 3: VillainB (730 in chips) 
+VillainB: posts small blind 15
+garciamurilo: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qc Qs]
+VillainB: raises 30 to 60
+garciamurilo: raises 30 to 90
+VillainB: calls 30
+*** FLOP *** [7c Kc 3c]
+garciamurilo: bets 30
+VillainB: calls 30
+*** TURN *** [7c Kc 3c] [2s]
+garciamurilo: bets 30
+VillainB: calls 30
+*** RIVER *** [7c Kc 3c 2s] [Ad]
+garciamurilo: checks 
+VillainB: checks 
+*** SHOW DOWN ***
+garciamurilo: shows [Qc Qs] (a pair of Queens)
+VillainB: mucks hand 
+garciamurilo collected 300 from pot
+*** SUMMARY ***
+Total pot 300 | Rake 0 
+Board [7c Kc 3c 2s Ad]
+Seat 2: garciamurilo (big blind) showed [Qc Qs] and won (300) with a pair of Queens
+Seat 3: VillainB (button) (small blind) mucked [Jc 8h]
+
+
+
+PokerStars Hand #219269911437: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:27:45 BRT [2020/10/11 2:27:45 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (920 in chips) 
+Seat 3: VillainB (580 in chips) 
+garciamurilo: posts small blind 15
+VillainB: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [7c Kc]
+garciamurilo: calls 15
+VillainB: checks 
+*** FLOP *** [Ts 6s Jd]
+VillainB: checks 
+garciamurilo: checks 
+*** TURN *** [Ts 6s Jd] [6h]
+VillainB: checks 
+garciamurilo: checks 
+*** RIVER *** [Ts 6s Jd 6h] [9h]
+VillainB: checks 
+garciamurilo: checks 
+*** SHOW DOWN ***
+VillainB: shows [Qd 4c] (a pair of Sixes)
+garciamurilo: shows [7c Kc] (a pair of Sixes - King kicker)
+garciamurilo collected 60 from pot
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Board [Ts 6s Jd 6h 9h]
+Seat 2: garciamurilo (button) (small blind) showed [7c Kc] and won (60) with a pair of Sixes
+Seat 3: VillainB (big blind) showed [Qd 4c] and lost with a pair of Sixes
+
+
+
+PokerStars Hand #219269914197: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:27:59 BRT [2020/10/11 2:27:59 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (950 in chips) 
+Seat 3: VillainB (550 in chips) 
+VillainB: posts small blind 15
+garciamurilo: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [Jd 2c]
+VillainB: folds 
+Uncalled bet (15) returned to garciamurilo
+garciamurilo collected 30 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 30 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (30)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269914809: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:28:03 BRT [2020/10/11 2:28:03 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (965 in chips) 
+Seat 3: VillainB (535 in chips) 
+garciamurilo: posts small blind 15
+VillainB: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [6d 5h]
+garciamurilo: folds 
+Uncalled bet (15) returned to VillainB
+VillainB collected 30 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 30 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (30)
+
+
+
+PokerStars Hand #219269915605: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:28:07 BRT [2020/10/11 2:28:07 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (950 in chips) 
+Seat 3: VillainB (550 in chips) 
+VillainB: posts small blind 15
+garciamurilo: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [7s 5d]
+VillainB: folds 
+Uncalled bet (15) returned to garciamurilo
+garciamurilo collected 30 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 30 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (30)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269916205: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:28:10 BRT [2020/10/11 2:28:10 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (965 in chips) 
+Seat 3: VillainB (535 in chips) 
+garciamurilo: posts small blind 15
+VillainB: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [3d 4s]
+garciamurilo: folds 
+Uncalled bet (15) returned to VillainB
+VillainB collected 30 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 30 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (30)
+
+
+
+PokerStars Hand #219269916997: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level II (15/30) - 2020/10/11 3:28:14 BRT [2020/10/11 2:28:14 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (950 in chips) 
+Seat 3: VillainB (550 in chips) 
+VillainB: posts small blind 15
+garciamurilo: posts big blind 30
+*** HOLE CARDS ***
+Dealt to garciamurilo [4d Ad]
+VillainB: folds 
+Uncalled bet (15) returned to garciamurilo
+garciamurilo collected 30 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 30 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (30)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269918223: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:28:21 BRT [2020/10/11 2:28:21 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (965 in chips) 
+Seat 3: VillainB (535 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Td 2c]
+garciamurilo: folds 
+Uncalled bet (20) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (40)
+
+
+
+PokerStars Hand #219269919013: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:28:25 BRT [2020/10/11 2:28:25 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (945 in chips) 
+Seat 3: VillainB (555 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [8s Tc]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269919592: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:28:28 BRT [2020/10/11 2:28:28 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (965 in chips) 
+Seat 3: VillainB (535 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qs Kd]
+garciamurilo: raises 40 to 80
+VillainB: calls 40
+*** FLOP *** [Jh 6c 7h]
+VillainB: checks 
+garciamurilo: bets 40
+VillainB: calls 40
+*** TURN *** [Jh 6c 7h] [Qh]
+VillainB: checks 
+garciamurilo: bets 40
+VillainB: calls 40
+*** RIVER *** [Jh 6c 7h Qh] [7d]
+VillainB: checks 
+garciamurilo: checks 
+*** SHOW DOWN ***
+VillainB: shows [Kh Ts] (a pair of Sevens)
+garciamurilo: shows [Qs Kd] (two pair, Queens and Sevens)
+garciamurilo collected 320 from pot
+*** SUMMARY ***
+Total pot 320 | Rake 0 
+Board [Jh 6c 7h Qh 7d]
+Seat 2: garciamurilo (button) (small blind) showed [Qs Kd] and won (320) with two pair, Queens and Sevens
+Seat 3: VillainB (big blind) showed [Kh Ts] and lost with a pair of Sevens
+
+
+
+PokerStars Hand #219269930526: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:28:43 BRT [2020/10/11 2:28:43 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (1125 in chips) 
+Seat 3: VillainB (375 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [4c 3d]
+VillainB: raises 80 to 120
+garciamurilo: folds 
+Uncalled bet (80) returned to VillainB
+VillainB collected 80 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 80 | Rake 0 
+Seat 2: garciamurilo (big blind) folded before Flop
+Seat 3: VillainB (button) (small blind) collected (80)
+
+
+
+PokerStars Hand #219269931324: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:28:47 BRT [2020/10/11 2:28:47 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (1085 in chips) 
+Seat 3: VillainB (415 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [2c Jc]
+garciamurilo: folds 
+Uncalled bet (20) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (40)
+
+
+
+PokerStars Hand #219269932138: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:28:51 BRT [2020/10/11 2:28:51 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (1065 in chips) 
+Seat 3: VillainB (435 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [3s Ah]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269932939: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:28:56 BRT [2020/10/11 2:28:56 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (1085 in chips) 
+Seat 3: VillainB (415 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [3d 4s]
+garciamurilo: folds 
+Uncalled bet (20) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (40)
+
+
+
+PokerStars Hand #219269933670: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:28:59 BRT [2020/10/11 2:28:59 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (1065 in chips) 
+Seat 3: VillainB (435 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [3d 9d]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269934283: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:29:03 BRT [2020/10/11 2:29:03 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (1085 in chips) 
+Seat 3: VillainB (415 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Tc 3s]
+garciamurilo: raises 40 to 80
+VillainB: folds 
+Uncalled bet (40) returned to garciamurilo
+garciamurilo collected 80 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 80 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) collected (80)
+Seat 3: VillainB (big blind) folded before Flop
+
+
+
+PokerStars Hand #219269935108: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:29:07 BRT [2020/10/11 2:29:07 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (1125 in chips) 
+Seat 3: VillainB (375 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qd 3h]
+VillainB: calls 20
+garciamurilo: checks 
+*** FLOP *** [Tc Qc Ad]
+garciamurilo: checks 
+VillainB: bets 40
+garciamurilo: folds 
+Uncalled bet (40) returned to VillainB
+VillainB collected 80 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 80 | Rake 0 
+Board [Tc Qc Ad]
+Seat 2: garciamurilo (big blind) folded on the Flop
+Seat 3: VillainB (button) (small blind) collected (80)
+
+
+
+PokerStars Hand #219269937620: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:29:21 BRT [2020/10/11 2:29:21 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (1085 in chips) 
+Seat 3: VillainB (415 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Ah 9h]
+garciamurilo: raises 40 to 80
+VillainB: folds 
+Uncalled bet (40) returned to garciamurilo
+garciamurilo collected 80 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 80 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) collected (80)
+Seat 3: VillainB (big blind) folded before Flop
+
+
+
+PokerStars Hand #219269938349: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:29:24 BRT [2020/10/11 2:29:24 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (1125 in chips) 
+Seat 3: VillainB (375 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [7d Qs]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269938997: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:29:28 BRT [2020/10/11 2:29:28 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (1145 in chips) 
+Seat 3: VillainB (355 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [7h 2d]
+garciamurilo: folds 
+Uncalled bet (20) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (40)
+
+
+
+PokerStars Hand #219269939628: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:29:31 BRT [2020/10/11 2:29:31 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (1125 in chips) 
+Seat 3: VillainB (375 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qh 8c]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269940268: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:29:35 BRT [2020/10/11 2:29:35 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (1145 in chips) 
+Seat 3: VillainB (355 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qd Jc]
+garciamurilo: raises 40 to 80
+VillainB: calls 40
+*** FLOP *** [Kh 7c 2c]
+VillainB: bets 160
+garciamurilo: folds 
+Uncalled bet (160) returned to VillainB
+VillainB collected 160 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 160 | Rake 0 
+Board [Kh 7c 2c]
+Seat 2: garciamurilo (button) (small blind) folded on the Flop
+Seat 3: VillainB (big blind) collected (160)
+
+
+
+PokerStars Hand #219269941979: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:29:44 BRT [2020/10/11 2:29:44 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (1065 in chips) 
+Seat 3: VillainB (435 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [7c 9c]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269942598: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:29:47 BRT [2020/10/11 2:29:47 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (1085 in chips) 
+Seat 3: VillainB (415 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [4h 2s]
+garciamurilo: folds 
+Uncalled bet (20) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (40)
+
+
+
+PokerStars Hand #219269943335: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:29:51 BRT [2020/10/11 2:29:51 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (1065 in chips) 
+Seat 3: VillainB (435 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Ts Qd]
+VillainB: raises 40 to 80
+garciamurilo: calls 40
+*** FLOP *** [4c 7d 3c]
+garciamurilo: bets 192
+VillainB: raises 163 to 355 and is all-in
+garciamurilo: folds 
+Uncalled bet (163) returned to VillainB
+VillainB collected 544 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 544 | Rake 0 
+Board [4c 7d 3c]
+Seat 2: garciamurilo (big blind) folded on the Flop
+Seat 3: VillainB (button) (small blind) collected (544)
+
+
+
+PokerStars Hand #219269946271: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:30:07 BRT [2020/10/11 2:30:07 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (793 in chips) 
+Seat 3: VillainB (707 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [2h 3s]
+garciamurilo: folds 
+Uncalled bet (20) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (40)
+
+
+
+PokerStars Hand #219269950469: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:30:10 BRT [2020/10/11 2:30:10 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (773 in chips) 
+Seat 3: VillainB (727 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [4h 9s]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269951072: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:30:14 BRT [2020/10/11 2:30:14 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (793 in chips) 
+Seat 3: VillainB (707 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [5c 2d]
+garciamurilo: raises 40 to 80
+VillainB: calls 40
+*** FLOP *** [4d 7s 9h]
+VillainB: bets 160
+garciamurilo: folds 
+Uncalled bet (160) returned to VillainB
+VillainB collected 160 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 160 | Rake 0 
+Board [4d 7s 9h]
+Seat 2: garciamurilo (button) (small blind) folded on the Flop
+Seat 3: VillainB (big blind) collected (160)
+
+
+
+PokerStars Hand #219269952878: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:30:23 BRT [2020/10/11 2:30:23 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (713 in chips) 
+Seat 3: VillainB (787 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Td 3c]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269953540: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:30:26 BRT [2020/10/11 2:30:26 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (733 in chips) 
+Seat 3: VillainB (767 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [5s 3s]
+garciamurilo: calls 20
+VillainB: checks 
+*** FLOP *** [Kc Ad Qs]
+VillainB: checks 
+garciamurilo: bets 40
+VillainB: folds 
+Uncalled bet (40) returned to garciamurilo
+garciamurilo collected 80 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 80 | Rake 0 
+Board [Kc Ad Qs]
+Seat 2: garciamurilo (button) (small blind) collected (80)
+Seat 3: VillainB (big blind) folded on the Flop
+
+
+
+PokerStars Hand #219269954934: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:30:34 BRT [2020/10/11 2:30:34 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (773 in chips) 
+Seat 3: VillainB (727 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qs 7d]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269955540: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:30:37 BRT [2020/10/11 2:30:37 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (793 in chips) 
+Seat 3: VillainB (707 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Kh Kc]
+garciamurilo: raises 40 to 80
+VillainB: folds 
+Uncalled bet (40) returned to garciamurilo
+garciamurilo collected 80 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 80 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) collected (80)
+Seat 3: VillainB (big blind) folded before Flop
+
+
+
+PokerStars Hand #219269956370: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:30:41 BRT [2020/10/11 2:30:41 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (833 in chips) 
+Seat 3: VillainB (667 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [5h Qs]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269957089: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:30:45 BRT [2020/10/11 2:30:45 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (853 in chips) 
+Seat 3: VillainB (647 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Ts 8h]
+garciamurilo: folds 
+Uncalled bet (20) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (40)
+
+
+
+PokerStars Hand #219269957808: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:30:49 BRT [2020/10/11 2:30:49 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (833 in chips) 
+Seat 3: VillainB (667 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [5d 7c]
+VillainB: raises 120 to 160
+garciamurilo: folds 
+Uncalled bet (120) returned to VillainB
+VillainB collected 80 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 80 | Rake 0 
+Seat 2: garciamurilo (big blind) folded before Flop
+Seat 3: VillainB (button) (small blind) collected (80)
+
+
+
+PokerStars Hand #219269958888: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:30:55 BRT [2020/10/11 2:30:55 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (793 in chips) 
+Seat 3: VillainB (707 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [3h 3d]
+garciamurilo: raises 40 to 80
+VillainB: calls 40
+*** FLOP *** [6c 4h Qc]
+VillainB: bets 160
+garciamurilo: folds 
+Uncalled bet (160) returned to VillainB
+VillainB collected 160 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 160 | Rake 0 
+Board [6c 4h Qc]
+Seat 2: garciamurilo (button) (small blind) folded on the Flop
+Seat 3: VillainB (big blind) collected (160)
+
+
+
+PokerStars Hand #219269960757: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:31:04 BRT [2020/10/11 2:31:04 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (713 in chips) 
+Seat 3: VillainB (787 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [8s Kc]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269961383: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:31:08 BRT [2020/10/11 2:31:08 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (733 in chips) 
+Seat 3: VillainB (767 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qs 8s]
+garciamurilo: raises 40 to 80
+VillainB: folds 
+Uncalled bet (40) returned to garciamurilo
+garciamurilo collected 80 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 80 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) collected (80)
+Seat 3: VillainB (big blind) folded before Flop
+
+
+
+PokerStars Hand #219269962034: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:31:11 BRT [2020/10/11 2:31:11 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (773 in chips) 
+Seat 3: VillainB (727 in chips) 
+VillainB: posts small blind 20
+garciamurilo: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [8h 3s]
+VillainB: folds 
+Uncalled bet (20) returned to garciamurilo
+garciamurilo collected 40 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (40)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269962661: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level III (20/40) - 2020/10/11 3:31:15 BRT [2020/10/11 2:31:15 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (793 in chips) 
+Seat 3: VillainB (707 in chips) 
+garciamurilo: posts small blind 20
+VillainB: posts big blind 40
+*** HOLE CARDS ***
+Dealt to garciamurilo [8d 6d]
+garciamurilo: folds 
+Uncalled bet (20) returned to VillainB
+VillainB collected 40 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 40 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (40)
+
+
+
+PokerStars Hand #219269964202: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:31:23 BRT [2020/10/11 2:31:23 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (773 in chips) 
+Seat 3: VillainB (727 in chips) 
+VillainB: posts small blind 30
+garciamurilo: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [4d Tc]
+VillainB: folds 
+Uncalled bet (30) returned to garciamurilo
+garciamurilo collected 60 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (60)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269964813: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:31:26 BRT [2020/10/11 2:31:26 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (803 in chips) 
+Seat 3: VillainB (697 in chips) 
+garciamurilo: posts small blind 30
+VillainB: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [4h 9c]
+garciamurilo: folds 
+Uncalled bet (30) returned to VillainB
+VillainB collected 60 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (60)
+
+
+
+PokerStars Hand #219269965511: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:31:30 BRT [2020/10/11 2:31:30 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (773 in chips) 
+Seat 3: VillainB (727 in chips) 
+VillainB: posts small blind 30
+garciamurilo: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [5s 8h]
+VillainB: folds 
+Uncalled bet (30) returned to garciamurilo
+garciamurilo collected 60 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (60)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269966152: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:31:33 BRT [2020/10/11 2:31:33 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (803 in chips) 
+Seat 3: VillainB (697 in chips) 
+garciamurilo: posts small blind 30
+VillainB: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qs Kc]
+garciamurilo: raises 60 to 120
+VillainB: folds 
+Uncalled bet (60) returned to garciamurilo
+garciamurilo collected 120 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 120 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) collected (120)
+Seat 3: VillainB (big blind) folded before Flop
+
+
+
+PokerStars Hand #219269967021: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:31:38 BRT [2020/10/11 2:31:38 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (863 in chips) 
+Seat 3: VillainB (637 in chips) 
+VillainB: posts small blind 30
+garciamurilo: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [Js Qc]
+VillainB: raises 120 to 180
+garciamurilo: folds 
+Uncalled bet (120) returned to VillainB
+VillainB collected 120 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 120 | Rake 0 
+Seat 2: garciamurilo (big blind) folded before Flop
+Seat 3: VillainB (button) (small blind) collected (120)
+
+
+
+PokerStars Hand #219269967990: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:31:43 BRT [2020/10/11 2:31:43 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (803 in chips) 
+Seat 3: VillainB (697 in chips) 
+garciamurilo: posts small blind 30
+VillainB: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [6h Kh]
+garciamurilo: raises 60 to 120
+VillainB: folds 
+Uncalled bet (60) returned to garciamurilo
+garciamurilo collected 120 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 120 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) collected (120)
+Seat 3: VillainB (big blind) folded before Flop
+
+
+
+PokerStars Hand #219269968664: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:31:47 BRT [2020/10/11 2:31:47 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (863 in chips) 
+Seat 3: VillainB (637 in chips) 
+VillainB: posts small blind 30
+garciamurilo: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [6d Ah]
+VillainB: raises 120 to 180
+garciamurilo: folds 
+Uncalled bet (120) returned to VillainB
+VillainB collected 120 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 120 | Rake 0 
+Seat 2: garciamurilo (big blind) folded before Flop
+Seat 3: VillainB (button) (small blind) collected (120)
+
+
+
+PokerStars Hand #219269969685: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:31:52 BRT [2020/10/11 2:31:52 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (803 in chips) 
+Seat 3: VillainB (697 in chips) 
+garciamurilo: posts small blind 30
+VillainB: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [4h 8d]
+garciamurilo: folds 
+Uncalled bet (30) returned to VillainB
+VillainB collected 60 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (60)
+
+
+
+PokerStars Hand #219269970385: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:31:55 BRT [2020/10/11 2:31:55 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (773 in chips) 
+Seat 3: VillainB (727 in chips) 
+VillainB: posts small blind 30
+garciamurilo: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [Js Kd]
+VillainB: raises 120 to 180
+garciamurilo: calls 120
+*** FLOP *** [9d 3h Ts]
+garciamurilo: bets 593 and is all-in
+VillainB: folds 
+Uncalled bet (593) returned to garciamurilo
+garciamurilo collected 360 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 360 | Rake 0 
+Board [9d 3h Ts]
+Seat 2: garciamurilo (big blind) collected (360)
+Seat 3: VillainB (button) (small blind) folded on the Flop
+
+
+
+PokerStars Hand #219269971937: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:32:04 BRT [2020/10/11 2:32:04 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (953 in chips) 
+Seat 3: VillainB (547 in chips) 
+garciamurilo: posts small blind 30
+VillainB: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [Kh 2d]
+garciamurilo: folds 
+Uncalled bet (30) returned to VillainB
+VillainB collected 60 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (60)
+
+
+
+PokerStars Hand #219269972657: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:32:08 BRT [2020/10/11 2:32:08 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (923 in chips) 
+Seat 3: VillainB (577 in chips) 
+VillainB: posts small blind 30
+garciamurilo: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [9d 4s]
+VillainB: folds 
+Uncalled bet (30) returned to garciamurilo
+garciamurilo collected 60 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (60)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269973305: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:32:11 BRT [2020/10/11 2:32:11 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (953 in chips) 
+Seat 3: VillainB (547 in chips) 
+garciamurilo: posts small blind 30
+VillainB: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [4d Kc]
+garciamurilo: folds 
+Uncalled bet (30) returned to VillainB
+VillainB collected 60 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (60)
+
+
+
+PokerStars Hand #219269974023: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:32:15 BRT [2020/10/11 2:32:15 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (923 in chips) 
+Seat 3: VillainB (577 in chips) 
+VillainB: posts small blind 30
+garciamurilo: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [7d Ts]
+VillainB: folds 
+Uncalled bet (30) returned to garciamurilo
+garciamurilo collected 60 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (60)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269974676: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:32:18 BRT [2020/10/11 2:32:18 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (953 in chips) 
+Seat 3: VillainB (547 in chips) 
+garciamurilo: posts small blind 30
+VillainB: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [2d 5s]
+garciamurilo: folds 
+Uncalled bet (30) returned to VillainB
+VillainB collected 60 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (60)
+
+
+
+PokerStars Hand #219269975317: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:32:22 BRT [2020/10/11 2:32:22 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (923 in chips) 
+Seat 3: VillainB (577 in chips) 
+VillainB: posts small blind 30
+garciamurilo: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [9d 7h]
+VillainB: folds 
+Uncalled bet (30) returned to garciamurilo
+garciamurilo collected 60 from pot
+garciamurilo: doesn't show hand 
+*** SUMMARY ***
+Total pot 60 | Rake 0 
+Seat 2: garciamurilo (big blind) collected (60)
+Seat 3: VillainB (button) (small blind) folded before Flop
+
+
+
+PokerStars Hand #219269975977: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:32:25 BRT [2020/10/11 2:32:25 ET]
+Table '99999 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (953 in chips) 
+Seat 3: VillainB (547 in chips) 
+garciamurilo: posts small blind 30
+VillainB: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [8h 4c]
+garciamurilo: raises 60 to 120
+VillainB: raises 120 to 240
+garciamurilo: folds 
+Uncalled bet (120) returned to VillainB
+VillainB collected 240 from pot
+VillainB: doesn't show hand 
+*** SUMMARY ***
+Total pot 240 | Rake 0 
+Seat 2: garciamurilo (button) (small blind) folded before Flop
+Seat 3: VillainB (big blind) collected (240)
+
+
+
+PokerStars Hand #219269977250: Tournament #99999, $1.84+$0.16 USD Hold'em No Limit - Level IV (30/60) - 2020/10/11 3:32:32 BRT [2020/10/11 2:32:32 ET]
+Table '99999 1' 3-max Seat #3 is the button
+Seat 2: garciamurilo (833 in chips) 
+Seat 3: VillainB (667 in chips) 
+VillainB: posts small blind 30
+garciamurilo: posts big blind 60
+*** HOLE CARDS ***
+Dealt to garciamurilo [7d Ac]
+VillainB: raises 120 to 180
+garciamurilo: calls 120
+*** FLOP *** [6h Qs Qh]
+garciamurilo: bets 653 and is all-in
+VillainB: calls 487 and is all-in
+Uncalled bet (166) returned to garciamurilo
+*** TURN *** [6h Qs Qh] [Jd]
+*** RIVER *** [6h Qs Qh Jd] [8c]
+*** SHOW DOWN ***
+garciamurilo: shows [7d Ac] (a pair of Queens)
+VillainB: shows [Kd Th] (a pair of Queens - lower kicker)
+garciamurilo collected 1334 from pot
+VillainB finished the tournament in 2nd place
+garciamurilo wins the tournament and receives $6.00 - congratulations!
+*** SUMMARY ***
+Total pot 1334 | Rake 0 
+Board [6h Qs Qh Jd 8c]
+Seat 2: garciamurilo (big blind) showed [7d Ac] and won (1334) with a pair of Queens
+Seat 3: VillainB (button) (small blind) showed [Kd Th] and lost with a pair of Queens
+
+
+
