@@ -56,7 +56,7 @@ Seat 3: VillainB (big blind) collected (40)
 <br>
 
 #### Data Modeling
-For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a relational data model split into five tables that may be useful for most cases.  
+For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of relational data model split into five tables that may be useful for most cases.  
 <br>
 
 ![pokerdm](https://github.com/user-attachments/assets/8936f540-51c7-4a1d-a5b1-bc9fc73c4313)
