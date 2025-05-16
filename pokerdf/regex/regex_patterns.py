@@ -793,16 +793,14 @@ class RegexPatterns:
         if hand != []:
 
             # Pattern to extract
-            regex = rf"{player} .* (?:and receives|and received) (\S+)"
+            # regex = rf"{player} .* (?:and receives|and received) (\S+)"
+            regex = rf"{player} .* (?:and receives|and received) (?:[$€£]?)\s*(\d+(?:\.\d+)?)"
 
             # Get the first SHOW_DOWN content of a played hand
             target = hand[0]
 
             # Apply regex
-            result_of_regex = re.findall(regex, target)
-
-            # Normalize
-            final_result = [float(x) for x in result_of_regex if str(x).isdigit()]
+            final_result = re.findall(regex, target)[:1]
 
             # Normalize output
             if final_result == []:
