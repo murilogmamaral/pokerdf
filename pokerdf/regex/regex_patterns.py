@@ -793,7 +793,6 @@ class RegexPatterns:
         if hand != []:
 
             # Pattern to extract
-            # regex = rf"{player} .* (?:and receives|and received) (\S+)"
             regex = rf"{player} .* (?:and receives|and received) (?:[$€£]?)\s*(\d+(?:\.\d+)?)"
 
             # Get the first SHOW_DOWN content of a played hand
