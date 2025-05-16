@@ -4,7 +4,7 @@ from pokerdf.regex.regex_patterns import RegexPatterns
 r = RegexPatterns()
 
 
-def capture_common_data(hand: list[str]) -> dict[str, Any]:
+def capture_common_data(splitted_hand: list[str]) -> dict[str, Any]:
     """
     Captures the common data of the tournament
 
@@ -15,11 +15,11 @@ def capture_common_data(hand: list[str]) -> dict[str, Any]:
         dict: Dictionary of captured values.
     """
     row: dict[str, Any] = {}
-    row["Modality"] = r.get_modality(hand)
-    row["TableSize"] = r.get_table_size(hand)
-    row["BuyIn"] = r.get_buyin(hand)
-    row["TournID"] = r.get_tourn_id(hand)
-    row["Owner"] = r.get_owner(hand)
+    row["Modality"] = r.get_modality(splitted_hand)
+    row["TableSize"] = r.get_table_size(splitted_hand)
+    row["BuyIn"] = r.get_buyin(splitted_hand)
+    row["TournID"] = r.get_tourn_id(splitted_hand)
+    row["Owner"] = r.get_owner(splitted_hand)
 
     return row
 
