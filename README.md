@@ -57,9 +57,9 @@ Seat 3: VillainB (big blind) collected (40)
 
 #### Data Modeling
 For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of relational data model split into five tables that may be useful for most cases.  
-<br>
 
-![pokerdm](images/data-modeling.svg)
+
+![data-modeling](https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/data-modeling.svg)
 
 
 ## Installation
