@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pokerdf"
-version = "1.0.5"
+version = "1.0.6"
 description = "Converts poker hand history files to pandas DataFrames."
 authors = ["Murilo Amaral <murilogmamaral@gmail.com>"]
 readme = "README.md"
