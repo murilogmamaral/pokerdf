@@ -177,22 +177,12 @@ def build_dim_hand_summary(df: pd.DataFrame) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: Columns TournID, HandID, LocalTime, Level, Playing, Ante,
-            SmallBlind, BigBlind, OwnerC1, OwnerC2 and BoardC1 to BoardC5.
+            SmallBlind, BigBlind, OwnerC1 and OwnerC2.
     """
     # One row per hand
     hands = df.drop_duplicates(
         subset=[Column.TOURN_ID, Column.HAND_ID], ignore_index=True
     )
-
-    # The most complete view of the board: river, else turn, else flop
-    boards = [
-        river if len(river) > 0 else (turn if len(turn) > 0 else flop)
-        for flop, turn, river in zip(
-            hands[Column.BOARD_FLOP],
-            hands[Column.BOARD_TURN],
-            hands[Column.BOARD_RIVER],
-        )
-    ]
 
     # Flatten the hierarchical columns into one column per card / blind
     dim = pd.DataFrame(
@@ -211,11 +201,6 @@ def build_dim_hand_summary(df: pd.DataFrame) -> pd.DataFrame:
             ModelColumn.OWNER_C2: [
                 _get_element(x, 1) for x in hands[Column.OWNERS_HAND]
             ],
-            ModelColumn.BOARD_C1: [_get_element(x, 0) for x in boards],
-            ModelColumn.BOARD_C2: [_get_element(x, 1) for x in boards],
-            ModelColumn.BOARD_C3: [_get_element(x, 2) for x in boards],
-            ModelColumn.BOARD_C4: [_get_element(x, 3) for x in boards],
-            ModelColumn.BOARD_C5: [_get_element(x, 4) for x in boards],
         }
     )
 
@@ -304,23 +289,48 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     They are exploded so that each row of the fact represents one single
     action, identified by the round and by the order in which it was taken.
 
+    Each row also carries the board as it was visible at the moment of the
+    action: no cards on preflop, three cards on the flop, four on the turn
+    and five on the river.
+
     Args:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
         pd.DataFrame: Columns TournID, HandID, Player, Round, ActionIndex,
-            Action and Value. ActionIndex restarts at 1 for each player/round,
-            preserving the order of the actions. Value is null for actions
-            without an amount (for example, checks and folds).
+            Action, Value and BoardC1 to BoardC5. ActionIndex restarts at 1
+            for each player/round, preserving the order of the actions. Value
+            is null for actions without an amount (for example, checks and
+            folds).
     """
     # One row per player per hand, with the four hierarchical action columns
+    # and the board of each round
     base = df.drop_duplicates(
         subset=[Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
-    ).loc[:, [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER, *ROUNDS.keys()]]
+    ).loc[
+        :,
+        [
+            Column.TOURN_ID,
+            Column.HAND_ID,
+            Column.PLAYER,
+            *ROUNDS.keys(),
+            Column.BOARD_FLOP,
+            Column.BOARD_TURN,
+            Column.BOARD_RIVER,
+        ],
+    ]
 
-    # Turn the four action columns into rows, one per round
+    # Turn the four action columns into rows, one per round, keeping the
+    # boards alongside so each action can be matched to its visible board
     melted = base.melt(
-        id_vars=[Column.TOURN_ID, Column.HAND_ID, Column.PLAYER],
+        id_vars=[
+            Column.TOURN_ID,
+            Column.HAND_ID,
+            Column.PLAYER,
+            Column.BOARD_FLOP,
+            Column.BOARD_TURN,
+            Column.BOARD_RIVER,
+        ],
         value_vars=list(ROUNDS.keys()),
         var_name=ModelColumn.ROUND,
         value_name="Pair",
@@ -348,6 +358,31 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
         + 1
     )
 
+    # The board visible at the moment of the action, according to the round:
+    # no cards on preflop, then the board of the round of the action
+    visible_boards = [
+        (
+            (
+                flop
+                if round_name == Round.FLOP
+                else turn if round_name == Round.TURN else river
+            )
+            if round_name != Round.PREFLOP
+            else None
+        )
+        for round_name, flop, turn, river in zip(
+            fact[ModelColumn.ROUND],
+            fact[Column.BOARD_FLOP],
+            fact[Column.BOARD_TURN],
+            fact[Column.BOARD_RIVER],
+        )
+    ]
+    fact[ModelColumn.BOARD_C1] = [_get_element(x, 0) for x in visible_boards]
+    fact[ModelColumn.BOARD_C2] = [_get_element(x, 1) for x in visible_boards]
+    fact[ModelColumn.BOARD_C3] = [_get_element(x, 2) for x in visible_boards]
+    fact[ModelColumn.BOARD_C4] = [_get_element(x, 3) for x in visible_boards]
+    fact[ModelColumn.BOARD_C5] = [_get_element(x, 4) for x in visible_boards]
+
     # Final structure of the fact table
     fact = fact.astype({Column.TOURN_ID: "int64", Column.HAND_ID: "int64"}).loc[
         :,
@@ -359,6 +394,11 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             ModelColumn.ACTION_INDEX,
             ModelColumn.ACTION,
             ModelColumn.VALUE,
+            ModelColumn.BOARD_C1,
+            ModelColumn.BOARD_C2,
+            ModelColumn.BOARD_C3,
+            ModelColumn.BOARD_C4,
+            ModelColumn.BOARD_C5,
         ],
     ]
 

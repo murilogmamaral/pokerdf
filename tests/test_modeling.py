@@ -98,6 +98,11 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "ActionIndex",
         "Action",
         "Value",
+        "BoardC1",
+        "BoardC2",
+        "BoardC3",
+        "BoardC4",
+        "BoardC5",
     ]
     assert set(fact["Round"]) <= {"preflop", "flop", "turn", "river"}
     assert fact["TournID"].dtype == "int64"
@@ -150,6 +155,45 @@ def test_fact_preserves_actions_across_rounds(fact: pd.DataFrame) -> None:
     ]
 
 
+BOARD_COLUMNS = ["BoardC1", "BoardC2", "BoardC3", "BoardC4", "BoardC5"]
+
+
+def test_fact_board_is_empty_on_preflop_actions(fact: pd.DataFrame) -> None:
+    # Before the flop there are no community cards on the table
+    preflop = fact[fact["Round"] == "preflop"]
+    assert preflop[BOARD_COLUMNS].isna().all().all()
+
+
+def test_fact_board_shows_three_cards_on_flop_actions(fact: pd.DataFrame) -> None:
+    # Hand 219269851097: VillainB bets the flop with board [4d Tc 7s]
+    row = fact[
+        (fact["HandID"] == 219269851097)
+        & (fact["Player"] == "VillainB")
+        & (fact["Round"] == "flop")
+    ].iloc[0]
+    assert row[BOARD_COLUMNS].tolist() == ["4d", "Tc", "7s", None, None]
+
+
+def test_fact_board_shows_four_cards_on_turn_actions(fact: pd.DataFrame) -> None:
+    # Hand 219269893866: garciamurilo folds on the turn with board [2s Qh 8s 5h]
+    row = fact[
+        (fact["HandID"] == 219269893866)
+        & (fact["Player"] == "garciamurilo")
+        & (fact["Round"] == "turn")
+    ].iloc[0]
+    assert row[BOARD_COLUMNS].tolist() == ["2s", "Qh", "8s", "5h", None]
+
+
+def test_fact_board_shows_five_cards_on_river_actions(fact: pd.DataFrame) -> None:
+    # Hand 219269911437: garciamurilo checks the river with board [Ts 6s Jd 6h 9h]
+    row = fact[
+        (fact["HandID"] == 219269911437)
+        & (fact["Player"] == "garciamurilo")
+        & (fact["Round"] == "river")
+    ].iloc[0]
+    assert row[BOARD_COLUMNS].tolist() == ["Ts", "6s", "Jd", "6h", "9h"]
+
+
 # ---------------------------------------------------------------------------
 # dim_tourn_summary
 # ---------------------------------------------------------------------------
@@ -187,19 +231,14 @@ def test_dim_hand_summary_flattens_blinds_and_owner_cards(
     assert row["BigBlind"] == 20.0
     assert row["OwnerC1"] == "3s"
     assert row["OwnerC2"] == "Jh"
-    # No flop in this hand: the board columns stay empty
-    assert row[["BoardC1", "BoardC2", "BoardC3", "BoardC4", "BoardC5"]].isna().all()
 
 
-def test_dim_hand_summary_uses_the_most_complete_board(
-    source_df: pd.DataFrame,
-) -> None:
+def test_dim_hand_summary_converts_roman_levels(source_df: pd.DataFrame) -> None:
     dim = build_dim_hand_summary(source_df)
-    # Hand 219269911437 went to the river with board [Ts 6s Jd 6h 9h]
-    row = dim[dim["HandID"] == 219269911437].iloc[0]
-    board = row[["BoardC1", "BoardC2", "BoardC3", "BoardC4", "BoardC5"]]
-    assert board.tolist() == ["Ts", "6s", "Jd", "6h", "9h"]
-    assert row["Level"] == 2
+    # Hand 219269911437 was played during Level II
+    assert dim[dim["HandID"] == 219269911437].iloc[0]["Level"] == 2
+    # The board belongs to the fact table, not to the hand dimension
+    assert "BoardC1" not in dim.columns
 
 
 # ---------------------------------------------------------------------------
