@@ -1,0 +1,101 @@
+"""Single source of truth for the column and table names used across the package.
+
+The enums inherit from StrEnum, so every member behaves exactly like its string
+value: they can index DataFrames, be used as dictionary keys and be written to
+parquet transparently, while keeping the names centralized and refactorable.
+"""
+
+from enum import StrEnum
+
+
+class Column(StrEnum):
+    """
+    Columns of the converted data, in the canonical output order.
+
+    This is the schema produced by the convert command: one row per player per
+    hand, validated by ValidateInput (which mirrors these names field by field).
+    """
+
+    MODALITY = "Modality"
+    TABLE_SIZE = "TableSize"
+    BUY_IN = "BuyIn"
+    TOURN_ID = "TournID"
+    TABLE_ID = "TableID"
+    HAND_ID = "HandID"
+    LOCAL_TIME = "LocalTime"
+    LEVEL = "Level"
+    ANTE = "Ante"
+    BLINDS = "Blinds"
+    OWNER = "Owner"
+    OWNERS_HAND = "OwnersHand"
+    PLAYING = "Playing"
+    PLAYER = "Player"
+    SEAT = "Seat"
+    POSTED_ANTE = "PostedAnte"
+    POSITION = "Position"
+    POSTED_BLIND = "PostedBlind"
+    STACK = "Stack"
+    PREFLOP_ACTION = "PreflopAction"
+    FLOP_ACTION = "FlopAction"
+    TURN_ACTION = "TurnAction"
+    RIVER_ACTION = "RiverAction"
+    ANTE_ALL_IN = "AnteAllIn"
+    PREFLOP_ALL_IN = "PreflopAllIn"
+    FLOP_ALL_IN = "FlopAllIn"
+    TURN_ALL_IN = "TurnAllIn"
+    RIVER_ALL_IN = "RiverAllIn"
+    BOARD_FLOP = "BoardFlop"
+    BOARD_TURN = "BoardTurn"
+    BOARD_RIVER = "BoardRiver"
+    SHOW_DOWN = "ShowDown"
+    CARD_COMBINATION = "CardCombination"
+    RESULT = "Result"
+    BALANCE = "Balance"
+    FINAL_RANK = "FinalRank"
+    PRIZE = "Prize"
+
+
+class ModelColumn(StrEnum):
+    """
+    Columns that exist only in the star schema tables, complementing Column.
+
+    They are produced by the modeling command when flattening hierarchical
+    columns (blinds, cards, boards) and exploding the player actions.
+    """
+
+    LOCAL_START_TIME = "LocalStartTime"
+    SMALL_BLIND = "SmallBlind"
+    BIG_BLIND = "BigBlind"
+    OWNER_C1 = "OwnerC1"
+    OWNER_C2 = "OwnerC2"
+    BOARD_C1 = "BoardC1"
+    BOARD_C2 = "BoardC2"
+    BOARD_C3 = "BoardC3"
+    BOARD_C4 = "BoardC4"
+    BOARD_C5 = "BoardC5"
+    SHOW_DOWN_C1 = "ShowDownC1"
+    SHOW_DOWN_C2 = "ShowDownC2"
+    POKER_HAND = "PokerHand"
+    ROUND = "Round"
+    ACTION_INDEX = "ActionIndex"
+    ACTION = "Action"
+    VALUE = "Value"
+
+
+class Round(StrEnum):
+    """Rounds of a hand, in chronological order."""
+
+    PREFLOP = "preflop"
+    FLOP = "flop"
+    TURN = "turn"
+    RIVER = "river"
+
+
+class ModelTable(StrEnum):
+    """Tables of the star schema produced by the modeling command."""
+
+    FACT_PLAYER_ACTIONS = "fact_player_actions"
+    DIM_TOURN_SUMMARY = "dim_tourn_summary"
+    DIM_HAND_SUMMARY = "dim_hand_summary"
+    DIM_PLAYER_SUMMARY = "dim_player_summary"
+    DIM_FINAL_RANK = "dim_final_rank"

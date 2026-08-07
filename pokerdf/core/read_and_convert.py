@@ -1,21 +1,30 @@
 import os
+import warnings
+
 import pandas as pd
-from typing import List
 from joblib import Parallel, delayed
-from pokerdf.validation.pydantic_modules import ValidateInput
-from pokerdf.utils.strings import PLATFORM
+
 from pokerdf.regex.regex_execution import (
     capture_common_data,
     capture_general_data_of_the_hand,
     capture_specific_data_of_the_player,
     r,
 )
-import warnings
+from pokerdf.utils.columns import Column
+from pokerdf.utils.strings import (
+    FAIL_LOG,
+    HAND_HISTORY_EXTENSION,
+    HAND_HISTORY_PREFIX,
+    PARQUET_EXTENSION,
+    PLATFORM,
+    SUCCESS_LOG,
+)
+from pokerdf.validation.pydantic_modules import ValidateInput
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
-def get_files_paths(path: str) -> List[str]:
+def get_files_paths(path: str) -> list[str]:
     """
     Retrieve the paths of the hand history files in the specified directory.
 
@@ -26,7 +35,7 @@ def get_files_paths(path: str) -> List[str]:
         path (str): The directory path to search for files.
 
     Returns:
-        List[str]: Sorted list of full paths of the hand history files.
+        list[str]: Sorted list of full paths of the hand history files.
     """
     # Get files names
     list_of_all_files_names = os.listdir(path)
@@ -38,7 +47,8 @@ def get_files_paths(path: str) -> List[str]:
     list_of_selected_files = [
         file_name
         for file_name in list_of_all_files_names
-        if file_name.startswith("HH") and file_name.endswith(".txt")
+        if file_name.startswith(HAND_HISTORY_PREFIX)
+        and file_name.endswith(HAND_HISTORY_EXTENSION)
     ]
 
     # Compose the final path for each file
@@ -57,47 +67,50 @@ def compose_dataframe() -> pd.DataFrame:
     Returns:
         pd.DataFrame: An empty DataFrame with predefined columns and dtypes.
     """
+    # Dtype of each column of the output schema, in the canonical order
+    dtypes: dict[Column, str] = {
+        Column.MODALITY: "object",
+        Column.TABLE_SIZE: "int64",
+        Column.BUY_IN: "object",
+        Column.TOURN_ID: "object",
+        Column.TABLE_ID: "object",
+        Column.HAND_ID: "object",
+        Column.LOCAL_TIME: "datetime64[ns]",
+        Column.LEVEL: "object",
+        Column.ANTE: "float64",
+        Column.BLINDS: "object",
+        Column.OWNER: "object",
+        Column.OWNERS_HAND: "object",
+        Column.PLAYING: "int64",
+        Column.PLAYER: "object",
+        Column.SEAT: "int64",
+        Column.POSTED_ANTE: "float64",
+        Column.POSITION: "object",
+        Column.POSTED_BLIND: "float64",
+        Column.STACK: "float64",
+        Column.PREFLOP_ACTION: "object",
+        Column.FLOP_ACTION: "object",
+        Column.TURN_ACTION: "object",
+        Column.RIVER_ACTION: "object",
+        Column.ANTE_ALL_IN: "bool",
+        Column.PREFLOP_ALL_IN: "bool",
+        Column.FLOP_ALL_IN: "bool",
+        Column.TURN_ALL_IN: "bool",
+        Column.RIVER_ALL_IN: "bool",
+        Column.BOARD_FLOP: "object",
+        Column.BOARD_TURN: "object",
+        Column.BOARD_RIVER: "object",
+        Column.SHOW_DOWN: "object",
+        Column.CARD_COMBINATION: "object",
+        Column.RESULT: "object",
+        Column.BALANCE: "float64",
+        Column.FINAL_RANK: "int64",
+        Column.PRIZE: "float64",
+    }
+
     # Compose default dataframe
     df = pd.DataFrame(
-        {
-            "Modality": pd.Series(dtype="object"),
-            "TableSize": pd.Series(dtype="int64"),
-            "BuyIn": pd.Series(dtype="object"),
-            "TournID": pd.Series(dtype="object"),
-            "TableID": pd.Series(dtype="object"),
-            "HandID": pd.Series(dtype="object"),
-            "LocalTime": pd.Series(dtype="datetime64[ns]"),
-            "Level": pd.Series(dtype="object"),
-            "Ante": pd.Series(dtype="float64"),
-            "Blinds": pd.Series(dtype="object"),
-            "Owner": pd.Series(dtype="object"),
-            "OwnersHand": pd.Series(dtype="object"),
-            "Playing": pd.Series(dtype="int64"),
-            "Player": pd.Series(dtype="object"),
-            "Seat": pd.Series(dtype="int64"),
-            "PostedAnte": pd.Series(dtype="float64"),
-            "Position": pd.Series(dtype="object"),
-            "PostedBlind": pd.Series(dtype="float64"),
-            "Stack": pd.Series(dtype="float64"),
-            "PreflopAction": pd.Series(dtype="object"),
-            "FlopAction": pd.Series(dtype="object"),
-            "TurnAction": pd.Series(dtype="object"),
-            "RiverAction": pd.Series(dtype="object"),
-            "AnteAllIn": pd.Series(dtype="bool"),
-            "PreflopAllIn": pd.Series(dtype="bool"),
-            "FlopAllIn": pd.Series(dtype="bool"),
-            "TurnAllIn": pd.Series(dtype="bool"),
-            "RiverAllIn": pd.Series(dtype="bool"),
-            "BoardFlop": pd.Series(dtype="object"),
-            "BoardTurn": pd.Series(dtype="object"),
-            "BoardRiver": pd.Series(dtype="object"),
-            "ShowDown": pd.Series(dtype="object"),
-            "CardCombination": pd.Series(dtype="object"),
-            "Result": pd.Series(dtype="object"),
-            "Balance": pd.Series(dtype="float64"),
-            "FinalRank": pd.Series(dtype="int64"),
-            "Prize": pd.Series(dtype="float64"),
-        }
+        {column: pd.Series(dtype=dtype) for column, dtype in dtypes.items()}
     )
     return df
 
@@ -196,14 +209,9 @@ def _save_log(msg: str, destination: str, file_name: str) -> None:
     # Compose path of the log
     path = os.path.join(destination, file_name)
 
-    # Open the file
-    file = open(path, "a")
-
-    # Write content
-    file.write(msg + "\n")
-
-    # Close the writing process
-    file.close()
+    # Append the message, closing the file even if the writing fails
+    with open(path, "a") as file:
+        file.write(msg + "\n")
 
 
 class DataProcessing:
@@ -234,8 +242,10 @@ class DataProcessing:
             df = convert_txt_to_tabular_data(self.path).reset_index(drop=True)
 
             # Compose name of the .parquet file (the Tournament ID + the Local Time)
-            clean_datetime = str(df.LocalTime[0]).replace("-", "")[:8]
-            file_name = clean_datetime + "-T" + str(df.TournID[0]) + ".parquet"
+            clean_datetime = str(df[Column.LOCAL_TIME][0]).replace("-", "")[:8]
+            file_name = (
+                clean_datetime + "-T" + str(df[Column.TOURN_ID][0]) + PARQUET_EXTENSION
+            )
 
             # Path to save the file
             destination_path = os.path.join(self.destination, file_name)
@@ -244,16 +254,16 @@ class DataProcessing:
             df.to_parquet(destination_path, index=False)
 
             # Log / print DONE status
-            msg = "   DONE: " + self.path.split("/")[-1]
-            _save_log(msg, self.destination, "success.txt")
+            msg = "   DONE: " + os.path.basename(self.path)
+            _save_log(msg, self.destination, SUCCESS_LOG)
             print(msg)
 
         except Exception as e:
 
             # Log / print FAIL status
-            msg = "   FAIL: " + self.path.split("/")[-1]
+            msg = "   FAIL: " + os.path.basename(self.path)
             msg += " (" + str(e) + ")"
-            _save_log(msg, self.destination, "fail.txt")
+            _save_log(msg, self.destination, FAIL_LOG)
             print(msg)
 
 

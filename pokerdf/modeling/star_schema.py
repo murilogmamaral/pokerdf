@@ -6,6 +6,9 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.dataset
 
+from pokerdf.utils.columns import Column, ModelColumn, ModelTable, Round
+from pokerdf.utils.strings import PARQUET_EXTENSION
+
 # Unified schema of the .parquet files produced by the convert command.
 # Reading with an explicit schema is required because columns that are entirely
 # empty in a tournament (for example, Prize) are saved with the "null" type,
@@ -14,52 +17,52 @@ _ACTIONS = pa.list_(pa.list_(pa.string()))
 _CARDS = pa.list_(pa.string())
 SOURCE_SCHEMA = pa.schema(
     [
-        ("Modality", pa.string()),
-        ("TableSize", pa.int64()),
-        ("BuyIn", pa.string()),
-        ("TournID", pa.string()),
-        ("TableID", pa.string()),
-        ("HandID", pa.string()),
-        ("LocalTime", pa.timestamp("ns")),
-        ("Level", pa.string()),
-        ("Ante", pa.float64()),
-        ("Blinds", pa.list_(pa.float64())),
-        ("Owner", pa.string()),
-        ("OwnersHand", _CARDS),
-        ("Playing", pa.int64()),
-        ("Player", pa.string()),
-        ("Seat", pa.int64()),
-        ("PostedAnte", pa.float64()),
-        ("Position", pa.string()),
-        ("PostedBlind", pa.float64()),
-        ("Stack", pa.float64()),
-        ("PreflopAction", _ACTIONS),
-        ("FlopAction", _ACTIONS),
-        ("TurnAction", _ACTIONS),
-        ("RiverAction", _ACTIONS),
-        ("AnteAllIn", pa.bool_()),
-        ("PreflopAllIn", pa.bool_()),
-        ("FlopAllIn", pa.bool_()),
-        ("TurnAllIn", pa.bool_()),
-        ("RiverAllIn", pa.bool_()),
-        ("BoardFlop", _CARDS),
-        ("BoardTurn", _CARDS),
-        ("BoardRiver", _CARDS),
-        ("ShowDown", _CARDS),
-        ("CardCombination", pa.string()),
-        ("Result", pa.string()),
-        ("Balance", pa.float64()),
-        ("FinalRank", pa.int64()),
-        ("Prize", pa.float64()),
+        (Column.MODALITY, pa.string()),
+        (Column.TABLE_SIZE, pa.int64()),
+        (Column.BUY_IN, pa.string()),
+        (Column.TOURN_ID, pa.string()),
+        (Column.TABLE_ID, pa.string()),
+        (Column.HAND_ID, pa.string()),
+        (Column.LOCAL_TIME, pa.timestamp("ns")),
+        (Column.LEVEL, pa.string()),
+        (Column.ANTE, pa.float64()),
+        (Column.BLINDS, pa.list_(pa.float64())),
+        (Column.OWNER, pa.string()),
+        (Column.OWNERS_HAND, _CARDS),
+        (Column.PLAYING, pa.int64()),
+        (Column.PLAYER, pa.string()),
+        (Column.SEAT, pa.int64()),
+        (Column.POSTED_ANTE, pa.float64()),
+        (Column.POSITION, pa.string()),
+        (Column.POSTED_BLIND, pa.float64()),
+        (Column.STACK, pa.float64()),
+        (Column.PREFLOP_ACTION, _ACTIONS),
+        (Column.FLOP_ACTION, _ACTIONS),
+        (Column.TURN_ACTION, _ACTIONS),
+        (Column.RIVER_ACTION, _ACTIONS),
+        (Column.ANTE_ALL_IN, pa.bool_()),
+        (Column.PREFLOP_ALL_IN, pa.bool_()),
+        (Column.FLOP_ALL_IN, pa.bool_()),
+        (Column.TURN_ALL_IN, pa.bool_()),
+        (Column.RIVER_ALL_IN, pa.bool_()),
+        (Column.BOARD_FLOP, _CARDS),
+        (Column.BOARD_TURN, _CARDS),
+        (Column.BOARD_RIVER, _CARDS),
+        (Column.SHOW_DOWN, _CARDS),
+        (Column.CARD_COMBINATION, pa.string()),
+        (Column.RESULT, pa.string()),
+        (Column.BALANCE, pa.float64()),
+        (Column.FINAL_RANK, pa.int64()),
+        (Column.PRIZE, pa.float64()),
     ]
 )
 
 # Mapping between the action columns of the converted data and the round names
 ROUNDS = {
-    "PreflopAction": "preflop",
-    "FlopAction": "flop",
-    "TurnAction": "turn",
-    "RiverAction": "river",
+    Column.PREFLOP_ACTION: Round.PREFLOP,
+    Column.FLOP_ACTION: Round.FLOP,
+    Column.TURN_ACTION: Round.TURN,
+    Column.RIVER_ACTION: Round.RIVER,
 }
 
 
@@ -126,7 +129,7 @@ def load_converted_data(path: str) -> pd.DataFrame:
         pd.DataFrame: All files concatenated, with the unified schema.
     """
     # List all .parquet files of the folder
-    files = sorted(glob(os.path.join(path, "*.parquet")))
+    files = sorted(glob(os.path.join(path, f"*{PARQUET_EXTENSION}")))
 
     # Read everything as a single table, casting each file to the unified schema
     dataset = pa.dataset.dataset(files, schema=SOURCE_SCHEMA)
@@ -148,16 +151,18 @@ def build_dim_tourn_summary(df: pd.DataFrame) -> pd.DataFrame:
     """
     # One row per tournament: the start time is the time of its first hand
     dim = (
-        df.groupby("TournID", as_index=False)
+        df.groupby(Column.TOURN_ID, as_index=False)
         .agg(
-            LocalStartTime=("LocalTime", "min"),
-            Modality=("Modality", "first"),
-            TableSize=("TableSize", "first"),
-            BuyIn=("BuyIn", "first"),
-            Owner=("Owner", "first"),
+            **{
+                ModelColumn.LOCAL_START_TIME: (Column.LOCAL_TIME, "min"),
+                Column.MODALITY: (Column.MODALITY, "first"),
+                Column.TABLE_SIZE: (Column.TABLE_SIZE, "first"),
+                Column.BUY_IN: (Column.BUY_IN, "first"),
+                Column.OWNER: (Column.OWNER, "first"),
+            }
         )
-        .astype({"TournID": "int64"})
-        .sort_values("LocalStartTime", ignore_index=True)
+        .astype({Column.TOURN_ID: "int64"})
+        .sort_values(ModelColumn.LOCAL_START_TIME, ignore_index=True)
     )
 
     return dim
@@ -175,38 +180,46 @@ def build_dim_hand_summary(df: pd.DataFrame) -> pd.DataFrame:
             SmallBlind, BigBlind, OwnerC1, OwnerC2 and BoardC1 to BoardC5.
     """
     # One row per hand
-    hands = df.drop_duplicates(subset=["TournID", "HandID"], ignore_index=True)
+    hands = df.drop_duplicates(
+        subset=[Column.TOURN_ID, Column.HAND_ID], ignore_index=True
+    )
 
     # The most complete view of the board: river, else turn, else flop
     boards = [
         river if len(river) > 0 else (turn if len(turn) > 0 else flop)
         for flop, turn, river in zip(
-            hands["BoardFlop"], hands["BoardTurn"], hands["BoardRiver"]
+            hands[Column.BOARD_FLOP],
+            hands[Column.BOARD_TURN],
+            hands[Column.BOARD_RIVER],
         )
     ]
 
     # Flatten the hierarchical columns into one column per card / blind
     dim = pd.DataFrame(
         {
-            "TournID": hands["TournID"].astype("int64"),
-            "HandID": hands["HandID"].astype("int64"),
-            "LocalTime": hands["LocalTime"],
-            "Level": hands["Level"].map(_roman_to_int).astype("Int64"),
-            "Playing": hands["Playing"],
-            "Ante": hands["Ante"],
-            "SmallBlind": [_get_element(x, 0) for x in hands["Blinds"]],
-            "BigBlind": [_get_element(x, 1) for x in hands["Blinds"]],
-            "OwnerC1": [_get_element(x, 0) for x in hands["OwnersHand"]],
-            "OwnerC2": [_get_element(x, 1) for x in hands["OwnersHand"]],
-            "BoardC1": [_get_element(x, 0) for x in boards],
-            "BoardC2": [_get_element(x, 1) for x in boards],
-            "BoardC3": [_get_element(x, 2) for x in boards],
-            "BoardC4": [_get_element(x, 3) for x in boards],
-            "BoardC5": [_get_element(x, 4) for x in boards],
+            Column.TOURN_ID: hands[Column.TOURN_ID].astype("int64"),
+            Column.HAND_ID: hands[Column.HAND_ID].astype("int64"),
+            Column.LOCAL_TIME: hands[Column.LOCAL_TIME],
+            Column.LEVEL: hands[Column.LEVEL].map(_roman_to_int).astype("Int64"),
+            Column.PLAYING: hands[Column.PLAYING],
+            Column.ANTE: hands[Column.ANTE],
+            ModelColumn.SMALL_BLIND: [_get_element(x, 0) for x in hands[Column.BLINDS]],
+            ModelColumn.BIG_BLIND: [_get_element(x, 1) for x in hands[Column.BLINDS]],
+            ModelColumn.OWNER_C1: [
+                _get_element(x, 0) for x in hands[Column.OWNERS_HAND]
+            ],
+            ModelColumn.OWNER_C2: [
+                _get_element(x, 1) for x in hands[Column.OWNERS_HAND]
+            ],
+            ModelColumn.BOARD_C1: [_get_element(x, 0) for x in boards],
+            ModelColumn.BOARD_C2: [_get_element(x, 1) for x in boards],
+            ModelColumn.BOARD_C3: [_get_element(x, 2) for x in boards],
+            ModelColumn.BOARD_C4: [_get_element(x, 3) for x in boards],
+            ModelColumn.BOARD_C5: [_get_element(x, 4) for x in boards],
         }
     )
 
-    return dim.sort_values(["TournID", "HandID"], ignore_index=True)
+    return dim.sort_values([Column.TOURN_ID, Column.HAND_ID], ignore_index=True)
 
 
 def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
@@ -223,28 +236,34 @@ def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
     """
     # One row per player per hand
     players = df.drop_duplicates(
-        subset=["TournID", "HandID", "Player"], ignore_index=True
+        subset=[Column.TOURN_ID, Column.HAND_ID, Column.PLAYER], ignore_index=True
     )
 
     dim = pd.DataFrame(
         {
-            "TournID": players["TournID"].astype("int64"),
-            "HandID": players["HandID"].astype("int64"),
-            "Player": players["Player"],
-            "Seat": players["Seat"],
-            "Position": players["Position"],
-            "Stack": players["Stack"],
-            "PostedAnte": players["PostedAnte"],
-            "PostedBlind": players["PostedBlind"],
-            "Result": players["Result"],
-            "Balance": players["Balance"],
-            "ShowDownC1": [_get_element(x, 0) for x in players["ShowDown"]],
-            "ShowDownC2": [_get_element(x, 1) for x in players["ShowDown"]],
-            "PokerHand": players["CardCombination"],
+            Column.TOURN_ID: players[Column.TOURN_ID].astype("int64"),
+            Column.HAND_ID: players[Column.HAND_ID].astype("int64"),
+            Column.PLAYER: players[Column.PLAYER],
+            Column.SEAT: players[Column.SEAT],
+            Column.POSITION: players[Column.POSITION],
+            Column.STACK: players[Column.STACK],
+            Column.POSTED_ANTE: players[Column.POSTED_ANTE],
+            Column.POSTED_BLIND: players[Column.POSTED_BLIND],
+            Column.RESULT: players[Column.RESULT],
+            Column.BALANCE: players[Column.BALANCE],
+            ModelColumn.SHOW_DOWN_C1: [
+                _get_element(x, 0) for x in players[Column.SHOW_DOWN]
+            ],
+            ModelColumn.SHOW_DOWN_C2: [
+                _get_element(x, 1) for x in players[Column.SHOW_DOWN]
+            ],
+            ModelColumn.POKER_HAND: players[Column.CARD_COMBINATION],
         }
     )
 
-    return dim.sort_values(["TournID", "HandID", "Player"], ignore_index=True)
+    return dim.sort_values(
+        [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER], ignore_index=True
+    )
 
 
 def build_dim_final_rank(df: pd.DataFrame) -> pd.DataFrame:
@@ -262,10 +281,15 @@ def build_dim_final_rank(df: pd.DataFrame) -> pd.DataFrame:
     # The rank and prize of a player appear only in the hand of the elimination
     # or victory, with -1 / null everywhere else, so the maximum aggregates it
     dim = (
-        df.groupby(["TournID", "Player"], as_index=False)
-        .agg(FinalRank=("FinalRank", "max"), Prize=("Prize", "max"))
-        .astype({"TournID": "int64"})
-        .sort_values(["TournID", "Player"], ignore_index=True)
+        df.groupby([Column.TOURN_ID, Column.PLAYER], as_index=False)
+        .agg(
+            **{
+                Column.FINAL_RANK: (Column.FINAL_RANK, "max"),
+                Column.PRIZE: (Column.PRIZE, "max"),
+            }
+        )
+        .astype({Column.TOURN_ID: "int64"})
+        .sort_values([Column.TOURN_ID, Column.PLAYER], ignore_index=True)
     )
 
     return dim
@@ -290,48 +314,66 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             without an amount (for example, checks and folds).
     """
     # One row per player per hand, with the four hierarchical action columns
-    base = df.drop_duplicates(subset=["TournID", "HandID", "Player"]).loc[
-        :, ["TournID", "HandID", "Player", *ROUNDS.keys()]
-    ]
+    base = df.drop_duplicates(
+        subset=[Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
+    ).loc[:, [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER, *ROUNDS.keys()]]
 
     # Turn the four action columns into rows, one per round
     melted = base.melt(
-        id_vars=["TournID", "HandID", "Player"],
+        id_vars=[Column.TOURN_ID, Column.HAND_ID, Column.PLAYER],
         value_vars=list(ROUNDS.keys()),
-        var_name="Round",
+        var_name=ModelColumn.ROUND,
         value_name="Pair",
     )
-    melted["Round"] = melted["Round"].map(ROUNDS)
+    melted[ModelColumn.ROUND] = melted[ModelColumn.ROUND].map(ROUNDS)
 
     # Explode the list of [action, amount] pairs: one row per action taken,
     # preserving the order in which the actions happened within the round
     fact = melted.explode("Pair", ignore_index=True)
 
     # Split each pair into the action and its amount
-    fact["Action"] = [_get_element(x, 0) for x in fact["Pair"]]
-    fact["Value"] = pd.to_numeric(
+    fact[ModelColumn.ACTION] = [_get_element(x, 0) for x in fact["Pair"]]
+    fact[ModelColumn.VALUE] = pd.to_numeric(
         pd.Series([_get_element(x, 1) for x in fact["Pair"]]), errors="coerce"
     )
 
     # Discard placeholders of rounds in which the player did not act
-    fact = fact[fact["Action"].notna() & (fact["Action"] != "")]
+    fact = fact[fact[ModelColumn.ACTION].notna() & (fact[ModelColumn.ACTION] != "")]
 
     # Order of the action within its player/round, following the exploded order
-    fact["ActionIndex"] = (
-        fact.groupby(["TournID", "HandID", "Player", "Round"]).cumcount() + 1
+    fact[ModelColumn.ACTION_INDEX] = (
+        fact.groupby(
+            [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER, ModelColumn.ROUND]
+        ).cumcount()
+        + 1
     )
 
     # Final structure of the fact table
-    fact = fact.astype({"TournID": "int64", "HandID": "int64"}).loc[
-        :, ["TournID", "HandID", "Player", "Round", "ActionIndex", "Action", "Value"]
+    fact = fact.astype({Column.TOURN_ID: "int64", Column.HAND_ID: "int64"}).loc[
+        :,
+        [
+            Column.TOURN_ID,
+            Column.HAND_ID,
+            Column.PLAYER,
+            ModelColumn.ROUND,
+            ModelColumn.ACTION_INDEX,
+            ModelColumn.ACTION,
+            ModelColumn.VALUE,
+        ],
     ]
 
     # Sort by tournament, hand, player and chronological order of the rounds
-    round_order = {"preflop": 0, "flop": 1, "turn": 2, "river": 3}
+    round_order = {round_name: order for order, round_name in enumerate(Round)}
     fact = (
-        fact.assign(_round_order=fact["Round"].map(round_order))
+        fact.assign(_round_order=fact[ModelColumn.ROUND].map(round_order))
         .sort_values(
-            ["TournID", "HandID", "Player", "_round_order", "ActionIndex"],
+            [
+                Column.TOURN_ID,
+                Column.HAND_ID,
+                Column.PLAYER,
+                "_round_order",
+                ModelColumn.ACTION_INDEX,
+            ],
             ignore_index=True,
         )
         .drop(columns="_round_order")
@@ -361,17 +403,19 @@ def build_star_schema(source: str, destination: str) -> dict[str, int]:
 
     # Build the five tables of the star schema
     tables = {
-        "fact_player_actions": build_fact_player_actions(df),
-        "dim_tourn_summary": build_dim_tourn_summary(df),
-        "dim_hand_summary": build_dim_hand_summary(df),
-        "dim_player_summary": build_dim_player_summary(df),
-        "dim_final_rank": build_dim_final_rank(df),
+        ModelTable.FACT_PLAYER_ACTIONS: build_fact_player_actions(df),
+        ModelTable.DIM_TOURN_SUMMARY: build_dim_tourn_summary(df),
+        ModelTable.DIM_HAND_SUMMARY: build_dim_hand_summary(df),
+        ModelTable.DIM_PLAYER_SUMMARY: build_dim_player_summary(df),
+        ModelTable.DIM_FINAL_RANK: build_dim_final_rank(df),
     }
 
     # Save each table and collect its number of rows
     number_of_rows = {}
     for name, table in tables.items():
-        table.to_parquet(os.path.join(destination, f"{name}.parquet"), index=False)
-        number_of_rows[name] = len(table)
+        table.to_parquet(
+            os.path.join(destination, f"{name}{PARQUET_EXTENSION}"), index=False
+        )
+        number_of_rows[str(name)] = len(table)
 
     return number_of_rows
