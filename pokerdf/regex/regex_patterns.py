@@ -729,8 +729,10 @@ class RegexPatterns:
         eliminated player is won, and progressive knockouts ("wins $X for
         eliminating ... and their own bounty increases by $Y to $Z"), where
         the cash part is won and the rest feeds the player's own bounty.
-        Only the amount effectively won is captured, and multiple
-        eliminations in the same hand are summed.
+        When two players split an elimination ("wins $X for splitting the
+        elimination of"), each one's share is captured. Only the amount
+        effectively won is captured, and multiple eliminations in the same
+        hand are summed.
 
         Args:
             player (str): Name of the player.
@@ -745,7 +747,8 @@ class RegexPatterns:
             rf"{player} wins the [$€£]?(\d+(?:\.\d+)?) bounty for eliminating"
         )
         regex_progressive = (
-            rf"{player} wins [$€£]?(\d+(?:\.\d+)?) for eliminating "
+            rf"{player} wins [$€£]?(\d+(?:\.\d+)?) "
+            rf"for (?:eliminating|splitting the elimination of) "
             rf".* and their own bounty increases"
         )
 

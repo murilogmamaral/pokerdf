@@ -205,6 +205,21 @@ def test_get_bounty_won_returns_none_when_no_bounty_is_won(
     assert r.get_bounty_won("VillainB", pko_elimination_hand) == [None]
 
 
+def test_get_bounty_won_split_elimination() -> None:
+    # Two players splitting an elimination each win their share
+    hand = [
+        "Hand #1: Tournament #2, ...",
+        "SHOW DOWN ***\n"
+        "VillainA wins $0.34 for splitting the elimination of VillainC "
+        "and their own bounty increases by $0.34 to $14.55\n"
+        "VillainB wins $0.34 for splitting the elimination of VillainC "
+        "and their own bounty increases by $0.33 to $1.20",
+    ]
+    assert r.get_bounty_won("VillainA", hand) == [0.34]
+    assert r.get_bounty_won("VillainB", hand) == [0.34]
+    assert r.get_bounty_won("VillainC", hand) == [None]
+
+
 def test_get_actions_preflop(first_hand: list[str]) -> None:
     result = r.get_actions("garciamurilo", first_hand, stage="HOLE CARDS ***")
     assert result == [[("folds", "")]]
