@@ -52,6 +52,7 @@ SOURCE_SCHEMA = pa.schema(
         (Column.CARD_COMBINATION, pa.string()),
         (Column.RESULT, pa.string()),
         (Column.BALANCE, pa.float64()),
+        (Column.UNCALLED_RETURNED, pa.float64()),
         (Column.FINAL_RANK, pa.int64()),
         (Column.PRIZE, pa.float64()),
     ]

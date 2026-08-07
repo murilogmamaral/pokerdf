@@ -57,6 +57,7 @@ EXPECTED_COLUMNS = [
     "CardCombination",
     "Result",
     "Balance",
+    "UncalledReturned",
     "FinalRank",
     "Prize",
 ]

@@ -51,6 +51,7 @@ class Column(StrEnum):
     CARD_COMBINATION = "CardCombination"
     RESULT = "Result"
     BALANCE = "Balance"
+    UNCALLED_RETURNED = "UncalledReturned"
     FINAL_RANK = "FinalRank"
     PRIZE = "Prize"
 

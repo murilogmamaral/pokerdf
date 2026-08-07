@@ -63,6 +63,7 @@ def test_capture_specific_data_of_the_player(showdown_hand: list[str]) -> None:
     assert result["CardCombination"] == ["a pair of Jacks"]
     assert result["Result"] == ["won"]
     assert result["Balance"] == [40.0]
+    assert result["UncalledReturned"] == [None]
     assert result["FinalRank"] == [-1]
     assert result["Prize"] == [None]
 

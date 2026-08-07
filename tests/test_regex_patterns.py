@@ -244,6 +244,39 @@ def test_get_balance_returns_none_when_nothing_is_collected(
     assert r.get_balance("VillainA", showdown_hand) == [None]
 
 
+def test_get_uncalled_returned(first_hand: list[str]) -> None:
+    # VillainB's unmatched part of the big blind comes back when everyone folds
+    assert r.get_uncalled_returned("VillainB", first_hand) == [10.0]
+
+
+def test_get_uncalled_returned_returns_none_when_nothing_is_returned(
+    first_hand: list[str],
+) -> None:
+    assert r.get_uncalled_returned("garciamurilo", first_hand) == [None]
+
+
+def test_get_uncalled_returned_sums_multiple_returns() -> None:
+    # Synthetic hand: the excess of a raise over a short all-in is returned
+    # preflop, and an uncalled bet is returned on the flop
+    hand = [
+        "Hand #1: Tournament #2, ...",
+        "HOLE CARDS ***\n"
+        "VillainA: raises 380 to 400 and is all-in\n"
+        "garciamurilo: raises 600 to 1000\n"
+        "Uncalled bet (600) returned to garciamurilo",
+        "FLOP *** [2c 7d 9h]\n"
+        "garciamurilo: bets 200\n"
+        "Uncalled bet (200) returned to garciamurilo",
+    ]
+    assert r.get_uncalled_returned("garciamurilo", hand) == [800.0]
+
+
+def test_get_uncalled_returned_does_not_match_a_longer_player_name() -> None:
+    # "Vill" must not capture the return of "VillainA"
+    hand = ["HOLE CARDS ***\nUncalled bet (50) returned to VillainA"]
+    assert r.get_uncalled_returned("Vill", hand) == [None]
+
+
 def test_get_final_rank_of_eliminated_player(elimination_hand: list[str]) -> None:
     assert r.get_final_rank("VillainA", elimination_hand) == [3]
 

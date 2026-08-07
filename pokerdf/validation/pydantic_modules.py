@@ -38,5 +38,6 @@ class ValidateInput(BaseModel):
     CardCombination: list[str | None]
     Result: list[str]
     Balance: list[float | None]
+    UncalledReturned: list[float | None]
     FinalRank: list[int]
     Prize: list[float | None]

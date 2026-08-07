@@ -640,6 +640,41 @@ class RegexPatterns:
 
         return result
 
+    def get_uncalled_returned(self, player: str, hand: list[str]) -> list[float | None]:
+        """
+        Get the total amount of uncalled bets returned to the player in the hand.
+
+        A bet (or the excess of a raise over an all-in) that nobody calls is
+        given back to the player with an "Uncalled bet (X) returned to" line.
+        The same player can receive more than one return in the same hand
+        (for example, the excess of a raise over a short all-in and, later,
+        an uncalled bet on another street), so the amounts are summed.
+
+        Args:
+            player (str): Name of the player.
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the total amount returned to the player
+                (for example, [320.0]), or [None] if nothing was returned.
+        """
+        # Pattern to extract. The end-of-line anchor prevents a player name
+        # from matching a longer name that starts with it
+        regex = rf"Uncalled bet \((\d+(?:\.\d+)?)\) returned to {player}\s*$"
+
+        # The return can happen at any stage, so search the whole hand
+        target = "\n".join(hand)
+
+        # Apply regex
+        result = re.findall(regex, target, flags=re.MULTILINE)
+
+        # Nothing returned to the player in the hand
+        if result == []:
+            return [None]
+
+        # Sum all the returns of the hand
+        return [sum(float(x) for x in result)]
+
     def get_board(
         self, hand: list[str], stage: str
     ) -> (

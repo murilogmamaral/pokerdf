@@ -104,6 +104,7 @@ def compose_dataframe() -> pd.DataFrame:
         Column.CARD_COMBINATION: "object",
         Column.RESULT: "object",
         Column.BALANCE: "float64",
+        Column.UNCALLED_RETURNED: "float64",
         Column.FINAL_RANK: "int64",
         Column.PRIZE: "float64",
     }
