@@ -100,9 +100,17 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "Seat",
         "Position",
         "Action",
-        "Value",
         "AddedValue",
         "TotalValue",
+        "TotalPot",
+        "TableSize",
+        "Level",
+        "Playing",
+        "Ante",
+        "SmallBlind",
+        "BigBlind",
+        "OwnerC1",
+        "OwnerC2",
         "BoardC1",
         "BoardC2",
         "BoardC3",
@@ -124,12 +132,26 @@ def test_fact_each_row_is_one_action(fact: pd.DataFrame) -> None:
 
 
 def test_fact_explodes_single_action(fact: pd.DataFrame) -> None:
-    # Hand 11111: garciamurilo only folds preflop
+    # Hand 11111: garciamurilo only folds preflop, pushing nothing
     rows = fact[(fact["HandID"] == 11111) & (fact["Player"] == "garciamurilo")]
     assert rows[["Round", "ActionIndex", "Action"]].values.tolist() == [
         ["preflop", 1, "folds"]
     ]
-    assert rows["Value"].isna().all()
+    assert (rows["AddedValue"] == 0.0).all()
+
+
+def test_fact_carries_hand_context(fact: pd.DataFrame) -> None:
+    # Hand 11111: 3-max at level I (blinds 10/20), 3 players, no ante,
+    # with the owner holding 3s Jh
+    row = fact[fact["HandID"] == 11111].iloc[0]
+    assert row["TableSize"] == 3
+    assert row["Level"] == 1
+    assert row["Playing"] == 3
+    assert pd.isna(row["Ante"])
+    assert row["SmallBlind"] == 10.0
+    assert row["BigBlind"] == 20.0
+    assert row["OwnerC1"] == "3s"
+    assert row["OwnerC2"] == "Jh"
 
 
 def test_fact_carries_seat_and_position(fact: pd.DataFrame) -> None:
@@ -195,7 +217,7 @@ def test_fact_explodes_multiple_actions_in_the_same_round(
         & (fact["Player"] == "garciamurilo")
         & (fact["Round"] == "preflop")
     ]
-    assert rows[["ActionIndex", "Action", "Value"]].values.tolist() == [
+    assert rows[["ActionIndex", "Action", "AddedValue"]].values.tolist() == [
         [1, "calls", 15.0],
         [2, "calls", 60.0],
     ]
@@ -224,9 +246,23 @@ def test_fact_added_value_of_calls_is_the_amount_captured(
         & (fact["Player"] == "garciamurilo")
         & (fact["Round"] == "preflop")
     ]
-    assert rows[["Action", "Value", "AddedValue", "TotalValue"]].values.tolist() == [
-        ["calls", 15.0, 15.0, 30.0],
-        ["calls", 60.0, 60.0, 90.0],
+    assert rows[["Action", "AddedValue", "TotalValue"]].values.tolist() == [
+        ["calls", 15.0, 30.0],
+        ["calls", 60.0, 90.0],
+    ]
+
+
+def test_fact_total_pot_accumulates_the_whole_hand(fact: pd.DataFrame) -> None:
+    # Hand 219269903263 (blinds 15/30, no ante): the pot starts at 45 with
+    # the blinds, and grows with every action across the rounds
+    rows = fact[fact["HandID"] == 219269903263]
+    assert rows[["Round", "Player", "Action", "TotalPot"]].values.tolist() == [
+        ["preflop", "garciamurilo", "calls", 60.0],
+        ["preflop", "VillainB", "raises", 120.0],
+        ["preflop", "garciamurilo", "calls", 180.0],
+        ["flop", "VillainB", "checks", 180.0],
+        ["flop", "garciamurilo", "bets", 396.0],
+        ["flop", "VillainB", "folds", 396.0],
     ]
 
 
@@ -234,13 +270,12 @@ def test_fact_added_value_of_raises_accounts_for_committed_chips(
     fact: pd.DataFrame,
 ) -> None:
     # Hand 219269854149 preflop (blinds 10/20): VillainA posted the small
-    # blind 10 and "raises 40 to 60": the captured Value is the increase over
-    # the big blind (40), but the player pushed 50 chips to reach 60
+    # blind 10 and "raises 40 to 60": the log captures the increase over the
+    # big blind (40), but the player pushed 50 chips to reach 60
     row = fact[(fact["HandID"] == 219269854149) & (fact["Player"] == "VillainA")].iloc[
         0
     ]
     assert row["Action"] == "raises"
-    assert row["Value"] == 40.0
     assert row["AddedValue"] == 50.0
     assert row["TotalValue"] == 60.0
 
@@ -252,7 +287,6 @@ def test_fact_added_value_of_reraises(fact: pd.DataFrame) -> None:
         0
     ]
     assert row["Action"] == "raises"
-    assert row["Value"] == 60.0
     assert row["AddedValue"] == 60.0
     assert row["TotalValue"] == 90.0
 
@@ -268,7 +302,6 @@ def test_fact_big_blind_check_keeps_the_blind_committed(
         & (fact["Round"] == "preflop")
     ].iloc[0]
     assert row["Action"] == "checks"
-    assert pd.isna(row["Value"])
     assert row["AddedValue"] == 0.0
     assert row["TotalValue"] == 20.0
 
@@ -345,9 +378,10 @@ def test_dim_tourn_summary(source_df: pd.DataFrame) -> None:
     assert row["TournID"] == 99999
     assert row["LocalStartTime"] == pd.Timestamp("2020-10-11 03:22:15")
     assert row["Modality"] == "USD Hold'em No Limit"
-    assert row["TableSize"] == 3
     assert row["BuyIn"] == "$1.84+$0.16"
     assert row["Owner"] == "garciamurilo"
+    # TableSize belongs to the fact table now
+    assert "TableSize" not in dim.columns
 
 
 # ---------------------------------------------------------------------------
@@ -361,25 +395,28 @@ def test_dim_hand_summary_has_one_row_per_hand(
     assert not dim.duplicated(subset=["TournID", "HandID"]).any()
 
 
-def test_dim_hand_summary_flattens_blinds_and_owner_cards(
+def test_dim_hand_summary_carries_the_winner_showdown(
     source_df: pd.DataFrame,
 ) -> None:
     dim = build_dim_hand_summary(source_df)
-    row = dim[dim["HandID"] == 11111].iloc[0]
-    assert row["Level"] == 1
-    assert row["Playing"] == 3
-    assert row["SmallBlind"] == 10.0
-    assert row["BigBlind"] == 20.0
-    assert row["OwnerC1"] == "3s"
-    assert row["OwnerC2"] == "Jh"
+    # Hand 219269866589: garciamurilo won the showdown with a pair of Jacks
+    row = dim[dim["HandID"] == 219269866589].iloc[0]
+    assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:23:44")
+    assert row["ShowDownC1"] == "8h"
+    assert row["ShowDownC2"] == "Kh"
+    assert row["PokerHand"] == "a pair of Jacks"
 
 
-def test_dim_hand_summary_converts_roman_levels(source_df: pd.DataFrame) -> None:
+def test_dim_hand_summary_showdown_is_null_without_showdown(
+    source_df: pd.DataFrame,
+) -> None:
     dim = build_dim_hand_summary(source_df)
-    # Hand 219269911437 was played during Level II
-    assert dim[dim["HandID"] == 219269911437].iloc[0]["Level"] == 2
-    # The board belongs to the fact table, not to the hand dimension
-    assert "BoardC1" not in dim.columns
+    # Hand 11111 ended with everyone folding preflop
+    row = dim[dim["HandID"] == 11111].iloc[0]
+    assert row[["ShowDownC1", "ShowDownC2", "PokerHand"]].isna().all()
+    # The betting context of the hand belongs to the fact table
+    assert "SmallBlind" not in dim.columns
+    assert "Level" not in dim.columns
 
 
 # ---------------------------------------------------------------------------
@@ -404,17 +441,17 @@ def test_dim_player_summary_values(source_df: pd.DataFrame) -> None:
     assert "Position" not in dim.columns
 
 
-def test_dim_player_summary_flattens_showdown_cards(
+def test_dim_player_summary_keeps_balance_but_not_showdown(
     source_df: pd.DataFrame,
 ) -> None:
     dim = build_dim_player_summary(source_df)
     row = dim[(dim["HandID"] == 219269866589) & (dim["Player"] == "garciamurilo")].iloc[
         0
     ]
-    assert row["ShowDownC1"] == "8h"
-    assert row["ShowDownC2"] == "Kh"
-    assert row["PokerHand"] == "a pair of Jacks"
     assert row["Balance"] == 40.0
+    # The showdown of the hand belongs to dim_hand_summary now
+    assert "ShowDownC1" not in dim.columns
+    assert "PokerHand" not in dim.columns
 
 
 # ---------------------------------------------------------------------------
@@ -465,7 +502,13 @@ def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:
             "Seat": [1, 2, 4, 9],
             "Position": ["small blind", "big blind", None, "button"],
             "PostedBlind": [10.0, 20.0, None, None],
+            "PostedAnte": [None] * 4,
             "Blinds": [[10.0, 20.0]] * 4,
+            "TableSize": [9] * 4,
+            "Level": ["I"] * 4,
+            "Playing": [4] * 4,
+            "Ante": [None] * 4,
+            "OwnersHand": [["Ah", "Kh"]] * 4,
             "PreflopAction": [
                 [("folds", "")],
                 placeholder[0],

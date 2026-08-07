@@ -146,8 +146,8 @@ def build_dim_tourn_summary(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, LocalStartTime, Modality, TableSize,
-            BuyIn and Owner.
+        pd.DataFrame: Columns TournID, LocalStartTime, Modality, BuyIn and
+            Owner. TableSize belongs to the fact table.
     """
     # One row per tournament: the start time is the time of its first hand
     dim = (
@@ -156,7 +156,6 @@ def build_dim_tourn_summary(df: pd.DataFrame) -> pd.DataFrame:
             **{
                 ModelColumn.LOCAL_START_TIME: (Column.LOCAL_TIME, "min"),
                 Column.MODALITY: (Column.MODALITY, "first"),
-                Column.TABLE_SIZE: (Column.TABLE_SIZE, "first"),
                 Column.BUY_IN: (Column.BUY_IN, "first"),
                 Column.OWNER: (Column.OWNER, "first"),
             }
@@ -176,33 +175,41 @@ def build_dim_hand_summary(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, HandID, LocalTime, Level, Playing, Ante,
-            SmallBlind, BigBlind, OwnerC1 and OwnerC2.
+        pd.DataFrame: Columns TournID, HandID, LocalTime, ShowDownC1,
+            ShowDownC2 and PokerHand: when and how the hand ended. The
+            showdown columns hold the cards and combination of the showdown
+            winner, and are null when the hand ended without a showdown.
+            The betting context of the hand (level, blinds, ante, owner
+            cards) belongs to the fact table.
     """
     # One row per hand
-    hands = df.drop_duplicates(
-        subset=[Column.TOURN_ID, Column.HAND_ID], ignore_index=True
-    )
+    hands = df.drop_duplicates(subset=[Column.TOURN_ID, Column.HAND_ID]).loc[
+        :, [Column.TOURN_ID, Column.HAND_ID, Column.LOCAL_TIME]
+    ]
 
-    # Flatten the hierarchical columns into one column per card / blind
-    dim = pd.DataFrame(
+    # The showdown that decided the hand: the winner's revealed cards and
+    # combination (in split pots, the winner with the largest balance)
+    winners = (
+        df[df[Column.RESULT] == "won"]
+        .sort_values(Column.BALANCE, ascending=False)
+        .drop_duplicates(subset=[Column.TOURN_ID, Column.HAND_ID])
+    )
+    showdown = pd.DataFrame(
         {
-            Column.TOURN_ID: hands[Column.TOURN_ID].astype("int64"),
-            Column.HAND_ID: hands[Column.HAND_ID].astype("int64"),
-            Column.LOCAL_TIME: hands[Column.LOCAL_TIME],
-            Column.LEVEL: hands[Column.LEVEL].map(_roman_to_int).astype("Int64"),
-            Column.PLAYING: hands[Column.PLAYING],
-            Column.ANTE: hands[Column.ANTE],
-            ModelColumn.SMALL_BLIND: [_get_element(x, 0) for x in hands[Column.BLINDS]],
-            ModelColumn.BIG_BLIND: [_get_element(x, 1) for x in hands[Column.BLINDS]],
-            ModelColumn.OWNER_C1: [
-                _get_element(x, 0) for x in hands[Column.OWNERS_HAND]
+            Column.TOURN_ID: winners[Column.TOURN_ID],
+            Column.HAND_ID: winners[Column.HAND_ID],
+            ModelColumn.SHOW_DOWN_C1: [
+                _get_element(x, 0) for x in winners[Column.SHOW_DOWN]
             ],
-            ModelColumn.OWNER_C2: [
-                _get_element(x, 1) for x in hands[Column.OWNERS_HAND]
+            ModelColumn.SHOW_DOWN_C2: [
+                _get_element(x, 1) for x in winners[Column.SHOW_DOWN]
             ],
+            ModelColumn.POKER_HAND: winners[Column.CARD_COMBINATION],
         }
     )
+
+    dim = hands.merge(showdown, on=[Column.TOURN_ID, Column.HAND_ID], how="left")
+    dim = dim.astype({Column.TOURN_ID: "int64", Column.HAND_ID: "int64"})
 
     return dim.sort_values([Column.TOURN_ID, Column.HAND_ID], ignore_index=True)
 
@@ -216,9 +223,9 @@ def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: Columns TournID, HandID, Player, Stack, PostedAnte,
-            PostedBlind, Result, Balance, ShowDownC1, ShowDownC2 and
-            PokerHand. Seat and Position belong to the fact table, where
-            they define who acts first in each round.
+            PostedBlind, Result and Balance. Seat and Position belong to the
+            fact table, where they define who acts first in each round, and
+            the showdown of the hand belongs to dim_hand_summary.
     """
     # One row per player per hand
     players = df.drop_duplicates(
@@ -235,13 +242,6 @@ def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
             Column.POSTED_BLIND: players[Column.POSTED_BLIND],
             Column.RESULT: players[Column.RESULT],
             Column.BALANCE: players[Column.BALANCE],
-            ModelColumn.SHOW_DOWN_C1: [
-                _get_element(x, 0) for x in players[Column.SHOW_DOWN]
-            ],
-            ModelColumn.SHOW_DOWN_C2: [
-                _get_element(x, 1) for x in players[Column.SHOW_DOWN]
-            ],
-            ModelColumn.POKER_HAND: players[Column.CARD_COMBINATION],
         }
     )
 
@@ -292,7 +292,23 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
             and the board of each round still attached.
     """
     # One row per player per hand, with the four hierarchical action columns
-    # and the context needed downstream (seat, position, blinds and boards)
+    # and the context needed downstream (seat, position, blinds, ante, the
+    # hand context that goes into the fact table, and the boards)
+    context_columns = [
+        Column.SEAT,
+        Column.POSITION,
+        Column.POSTED_BLIND,
+        Column.POSTED_ANTE,
+        Column.BLINDS,
+        Column.TABLE_SIZE,
+        Column.LEVEL,
+        Column.PLAYING,
+        Column.ANTE,
+        Column.OWNERS_HAND,
+        Column.BOARD_FLOP,
+        Column.BOARD_TURN,
+        Column.BOARD_RIVER,
+    ]
     base = df.drop_duplicates(
         subset=[Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
     ).loc[
@@ -301,14 +317,8 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
             Column.TOURN_ID,
             Column.HAND_ID,
             Column.PLAYER,
-            Column.SEAT,
-            Column.POSITION,
-            Column.POSTED_BLIND,
-            Column.BLINDS,
+            *context_columns,
             *ROUNDS.keys(),
-            Column.BOARD_FLOP,
-            Column.BOARD_TURN,
-            Column.BOARD_RIVER,
         ],
     ]
 
@@ -327,14 +337,8 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
             Column.TOURN_ID,
             Column.HAND_ID,
             Column.PLAYER,
-            Column.SEAT,
-            Column.POSITION,
-            Column.POSTED_BLIND,
-            Column.BLINDS,
+            *context_columns,
             "_effective_big_blind",
-            Column.BOARD_FLOP,
-            Column.BOARD_TURN,
-            Column.BOARD_RIVER,
         ],
         value_vars=list(ROUNDS.keys()),
         var_name=ModelColumn.ROUND,
@@ -463,11 +467,14 @@ def _compute_bet_amounts(fact: pd.DataFrame) -> pd.DataFrame:
     - Every TotalValue can push the level up. This also covers the short
       all-in big blind: the first caller still pays the nominal big blind,
       and that call becomes the new level for the raises that follow.
-    - AddedValue = TotalValue - previously committed amount, i.e. the chips
-      the player actually pushed with the action.
+    - AddedValue is the difference to the previously committed amount, i.e.
+      the chips the player actually pushed with the action.
+    - After the replay, the posted ante is added to the preflop TotalValue,
+      so the preflop total reflects everything the player put in during the
+      round: ante, blind and betting. The ante does not change AddedValue
+      nor the bet level (the platform arithmetic excludes it).
 
-    Antes are not part of the round betting and uncalled bets returned at the
-    end of the hand are not discounted.
+    Uncalled bets returned at the end of the hand are not discounted.
 
     Args:
         fact (pd.DataFrame): Exploded actions sorted chronologically.
@@ -528,7 +535,60 @@ def _compute_bet_amounts(fact: pd.DataFrame) -> pd.DataFrame:
     fact[ModelColumn.ADDED_VALUE] = added_values
     fact[ModelColumn.TOTAL_VALUE] = total_values
 
+    # The ante is part of everything the player put in during the preflop
+    posted_ante = fact[Column.POSTED_ANTE].astype("float64").fillna(0.0)
+    is_preflop_row = fact[ModelColumn.ROUND] == Round.PREFLOP
+    fact[ModelColumn.TOTAL_VALUE] = fact[ModelColumn.TOTAL_VALUE] + posted_ante.where(
+        is_preflop_row, 0.0
+    )
+
     return fact
+
+
+def _compute_total_pot(fact: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute TotalPot: the total pot right after each action.
+
+    The pot starts with everything posted before the first action — the
+    antes and blinds of every player of the hand, including players that
+    never acted (for example, all-in on the post) and partial posts of
+    short stacks — and grows with the chips pushed by each action
+    (AddedValue), following the chronological order of the rows.
+
+    Uncalled bets returned at the end of the hand are not discounted, so
+    after the last action TotalPot equals the "Total pot" reported by the
+    platform plus the returned amount, when there is one.
+
+    Args:
+        fact (pd.DataFrame): Actions sorted chronologically, with AddedValue.
+        df (pd.DataFrame): Converted data, used to sum the posts of every
+            player of each hand.
+
+    Returns:
+        pd.DataFrame: The same rows with TotalPot attached.
+    """
+    keys = [Column.TOURN_ID, Column.HAND_ID]
+
+    # Antes and blinds of every player, posted before any action
+    posts = df.drop_duplicates(subset=[*keys, Column.PLAYER])
+    initial_pot = (
+        (
+            posts[Column.POSTED_ANTE].astype("float64").fillna(0.0)
+            + posts[Column.POSTED_BLIND].astype("float64").fillna(0.0)
+        )
+        .groupby([posts[key] for key in keys])
+        .sum()
+        .reset_index(name="_initial_pot")
+    )
+
+    # The pot after each action accumulates the chips pushed so far
+    fact = fact.merge(initial_pot, on=keys, how="left")
+    fact[ModelColumn.TOTAL_POT] = (
+        fact["_initial_pot"].fillna(0.0)
+        + fact.groupby(keys)[ModelColumn.ADDED_VALUE].cumsum()
+    )
+
+    return fact.drop(columns="_initial_pot")
 
 
 def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
@@ -542,21 +602,27 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     order, starting from the first seat to act (the seat after the big blind
     on preflop, the seat after the button postflop).
 
-    Each row carries the seat and position of the player, the board visible
-    at the moment of the action, and the reconstructed amounts: AddedValue
-    (chips pushed by the action) and TotalValue (total committed by the
-    player in the round after the action, including the posted blind).
+    Each row carries the seat and position of the player, the context of the
+    hand (table size, level, players active, ante, blinds and owner cards),
+    the board visible at the moment of the action, and the reconstructed
+    amounts:
+
+    - AddedValue: the exact chips pushed by the action.
+    - TotalValue: the total put in by the player in that round after the
+      action — on preflop it includes the posted ante and blind.
+    - TotalPot: the total pot right after the action, summing the antes and
+      blinds of every player plus all the chips pushed so far in the hand.
 
     Args:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
         pd.DataFrame: Columns TournID, HandID, ActionOrder, Round,
-            ActionIndex, Player, Seat, Position, Action, Value, AddedValue,
-            TotalValue and BoardC1 to BoardC5, sorted by ActionOrder inside
-            each hand. ActionIndex restarts at 1 for each player/round; Value
-            keeps the raw amount captured from the logs (null for actions
-            without an amount, like checks and folds).
+            ActionIndex, Player, Seat, Position, Action, AddedValue,
+            TotalValue, TotalPot, TableSize, Level, Playing, Ante,
+            SmallBlind, BigBlind, OwnerC1, OwnerC2 and BoardC1 to BoardC5,
+            sorted by ActionOrder inside each hand. ActionIndex restarts at 1
+            for each player/round.
     """
     # One row per action, sorted as the action unfolded, with the amounts.
     # The full list of players anchors the order even when the big blind or
@@ -567,6 +633,7 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     fact = _explode_actions(df)
     fact = _sort_chronologically(fact, players)
     fact = _compute_bet_amounts(fact)
+    fact = _compute_total_pot(fact, df)
 
     # The board visible at the moment of the action, according to the round:
     # no cards on preflop, then the board of the round of the action
@@ -593,6 +660,14 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     fact[ModelColumn.BOARD_C4] = [_get_element(x, 3) for x in visible_boards]
     fact[ModelColumn.BOARD_C5] = [_get_element(x, 4) for x in visible_boards]
 
+    # Flatten the hand context that lives in the fact: level as an integer,
+    # one column per blind and per owner card
+    fact[Column.LEVEL] = fact[Column.LEVEL].map(_roman_to_int).astype("Int64")
+    fact[ModelColumn.SMALL_BLIND] = [_get_element(x, 0) for x in fact[Column.BLINDS]]
+    fact[ModelColumn.BIG_BLIND] = [_get_element(x, 1) for x in fact[Column.BLINDS]]
+    fact[ModelColumn.OWNER_C1] = [_get_element(x, 0) for x in fact[Column.OWNERS_HAND]]
+    fact[ModelColumn.OWNER_C2] = [_get_element(x, 1) for x in fact[Column.OWNERS_HAND]]
+
     # Final structure of the fact table
     fact = fact.astype({Column.TOURN_ID: "int64", Column.HAND_ID: "int64"}).loc[
         :,
@@ -606,9 +681,17 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             Column.SEAT,
             Column.POSITION,
             ModelColumn.ACTION,
-            ModelColumn.VALUE,
             ModelColumn.ADDED_VALUE,
             ModelColumn.TOTAL_VALUE,
+            ModelColumn.TOTAL_POT,
+            Column.TABLE_SIZE,
+            Column.LEVEL,
+            Column.PLAYING,
+            Column.ANTE,
+            ModelColumn.SMALL_BLIND,
+            ModelColumn.BIG_BLIND,
+            ModelColumn.OWNER_C1,
+            ModelColumn.OWNER_C2,
             ModelColumn.BOARD_C1,
             ModelColumn.BOARD_C2,
             ModelColumn.BOARD_C3,

@@ -65,7 +65,84 @@ You can generate these five tables automatically with the `modeling` command, po
 ```
 pokerdf modeling /path/to/parquet/files
 ```
-The command concatenates all files and saves the five tables as _.parquet_ inside `./modeling/{SESSION_ID}/`. In `fact_player_actions`, the hierarchical action columns of the converted data are exploded so that each row represents one single action of a player, sorted exactly as the hand unfolded: rounds in chronological order, starting from the first seat to act (the seat after the big blind on preflop, the seat after the button postflop). Each row carries the seat and position of the player, the board visible at the moment of the action, and two reconstructed amounts: `AddedValue`, the chips actually pushed by the action, and `TotalValue`, the total committed by the player in that round (the raw `Value` captured from the logs is kept, but note that in raises it is the increase over the previous bet, not the chips pushed).
+The command concatenates all files and saves the five tables as _.parquet_ inside `./modeling/{SESSION_ID}/`.
+
+##### fact_player_actions
+
+One row per action taken by a player, sorted exactly as each hand unfolded: rounds in chronological order, starting from the first seat to act (the seat after the big blind on preflop, the seat after the button postflop). The betting amounts are reconstructed by replaying each round with the betting rules of the game, so they reflect the chips that actually moved — including partial (all-in) blind and ante posts.
+
+| Column      | Description                                                                                           | Example     |
+|-------------|-------------------------------------------------------------------------------------------------------|-------------|
+| TournID     | Tournament in which the action happened                                                               | 2928882649  |
+| HandID      | Hand in which the action happened                                                                     | 215024616736|
+| ActionOrder | Chronological sequence of the action inside the hand (1..n)                                           | 3           |
+| Round       | Round of the action (preflop, flop, turn, river)                                                      | preflop     |
+| ActionIndex | Order of the action among the player's actions in the round                                           | 1           |
+| Player      | Player who acted                                                                                      | playername  |
+| Seat        | Seat number of the player                                                                             | 4           |
+| Position    | Position of the player (button, small blind, big blind), when any                                     | big blind   |
+| Action      | The action taken (folds, checks, calls, bets, raises)                                                 | raises      |
+| AddedValue  | Exact chips pushed by the action                                                                      | 50.0        |
+| TotalValue  | Total put in by the player in the round after the action (on preflop includes the posted ante/blind)  | 64.0        |
+| TotalPot    | Total pot right after the action (uncalled bets returned at the end are not discounted)               | 156.0       |
+| TableSize   | Maximum number of players at the table                                                                | 9           |
+| Level       | Level of the tournament, as an integer                                                                | 15          |
+| Playing     | Number of players active in the hand                                                                  | 6           |
+| Ante        | Ante of the hand                                                                                      | 4.0         |
+| SmallBlind  | Nominal small blind of the hand                                                                       | 15.0        |
+| BigBlind    | Nominal big blind of the hand                                                                         | 30.0        |
+| OwnerC1..C2 | Hole cards of the owner of the logs                                                                   | Ah, Qd      |
+| BoardC1..C5 | Board visible at the moment of the action (empty on preflop, 3 cards on flop, 4 on turn, 5 on river)  | 4d, Tc, 7s  |
+
+##### dim_tourn_summary
+
+One row per tournament.
+
+| Column         | Description                          | Example              |
+|----------------|--------------------------------------|----------------------|
+| TournID        | Unique identifier of the tournament  | 2928882649           |
+| LocalStartTime | Time of the first hand               | 2020-06-07 07:44:35  |
+| Modality       | The type of game being played        | USD Hold'em No Limit |
+| BuyIn          | The buy-in of the tournament         | $4.60+$0.40          |
+| Owner          | Owner of the hand history files      | ownername            |
+
+##### dim_hand_summary
+
+One row per hand: when it was played and how it ended. The showdown columns hold the revealed cards and combination of the showdown winner, and are null when the hand ended without a showdown.
+
+| Column         | Description                                     | Example              |
+|----------------|--------------------------------------------------|----------------------|
+| TournID        | Tournament of the hand                          | 2928882649           |
+| HandID         | Unique identifier of the hand                   | 215024616736         |
+| LocalTime      | Time when the hand was played                   | 2020-06-07 07:52:12  |
+| ShowDownC1..C2 | Cards of the showdown winner                    | Ah, Ac               |
+| PokerHand      | Winning combination of the showdown             | a pair of Aces       |
+
+##### dim_player_summary
+
+One row per player in each hand.
+
+| Column      | Description                                                | Example    |
+|-------------|-------------------------------------------------------------|------------|
+| TournID     | Tournament of the hand                                     | 2928882649 |
+| HandID      | Hand in which the player participated                      | 215024616736 |
+| Player      | Name of the player                                         | playername |
+| Stack       | Stack of the player at the start of the hand               | 2500.0     |
+| PostedAnte  | Ante posted by the player (partial when all-in)            | 4.0        |
+| PostedBlind | Blind posted by the player (partial when all-in)           | 30.0       |
+| Result      | Result of the hand (folded, lost, mucked, non-sd win, won) | won        |
+| Balance     | Total collected from the pot in the hand                   | 156.0      |
+
+##### dim_final_rank
+
+One row per player in each tournament.
+
+| Column    | Description                                                             | Example    |
+|-----------|--------------------------------------------------------------------------|------------|
+| TournID   | Tournament played                                                       | 2928882649 |
+| Player    | Name of the player                                                      | playername |
+| FinalRank | Final rank in the tournament (-1 when not registered in the logs)       | 27         |
+| Prize     | Prize received, when any                                                | 0.24       |
 
 
 ## Installation

@@ -83,6 +83,7 @@ class ModelColumn(StrEnum):
     VALUE = "Value"
     ADDED_VALUE = "AddedValue"
     TOTAL_VALUE = "TotalValue"
+    TOTAL_POT = "TotalPot"
 
 
 class Round(StrEnum):
