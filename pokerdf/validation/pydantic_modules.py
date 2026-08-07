@@ -41,5 +41,7 @@ class ValidateInput(BaseModel):
     Balance: list[float | None]
     UncalledReturned: list[float | None]
     BountyWon: list[float | None]
+    TotalPotLog: list[float | None]
+    Rake: list[float | None]
     FinalRank: list[int]
     Prize: list[float | None]

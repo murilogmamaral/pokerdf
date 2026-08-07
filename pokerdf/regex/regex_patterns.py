@@ -750,6 +750,65 @@ class RegexPatterns:
         # Sum all the bounties of the hand
         return [sum(float(x) for x in result)]
 
+    def get_total_pot_log(self, hand: list[str]) -> list[float | None]:
+        """
+        Get the total pot of the hand, as reported in the summary.
+
+        This is the value logged by the platform itself ("Total pot 840 |
+        Rake 0"), captured to allow independent verification of any pot
+        reconstruction done downstream.
+
+        Args:
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the total pot of the hand (for example, [840.0]),
+                or [None] if the summary does not report it.
+        """
+        # Pattern to extract
+        regex = r"Total pot (\d+(?:\.\d+)?)"
+
+        # Get the last content of a played hand (the summary)
+        target = hand[-1]
+
+        # Apply regex
+        result = re.findall(regex, target)
+
+        # Normalize output
+        result = [float(x) for x in result]
+        result = self._guarantee_unicity(result, fill=None)
+
+        return result
+
+    def get_rake(self, hand: list[str]) -> list[float | None]:
+        """
+        Get the rake of the hand, as reported in the summary.
+
+        Tournament logs report 0 (the fee is charged in the buy-in), but the
+        value is captured for completeness and future-proofing.
+
+        Args:
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the rake of the hand (for example, [0.0]),
+                or [None] if the summary does not report it.
+        """
+        # Pattern to extract
+        regex = r"\| Rake (\d+(?:\.\d+)?)"
+
+        # Get the last content of a played hand (the summary)
+        target = hand[-1]
+
+        # Apply regex
+        result = re.findall(regex, target)
+
+        # Normalize output
+        result = [float(x) for x in result]
+        result = self._guarantee_unicity(result, fill=None)
+
+        return result
+
     def get_board(
         self, hand: list[str], stage: str
     ) -> (

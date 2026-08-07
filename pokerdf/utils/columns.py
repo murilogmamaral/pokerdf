@@ -54,6 +54,8 @@ class Column(StrEnum):
     BALANCE = "Balance"
     UNCALLED_RETURNED = "UncalledReturned"
     BOUNTY_WON = "BountyWon"
+    TOTAL_POT_LOG = "TotalPotLog"
+    RAKE = "Rake"
     FINAL_RANK = "FinalRank"
     PRIZE = "Prize"
 

@@ -60,6 +60,8 @@ EXPECTED_COLUMNS = [
     "Balance",
     "UncalledReturned",
     "BountyWon",
+    "TotalPotLog",
+    "Rake",
     "FinalRank",
     "Prize",
 ]

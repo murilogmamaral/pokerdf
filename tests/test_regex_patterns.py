@@ -110,6 +110,24 @@ def test_get_board_returns_empty_tuple_when_stage_is_not_reached(
     assert r.get_board(flop_hand, stage="TURN ***") == [()]
 
 
+def test_get_total_pot_log(first_hand: list[str]) -> None:
+    assert r.get_total_pot_log(first_hand) == [20.0]
+
+
+def test_get_total_pot_log_with_side_pots() -> None:
+    # With side pots the summary decomposes the total, but the first number
+    # is still the total pot
+    hand = [
+        "Hand #1: ...",
+        "SUMMARY ***\nTotal pot 9136 Main pot 5820. Side pot 3316. | Rake 0",
+    ]
+    assert r.get_total_pot_log(hand) == [9136.0]
+
+
+def test_get_rake(first_hand: list[str]) -> None:
+    assert r.get_rake(first_hand) == [0.0]
+
+
 # ---------------------------------------------------------------------------
 # Player-specific data
 # ---------------------------------------------------------------------------
