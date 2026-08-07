@@ -1,0 +1,61 @@
+# Continuous integration: guarantees that unit tests and lint checks pass
+# on every commit to main and on every pull request targeting main.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Check formatting with black
+        run: poetry run black --check pokerdf/ tests/
+
+      - name: Lint with flake8
+        run: poetry run flake8 pokerdf/ tests/
+
+      - name: Lint with ruff
+        run: poetry run ruff check pokerdf/ tests/
+
+      - name: Type-check with mypy
+        run: poetry run mypy pokerdf/ tests/
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run tests
+        run: poetry run python -m pytest tests/ -q

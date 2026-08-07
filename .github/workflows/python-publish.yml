@@ -1,24 +1,39 @@
 # Deploys the package to https://pypi.org/project/pokerdf/
 #
-# Trigger it manually via "Run workflow" (workflow_dispatch) in the Actions tab.
+# Trigger it manually via "Run workflow" (workflow_dispatch) in the Actions tab,
+# choosing the semver level to bump (patch by default). No manual version bump
+# is needed: the version in pyproject.toml always reflects the latest published
+# release, and this pipeline infers the next one from the chosen level.
 #
 # Full pipeline:
 #   1. test            -> run the test suite; nothing happens if it fails
-#   2. release-build   -> build sdist/wheel and read the version from pyproject.toml
+#   2. bump-and-build  -> bump the version in pyproject.toml, commit the bump
+#                         back to main, then build sdist/wheel
 #   3. github-release  -> create the git tag and the GitHub release dynamically,
 #                         named "v{version}", with the distributions attached
 #   4. pypi-publish    -> upload the distributions to PyPI (Trusted Publishing)
-#
-# The tag is never hardcoded: it always comes from the version in pyproject.toml.
-# If the tag already exists, the deploy fails early asking for a version bump.
 
 name: Upload Python Package
 
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: "Semver level to bump (patch: 1.0.6 -> 1.0.7)"
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: read
+
+# Never allow two deploys running at the same time
+concurrency:
+  group: deploy
+  cancel-in-progress: false
 
 jobs:
   test:
@@ -40,12 +55,16 @@ jobs:
       - name: Run tests
         run: poetry run python -m pytest tests/ -q
 
-  release-build:
+  bump-and-build:
     runs-on: ubuntu-latest
     needs:
       - test
+    permissions:
+      # Required to push the version bump commit to main
+      contents: write
     outputs:
-      version: ${{ steps.version.outputs.version }}
+      version: ${{ steps.bump.outputs.version }}
+      sha: ${{ steps.push.outputs.sha }}
 
     steps:
       - uses: actions/checkout@v4
@@ -57,9 +76,20 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
-      - name: Read package version from pyproject.toml
-        id: version
-        run: echo "version=$(poetry version --short)" >> "$GITHUB_OUTPUT"
+      - name: Bump version in pyproject.toml
+        id: bump
+        run: |
+          poetry version "${{ inputs.bump }}"
+          echo "version=$(poetry version --short)" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push the bump to main
+        id: push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "bump version to ${{ steps.bump.outputs.version }}"
+          git push origin HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Build release distributions with Poetry
         run: poetry build
@@ -73,7 +103,7 @@ jobs:
   github-release:
     runs-on: ubuntu-latest
     needs:
-      - release-build
+      - bump-and-build
     permissions:
       # Required to push the tag and create the release
       contents: write
@@ -90,13 +120,14 @@ jobs:
       - name: Create tag and GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: v${{ needs.release-build.outputs.version }}
+          TAG: v${{ needs.bump-and-build.outputs.version }}
+          TARGET_SHA: ${{ needs.bump-and-build.outputs.sha }}
         run: |
           if git ls-remote --exit-code origin "refs/tags/$TAG" >/dev/null 2>&1; then
-            echo "::error::Tag $TAG already exists. Bump the version in pyproject.toml before deploying."
+            echo "::error::Tag $TAG already exists. Check the version in pyproject.toml."
             exit 1
           fi
-          gh release create "$TAG" dist/* --title "$TAG" --generate-notes --target "$GITHUB_SHA"
+          gh release create "$TAG" dist/* --title "$TAG" --generate-notes --target "$TARGET_SHA"
 
   pypi-publish:
     runs-on: ubuntu-latest
