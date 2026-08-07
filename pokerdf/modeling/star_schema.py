@@ -604,10 +604,12 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Columns TournID, HandID, TableSize, Playing, Level,
             Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
-            Action, ActionIndex, ActionOrder, AddedValue, TotalValue,
-            TotalPot, BoardC1 to BoardC5, OwnerC1 and OwnerC2, sorted by
-            ActionOrder inside each hand. ActionIndex restarts at 1 for each
-            player/round.
+            PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder,
+            AddedValue, TotalValue, TotalPot, BoardC1 to BoardC5, OwnerC1
+            and OwnerC2, sorted by ActionOrder inside each hand. PostedAnte
+            and PostedBlind are the real amounts posted by the player
+            (partial when all-in), the same values used to reconstruct the
+            amounts. ActionIndex restarts at 1 for each player/round.
     """
     # One row per action, sorted as the action unfolded, with the amounts.
     # The full list of players anchors the order even when the big blind or
@@ -669,6 +671,8 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             Column.PLAYER,
             Column.SEAT,
             Column.POSITION,
+            Column.POSTED_ANTE,
+            Column.POSTED_BLIND,
             ModelColumn.ACTION,
             ModelColumn.ACTION_INDEX,
             ModelColumn.ACTION_ORDER,

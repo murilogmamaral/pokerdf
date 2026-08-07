@@ -103,6 +103,8 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "Player",
         "Seat",
         "Position",
+        "PostedAnte",
+        "PostedBlind",
         "Action",
         "ActionIndex",
         "ActionOrder",
@@ -163,6 +165,17 @@ def test_fact_carries_seat_and_position(fact: pd.DataFrame) -> None:
     row = fact[(fact["HandID"] == 11111) & (fact["Player"] == "VillainA")].iloc[0]
     assert row["Seat"] == 1
     assert row["Position"] == "button"
+
+
+def test_fact_carries_the_real_posted_amounts(fact: pd.DataFrame) -> None:
+    # Hand 11111: garciamurilo posted the small blind 10; VillainA (button)
+    # posted nothing. These are the real per-player amounts used in the
+    # reconstruction of AddedValue/TotalValue/TotalPot
+    row = fact[(fact["HandID"] == 11111) & (fact["Player"] == "garciamurilo")].iloc[0]
+    assert row["PostedBlind"] == 10.0
+    assert pd.isna(row["PostedAnte"])
+    row = fact[(fact["HandID"] == 11111) & (fact["Player"] == "VillainA")].iloc[0]
+    assert pd.isna(row["PostedBlind"])
 
 
 def test_fact_orders_preflop_from_the_seat_after_the_big_blind(

@@ -85,6 +85,8 @@ One row per action taken by a player, sorted exactly as each hand unfolded: roun
 | Player      | Player who acted                                                                                      | playername  |
 | Seat        | Seat number of the player                                                                             | 4           |
 | Position    | Position of the player (button, small blind, big blind), when any                                     | big blind   |
+| PostedAnte  | Ante actually posted by the player (partial when all-in)                                              | 4.0         |
+| PostedBlind | Blind actually posted by the player (partial when all-in)                                             | 30.0        |
 | Action      | The action taken (folds, checks, calls, bets, raises)                                                 | raises      |
 | ActionIndex | Order of the action among the player's actions in the round                                           | 1           |
 | ActionOrder | Chronological sequence of the action inside the hand (1..n)                                           | 3           |
@@ -118,7 +120,7 @@ One row per hand.
 
 ##### dim_player_summary
 
-One row per player in each hand. The showdown columns hold the cards revealed by the player (also for the losers, useful for range studies), and are null when the player did not reveal them.
+One row per player in each hand. The showdown columns hold the cards revealed by the player (also for the losers, useful for range studies), and are null when the player did not reveal them. PostedAnte and PostedBlind also live here because this table covers every player of the hand — including the ones with no action rows in the fact, like a big blind that wins a walk or goes all-in on the post.
 
 | Column         | Description                                                | Example    |
 |----------------|-------------------------------------------------------------|------------|
