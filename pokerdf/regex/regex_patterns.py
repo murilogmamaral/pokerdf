@@ -10,30 +10,28 @@ class RegexPatterns:
 
     def __init__(self) -> None:
         """
-        Initialize the RegexPatterns class.
+        Initialize the RegexPatterns class. No state is required.
         """
-        # Initialize the class
-        # This class does not need any specific initialization
         pass
 
     def _guarantee_unicity(
         self, result: list[Any], fill: str | int | None = "Unknown"
     ) -> list[Any]:
         """
-        Guarantee that the returned result is a list with just one element.
+        Guarantee that the returned result is a list with exactly one element.
 
         Args:
-            result (list): List of strings extracted with regex.
-            fill (str | int): Value to fill if nothing is captured by the regex. Default is "Unknown".
+            result (list): List of values extracted with regex.
+            fill (str | int | None): Value to use when nothing is captured by the regex. Default is "Unknown".
 
         Returns:
-            list: List with exactly one string.
+            list: List with exactly one element (the first match, or the fill value).
         """
-        # If nothing is found, it is set as "Unkown"
+        # If nothing is found, use the fill value
         if result == []:
             return [fill]
 
-        # If more than one info is found, only the first is considered
+        # If more than one match is found, only the first is considered
         elif len(result) > 1:
             result = [result[0]]
 
@@ -121,7 +119,9 @@ class RegexPatterns:
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List with the names of the active players.
+            list: List with the names of the active players. Names are escaped
+                with re.escape, so they can be safely interpolated into the
+                regex patterns of the player-specific methods.
         """
         # Pattern to extract
         regex = r"\nSeat \d{1}: (.*) \(\S+ in chips"
@@ -214,7 +214,7 @@ class RegexPatterns:
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List with the list of blinds (for example, [['10', '20']]).
+            list: List with the list of blinds as floats (for example, [[10.0, 20.0]]).
         """
         # Pattern to extract
         regex = r" Level \w+ \((\d+)/(\d+)\).*"
@@ -235,7 +235,8 @@ class RegexPatterns:
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List with the current ante of the tournament (for example, [10]).
+            list: List with the current ante of the tournament (for example, [10.0]),
+                or [None] if no ante was posted in the hand.
         """
         # Pattern to extract
         regex = r"posts the ante (\d+)"
@@ -246,7 +247,7 @@ class RegexPatterns:
         # Apply regex
         result = re.findall(regex, target)
 
-        # Convert to integer
+        # Convert to float
         result = [float(x) for x in result if x.isdigit()]
 
         # This list cannot be empty
@@ -266,7 +267,8 @@ class RegexPatterns:
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List with the current datetime (for example, ['2020-11-06 10:02:19']).
+            list: List with the current datetime as pd.Timestamp
+                (for example, [Timestamp('2020-11-06 10:02:19')]).
         """
         # Pattern to extract
         regex = r"(\d{4}/\d{2}/\d{2} \d{1,2}:\d{1,2}:\d{1,2})"
@@ -293,7 +295,7 @@ class RegexPatterns:
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List with the number of players per table (for example, ['9']).
+            list: List with the number of players per table (for example, [9]).
         """
         # Pattern to extract
         regex = r"(\d)-max"
@@ -308,7 +310,7 @@ class RegexPatterns:
 
     def get_table_id(self, hand: list[str]) -> list[str]:
         """
-        Get ID of a specific hand (for example, "1").
+        Get ID of the table inside the tournament (for example, "1").
 
         Args:
             hand (list): List of texts from a specific hand.
@@ -371,14 +373,15 @@ class RegexPatterns:
 
     def get_stack(self, player: str, hand: list[str]) -> list[float | None]:
         """
-        Get the current stack of the player (for example, '500').
+        Get the current stack of the player at the start of the hand.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List with the stack of the player (for example, ['500']).
+            list: List with the stack of the player (for example, [500.0]),
+                or [None] if the stack cannot be captured.
         """
         # Pattern to extract
         regex = rf"Seat \d+: {player} \((\d+) in chips"
@@ -397,14 +400,15 @@ class RegexPatterns:
 
     def get_posted_blind(self, player: str, hand: list[str]) -> list[float | None]:
         """
-        Get blind posted by the player (for example, '30').
+        Get blind posted by the player (small or big blind).
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List with the blide posted by the player (for example, ['30']).
+            list: List with the blind posted by the player (for example, [30.0]),
+                or [None] if the player did not post a blind.
         """
         # Pattern to extract
         regex = rf"{player}: posts \w+ blind (\d+)"
@@ -423,14 +427,15 @@ class RegexPatterns:
 
     def get_posted_ante(self, player: str, hand: list[str]) -> list[float | None]:
         """
-        Get ante posted by the player (for example, '10').
+        Get ante posted by the player.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List with the ante posted by the player (for example, ['10']).
+            list: List with the ante posted by the player (for example, [10.0]),
+                or [None] if the player did not post an ante.
         """
         # Pattern to extract
         regex = rf"{player}: posts the ante (\d+)"
@@ -451,17 +456,21 @@ class RegexPatterns:
         self, player: str, hand: list[str], stage: str
     ) -> list[list[tuple[str, str]]]:
         """
-        Get action the player (for example, ('call', '50')).
+        Get the actions taken by the player during a specific stage.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
             stage (str): Name of the stage to be considered
+                (for example, "HOLE CARDS ***" or "FLOP ***").
 
         Returns:
-            list: List of actions in a stage, like [('call', '50'),  ('fold', '')].
+            list: List with the list of (action, amount) tuples of the stage,
+                like [[('calls', '50'), ('folds', '')]]. The amount is an empty
+                string when the action has no associated value. If the stage is
+                not present or the player did not act, returns [[('', '')]].
         """
-        # Initial value to be returned
+        # Default value when the player has no action in the stage
         fill_empty = [[("", "")]]
 
         # Filter relevant data of a specific stage
@@ -478,7 +487,7 @@ class RegexPatterns:
         # Apply regex
         result = re.findall(regex, target)
 
-        # Guarantee that empty list will not be return
+        # Guarantee that an empty list will not be returned
         if result == []:
             return fill_empty
 
@@ -486,12 +495,13 @@ class RegexPatterns:
 
     def get_allin(self, player: str, hand: list[str], stage: str) -> list[bool]:
         """
-        Get if the player is all-in (it is boolean, True or False).
+        Check whether the player went all-in during a specific stage.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
             stage (str): Name of the stage to be considered
+                (for example, "HOLE CARDS ***" or " posts the ante ").
 
         Returns:
             list: List containing True or False, like [True].
@@ -521,19 +531,20 @@ class RegexPatterns:
         self, player: str, hand: list[str]
     ) -> list[list[str]] | list[list[None]]:
         """
-        Get cards, if the player showed them.
+        Get the cards of the player, if they were showed or mucked at showdown.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the cards of the player, like [['As', 'Ks']].
+            list: List containing the cards of the player, like [('As', 'Ks')],
+                or [[None, None]] if the player did not reveal the cards.
         """
         # Pattern to extract
         regex = rf"{player} .*(?:mucked|showed) \[(\S+) (\S+)\]"
 
-        # Defauld value for empty values
+        # Default value for empty results
         fill_empty = [[None, None]]
 
         # Get the last content of a played hand
@@ -542,7 +553,7 @@ class RegexPatterns:
         # Apply regex
         result = re.findall(regex, target)
 
-        # Guarantee that empty list will not be return
+        # Guarantee that an empty list will not be returned
         if result == []:
             return fill_empty
 
@@ -550,14 +561,15 @@ class RegexPatterns:
 
     def get_card_combination(self, player: str, hand: list[str]) -> list[str]:
         """
-        Get cards combination, if the player went to showdown.
+        Get the card combination, if the player went to showdown.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the card combination, like ['a pair of Kings'].
+            list: List containing the card combination, like ['a pair of Kings'],
+                or [None] if the player did not show a combination.
         """
         # Pattern to extract
         regex = rf"{player}.*showed.*with (.*)"
@@ -575,14 +587,15 @@ class RegexPatterns:
 
     def get_result(self, player: str, hand: list[str]) -> list[str]:
         """
-        Get the result of a showdown for a player.
+        Get the result of the hand for a player (folded, won, lost or mucked).
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the result, like ['won'].
+            list: List containing the result, like ['won']. When the player
+                collected the pot without a showdown, returns ['non-sd win'].
         """
         # Pattern to extract
         regex = rf"Seat \d+: {player} .*(\bfolded\b|\bwon\b|\blost\b|\bmucked\b).*"
@@ -600,14 +613,15 @@ class RegexPatterns:
 
     def get_balance(self, player: str, hand: list[str]) -> list[float | None]:
         """
-        Get how much a player won from the pot.
+        Get how much a player collected from the pot.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the balance, like ['320'].
+            list: List containing the balance, like [320.0], or [None]
+                if the player did not collect anything.
         """
         # Pattern to extract
         regex = rf"Seat \d: {player}.*(?:collected|won) \((\d+)\)"
@@ -635,16 +649,19 @@ class RegexPatterns:
         | list[tuple[()]]
     ):
         """
-        Get the cards on the board.
+        Get the cards on the board at a specific stage.
 
         Args:
             hand (list): List of texts from a specific hand.
             stage (str): Name of the stage to be considered
+                (for example, "FLOP ***", "TURN ***" or "RIVER ***").
 
         Returns:
-            list: List containing the cards on the board, like [('As', 'Ks', '2h')].
+            list: List containing the tuple of cards on the board, like
+                [('As', 'Ks', '2h')] for the flop, growing to 4 cards on the
+                turn and 5 on the river. Returns [()] if the stage was not reached.
         """
-        # Defauld value for empty values
+        # Default value for empty results
         fill_empty = [()]
 
         # Filter hands and reduce strings (to speed up the search)
@@ -681,7 +698,7 @@ class RegexPatterns:
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the number of the seat, like ['1'].
+            list: List containing the number of the seat, like [1].
         """
         # Pattern to extract
         regex = rf"\nSeat (\d+): {player}.*"
@@ -699,14 +716,15 @@ class RegexPatterns:
 
     def get_position(self, player: str, hand: list[str]) -> list[str]:
         """
-        Get position of the player (for example, 'button').
+        Get position of the player (button, small blind or big blind).
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the position of the player, like ['small blind'].
+            list: List containing the position of the player, like ['small blind'],
+                or [None] if the player had no special position.
         """
         # Pattern to extract
         regex = rf"Seat \d+\: {player} \((button|small blind|big blind)\) "
@@ -724,14 +742,16 @@ class RegexPatterns:
 
     def get_final_rank(self, player: str, hand: list[str]) -> list[int]:
         """
-        Get final rank of the player (for example, '14').
+        Get final rank of the player in the tournament, if defined in the hand.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the final rank of the player, like ['1'].
+            list: List containing the final rank of the player, like [3] when the
+                player is eliminated in the hand, or [1] when the player wins the
+                tournament. Returns [-1] when the rank is not defined in the hand.
         """
         # Filter content from SHOW_DOWN
         hand = [x for x in hand if "SHOW DOWN ***" in x]
@@ -778,14 +798,16 @@ class RegexPatterns:
 
     def get_prize(self, player: str, hand: list[str]) -> list[float] | list[None]:
         """
-        Get prize of the player (for example, '$50.00').
+        Get prize received by the player, if awarded in the hand.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the prize, like ['$50.00'].
+            list: List containing the prize as captured from the text, without
+                the currency symbol (for example, ['6.00']), or [None] if no
+                prize was awarded to the player in the hand.
         """
         # Filter content from SHOW_DOWN
         hand = [x for x in hand if "SHOW DOWN ***" in x]

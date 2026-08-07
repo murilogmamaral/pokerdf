@@ -6,13 +6,15 @@ r = RegexPatterns()
 
 def capture_common_data(splitted_hand: list[str]) -> dict[str, Any]:
     """
-    Captures the common data of the tournament
+    Capture the data shared by every hand of the tournament
+    (modality, table size, buy-in, tournament ID and owner).
 
     Args:
-        hand (list): List of texts from a specific hand.
+        splitted_hand (list): Text of a hand split by stage ("\\n*** ").
 
     Returns:
-        dict: Dictionary of captured values.
+        dict: Dictionary mapping column names to captured values,
+            each value being a single-element list.
     """
     row: dict[str, Any] = {}
     row["Modality"] = r.get_modality(splitted_hand)
@@ -26,13 +28,15 @@ def capture_common_data(splitted_hand: list[str]) -> dict[str, Any]:
 
 def capture_general_data_of_the_hand(splitted_hand: list[str]) -> dict[str, Any]:
     """
-    Captures the general data of the hand
+    Capture the data that describes the hand as a whole
+    (IDs, time, level, blinds, board cards, etc.), regardless of player.
 
     Args:
-        hand (list): List of texts from a specific hand.
+        splitted_hand (list): Text of a hand split by stage ("\\n*** ").
 
     Returns:
-        dict: Dictionary of captured values.
+        dict: Dictionary mapping column names to captured values,
+            each value being a single-element list.
     """
     row: dict[str, Any] = {}
     row["HandID"] = r.get_hand_id(splitted_hand)
@@ -54,14 +58,16 @@ def capture_specific_data_of_the_player(
     splitted_hand: list[str], player: str
 ) -> dict[str, Any]:
     """
-    Captures the specific data of a player
+    Capture the data specific to one player in the hand
+    (seat, position, stack, actions per stage, showdown and results).
 
     Args:
-        hand (list): List of texts from a specific hand.
+        splitted_hand (list): Text of a hand split by stage ("\\n*** ").
         player (str): Name of the player.
 
     Returns:
-        dict: Dictionary of captured values.
+        dict: Dictionary mapping column names to captured values,
+            each value being a single-element list.
     """
     row: dict[str, Any] = {}
     row["Player"] = [player]

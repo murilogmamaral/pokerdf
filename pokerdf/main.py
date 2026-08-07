@@ -51,7 +51,7 @@ def main() -> None:
         # Generate session ID
         session_id = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-        # Generate destionation path
+        # Generate destination path
         destination_path = f"./output/{session_id}"
 
         # Create folder

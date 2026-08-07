@@ -17,13 +17,16 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 
 def get_files_paths(path: str) -> List[str]:
     """
-    Retrieve the paths of relevant files in the specified directory.
+    Retrieve the paths of the hand history files in the specified directory.
+
+    Only files following the PokerStars naming convention are kept,
+    i.e. names starting with "HH" and ending with ".txt".
 
     Args:
         path (str): The directory path to search for files.
 
     Returns:
-        List[str]: A list of file paths that match the criteria.
+        List[str]: Sorted list of full paths of the hand history files.
     """
     # Get files names
     list_of_all_files_names = os.listdir(path)
@@ -46,10 +49,13 @@ def get_files_paths(path: str) -> List[str]:
 
 def compose_dataframe() -> pd.DataFrame:
     """
-    Create an empty DataFrame with predefined columns to hold poker data.
+    Create an empty DataFrame with predefined columns and dtypes to hold poker data.
+
+    This is the single source of truth for the output schema: every converted
+    hand is concatenated onto this frame, keeping column order and types stable.
 
     Returns:
-        pd.DataFrame: An empty DataFrame with predefined columns.
+        pd.DataFrame: An empty DataFrame with predefined columns and dtypes.
     """
     # Compose default dataframe
     df = pd.DataFrame(
@@ -100,6 +106,10 @@ def apply_regex(txt: str) -> pd.DataFrame:
     """
     Apply regex functions to parse the hand history text and collect relevant data.
 
+    Each hand is parsed at three levels: tournament-wide data, hand-wide data
+    and player-specific data. The output has one row per player per hand, and
+    every row is validated with pydantic before being appended.
+
     Args:
         txt (str): The text content of the poker hand history file.
 
@@ -109,10 +119,10 @@ def apply_regex(txt: str) -> pd.DataFrame:
     # Generate dataframe
     df = compose_dataframe()
 
-    # Spliting tournament's hands in a list
+    # Splitting tournament's hands in a list
     list_of_hands_as_text = txt.split(f"{PLATFORM} ")
 
-    # Cleaning list_of_hands_as_text
+    # Cleaning list_of_hands_as_text (BOM marker, None and empty entries)
     string_to_remove = "\ufeff"
     if string_to_remove in list_of_hands_as_text:
         list_of_hands_as_text.remove(string_to_remove)
@@ -158,6 +168,9 @@ def convert_txt_to_tabular_data(path: str) -> pd.DataFrame:
     """
     Convert a poker hand history text file into a structured DataFrame.
 
+    This is the entry point for building incremental pipelines: it converts a
+    single hand history file, with one row per player per hand.
+
     Args:
         path (str): The path to the .txt file containing the hand history.
 
@@ -173,12 +186,12 @@ def convert_txt_to_tabular_data(path: str) -> pd.DataFrame:
 
 def _save_log(msg: str, destination: str, file_name: str) -> None:
     """
-    Save a log message to a file.
+    Append a log message to a file, creating the file if it does not exist.
 
     Args:
         msg (str): The message to be logged.
         destination (str): The folder where the log file will be saved.
-        file_name (str): The name of the log file.
+        file_name (str): The name of the log file (for example, "success.txt").
     """
     # Compose path of the log
     path = os.path.join(destination, file_name)
@@ -195,9 +208,9 @@ def _save_log(msg: str, destination: str, file_name: str) -> None:
 
 class DataProcessing:
     """
-    Process and save a poker hand history file, logging the result.
+    Process one poker hand history file and save it as .parquet, logging the result.
 
-    Args:
+    Attributes:
         path (str): The path to the hand history file.
         destination (str): The directory where the processed data will be saved.
     """
@@ -209,6 +222,11 @@ class DataProcessing:
     def run(self) -> None:
         """
         Trigger the data processing.
+
+        Converts the file to a DataFrame and saves it as
+        "{DATE_OF_TOURNAMENT}-T{TOURNAMENT_ID}.parquet" in the destination
+        folder. Successes are appended to success.txt and failures to
+        fail.txt (with the error message); a failure never raises.
         """
         try:
 
@@ -241,13 +259,16 @@ class DataProcessing:
 
 def execute_in_parallel(source: str, destination: str) -> None:
     """
-    Function to run the DataProcessing with multiple cores
-    """
+    Convert all hand history files of a folder in parallel, using all CPU cores.
 
+    Args:
+        source (str): Directory containing the hand history .txt files.
+        destination (str): Directory where the .parquet files and logs are saved.
+    """
     # Get all paths
     all_paths = get_files_paths(source)
 
-    # Run a DataProcessing in parallel.
+    # Run a DataProcessing per file in parallel
     Parallel(n_jobs=-1)(
         delayed(DataProcessing(path, destination).run)() for path in all_paths
     )
