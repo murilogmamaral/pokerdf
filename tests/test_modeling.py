@@ -93,11 +93,16 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
     assert list(fact.columns) == [
         "TournID",
         "HandID",
-        "Player",
+        "ActionOrder",
         "Round",
         "ActionIndex",
+        "Player",
+        "Seat",
+        "Position",
         "Action",
         "Value",
+        "AddedValue",
+        "TotalValue",
         "BoardC1",
         "BoardC2",
         "BoardC3",
@@ -127,6 +132,59 @@ def test_fact_explodes_single_action(fact: pd.DataFrame) -> None:
     assert rows["Value"].isna().all()
 
 
+def test_fact_carries_seat_and_position(fact: pd.DataFrame) -> None:
+    # Hand 11111: garciamurilo was the small blind on seat 2
+    row = fact[(fact["HandID"] == 11111) & (fact["Player"] == "garciamurilo")].iloc[0]
+    assert row["Seat"] == 2
+    assert row["Position"] == "small blind"
+    # VillainA was the button on seat 1
+    row = fact[(fact["HandID"] == 11111) & (fact["Player"] == "VillainA")].iloc[0]
+    assert row["Seat"] == 1
+    assert row["Position"] == "button"
+
+
+def test_fact_orders_preflop_from_the_seat_after_the_big_blind(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 11111: VillainB (seat 3) is the big blind, so VillainA (seat 1)
+    # acts first and garciamurilo (seat 2) is next, as in the original log
+    rows = fact[fact["HandID"] == 11111]
+    assert rows[["ActionOrder", "Player", "Action"]].values.tolist() == [
+        [1, "VillainA", "folds"],
+        [2, "garciamurilo", "folds"],
+    ]
+
+
+def test_fact_orders_postflop_from_the_seat_after_the_button(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269857629 flop: VillainA (small blind) bets, garciamurilo
+    # (big blind) raises, and VillainA folds, exactly as in the log
+    rows = fact[(fact["HandID"] == 219269857629) & (fact["Round"] == "flop")]
+    assert rows[["Player", "Action", "ActionIndex"]].values.tolist() == [
+        ["VillainA", "bets", 1],
+        ["garciamurilo", "raises", 1],
+        ["VillainA", "folds", 2],
+    ]
+
+
+def test_fact_orders_heads_up_preflop_from_the_small_blind(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269883094 (heads-up): VillainB is button and small blind, and
+    # acts first preflop
+    rows = fact[(fact["HandID"] == 219269883094) & (fact["Round"] == "preflop")]
+    assert rows["Player"].tolist() == ["VillainB", "garciamurilo"]
+
+
+def test_fact_action_order_is_a_sequence_inside_each_hand(
+    fact: pd.DataFrame,
+) -> None:
+    sequences = fact.groupby(["TournID", "HandID"])["ActionOrder"]
+    assert (sequences.min() == 1).all()
+    assert (sequences.max() == sequences.count()).all()
+
+
 def test_fact_explodes_multiple_actions_in_the_same_round(
     fact: pd.DataFrame,
 ) -> None:
@@ -153,6 +211,89 @@ def test_fact_preserves_actions_across_rounds(fact: pd.DataFrame) -> None:
         ["turn", "checks"],
         ["river", "checks"],
     ]
+
+
+def test_fact_added_value_of_calls_is_the_amount_captured(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269903263 preflop (blinds 15/30): garciamurilo posts the small
+    # blind 15, calls 15 more (total 30), VillainB raises to 90, and
+    # garciamurilo calls 60 more (total 90)
+    rows = fact[
+        (fact["HandID"] == 219269903263)
+        & (fact["Player"] == "garciamurilo")
+        & (fact["Round"] == "preflop")
+    ]
+    assert rows[["Action", "Value", "AddedValue", "TotalValue"]].values.tolist() == [
+        ["calls", 15.0, 15.0, 30.0],
+        ["calls", 60.0, 60.0, 90.0],
+    ]
+
+
+def test_fact_added_value_of_raises_accounts_for_committed_chips(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269854149 preflop (blinds 10/20): VillainA posted the small
+    # blind 10 and "raises 40 to 60": the captured Value is the increase over
+    # the big blind (40), but the player pushed 50 chips to reach 60
+    row = fact[(fact["HandID"] == 219269854149) & (fact["Player"] == "VillainA")].iloc[
+        0
+    ]
+    assert row["Action"] == "raises"
+    assert row["Value"] == 40.0
+    assert row["AddedValue"] == 50.0
+    assert row["TotalValue"] == 60.0
+
+
+def test_fact_added_value_of_reraises(fact: pd.DataFrame) -> None:
+    # Hand 219269903263 preflop (blinds 15/30): VillainB posted the big blind
+    # 30 and "raises 60 to 90" over garciamurilo's call: pushed 60 to reach 90
+    row = fact[(fact["HandID"] == 219269903263) & (fact["Player"] == "VillainB")].iloc[
+        0
+    ]
+    assert row["Action"] == "raises"
+    assert row["Value"] == 60.0
+    assert row["AddedValue"] == 60.0
+    assert row["TotalValue"] == 90.0
+
+
+def test_fact_big_blind_check_keeps_the_blind_committed(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269857629 preflop (blinds 10/20): garciamurilo is the big blind
+    # and checks, adding nothing but keeping the 20 already committed
+    row = fact[
+        (fact["HandID"] == 219269857629)
+        & (fact["Player"] == "garciamurilo")
+        & (fact["Round"] == "preflop")
+    ].iloc[0]
+    assert row["Action"] == "checks"
+    assert pd.isna(row["Value"])
+    assert row["AddedValue"] == 0.0
+    assert row["TotalValue"] == 20.0
+
+
+def test_fact_bets_open_the_round_level(fact: pd.DataFrame) -> None:
+    # Hand 219269851097 flop: VillainB bets 80 with nothing committed yet
+    row = fact[
+        (fact["HandID"] == 219269851097)
+        & (fact["Player"] == "VillainB")
+        & (fact["Round"] == "flop")
+    ].iloc[0]
+    assert row["Action"] == "bets"
+    assert row["AddedValue"] == 80.0
+    assert row["TotalValue"] == 80.0
+
+
+def test_fact_amounts_are_consistent(fact: pd.DataFrame) -> None:
+    # The chips pushed by an action can never be negative, the round total
+    # can never be smaller than the pushed amount, and passive actions
+    # (checks and folds) never push chips
+    active = fact[fact["Action"].isin(["bets", "raises", "calls"])]
+    passive = fact[fact["Action"].isin(["checks", "folds"])]
+    assert (active["AddedValue"] >= 0).all()
+    assert (active["TotalValue"] >= active["AddedValue"]).all()
+    assert (passive["AddedValue"] == 0).all()
 
 
 BOARD_COLUMNS = ["BoardC1", "BoardC2", "BoardC3", "BoardC4", "BoardC5"]
@@ -255,11 +396,12 @@ def test_dim_player_summary_has_one_row_per_player_per_hand(
 def test_dim_player_summary_values(source_df: pd.DataFrame) -> None:
     dim = build_dim_player_summary(source_df)
     row = dim[(dim["HandID"] == 11111) & (dim["Player"] == "garciamurilo")].iloc[0]
-    assert row["Seat"] == 2
-    assert row["Position"] == "small blind"
     assert row["Stack"] == 500.0
     assert row["PostedBlind"] == 10.0
     assert row["Result"] == "folded"
+    # Seat and Position belong to the fact table now
+    assert "Seat" not in dim.columns
+    assert "Position" not in dim.columns
 
 
 def test_dim_player_summary_flattens_showdown_cards(
@@ -309,3 +451,41 @@ def test_build_star_schema_saves_the_five_tables(
         table = pd.read_parquet(tmp_path / f"{name}.parquet")
         assert len(table) == number_of_rows[name]
         assert len(table) > 0
+
+
+def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:
+    # A big blind all-in on the blind post has no action rows, but still
+    # anchors who acts first: the seat after the big blind opens the preflop
+    placeholder = [[("", "")]]
+    synthetic = pd.DataFrame(
+        {
+            "TournID": ["1"] * 4,
+            "HandID": ["100"] * 4,
+            "Player": ["sb", "bb", "utg", "btn"],
+            "Seat": [1, 2, 4, 9],
+            "Position": ["small blind", "big blind", None, "button"],
+            "PostedBlind": [10.0, 20.0, None, None],
+            "Blinds": [[10.0, 20.0]] * 4,
+            "PreflopAction": [
+                [("folds", "")],
+                placeholder[0],
+                [("calls", "20")],
+                [("folds", "")],
+            ],
+            "FlopAction": [placeholder[0]] * 4,
+            "TurnAction": [placeholder[0]] * 4,
+            "RiverAction": [placeholder[0]] * 4,
+            "BoardFlop": [[]] * 4,
+            "BoardTurn": [[]] * 4,
+            "BoardRiver": [[]] * 4,
+        }
+    )
+
+    fact = build_fact_player_actions(synthetic)
+
+    # utg (seat 4, right after the big blind) acts first, then the button
+    # (seat 9) and the small blind (seat 1); the big blind never acted
+    assert fact["Player"].tolist() == ["utg", "btn", "sb"]
+    assert fact["ActionOrder"].tolist() == [1, 2, 3]
+    # And the caller matches the big blind level
+    assert fact[fact["Player"] == "utg"].iloc[0]["TotalValue"] == 20.0

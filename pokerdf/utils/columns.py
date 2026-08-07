@@ -77,9 +77,12 @@ class ModelColumn(StrEnum):
     SHOW_DOWN_C2 = "ShowDownC2"
     POKER_HAND = "PokerHand"
     ROUND = "Round"
+    ACTION_ORDER = "ActionOrder"
     ACTION_INDEX = "ActionIndex"
     ACTION = "Action"
     VALUE = "Value"
+    ADDED_VALUE = "AddedValue"
+    TOTAL_VALUE = "TotalValue"
 
 
 class Round(StrEnum):

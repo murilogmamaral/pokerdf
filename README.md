@@ -65,7 +65,7 @@ You can generate these five tables automatically with the `modeling` command, po
 ```
 pokerdf modeling /path/to/parquet/files
 ```
-The command concatenates all files and saves the five tables as _.parquet_ inside `./modeling/{SESSION_ID}/`. In `fact_player_actions`, the hierarchical action columns of the converted data are exploded so that each row represents one single action of a player, with `ActionIndex` preserving the order of the actions within each round.
+The command concatenates all files and saves the five tables as _.parquet_ inside `./modeling/{SESSION_ID}/`. In `fact_player_actions`, the hierarchical action columns of the converted data are exploded so that each row represents one single action of a player, sorted exactly as the hand unfolded: rounds in chronological order, starting from the first seat to act (the seat after the big blind on preflop, the seat after the button postflop). Each row carries the seat and position of the player, the board visible at the moment of the action, and two reconstructed amounts: `AddedValue`, the chips actually pushed by the action, and `TotalValue`, the total committed by the player in that round (the raw `Value` captured from the logs is kept, but note that in raises it is the increase over the previous bet, not the chips pushed).
 
 
 ## Installation
