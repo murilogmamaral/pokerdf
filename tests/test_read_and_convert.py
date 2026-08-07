@@ -177,13 +177,17 @@ def test_apply_regex_captures_the_pot_decomposition(ko_tournament_text: str) -> 
 def test_apply_regex_captures_satellite_finishes(
     satellite_tournament_text: str,
 ) -> None:
-    df = apply_regex(satellite_tournament_text).set_index("Player")
-    assert df.loc["garciamurilo", "FinalRank"] == 1
+    df = apply_regex(satellite_tournament_text)
+    final = df[df["HandID"] == "33333"].set_index("Player")
+    assert final.loc["garciamurilo", "FinalRank"] == 1
     # The ticket face value is the prize (as text; coerced downstream)
-    assert df.loc["garciamurilo", "Prize"] == "1"
-    assert df.loc["VillainB", "FinalRank"] == 2
+    assert final.loc["garciamurilo", "Prize"] == "1"
+    assert final.loc["VillainB", "FinalRank"] == 2
     # VillainC finished without a reported place
-    assert df.loc["VillainC", "FinalRank"] == 0
+    assert final.loc["VillainC", "FinalRank"] == 0
+    # Elimination with no SHOW DOWN section (all-in blind post, all fold)
+    no_showdown = df[df["HandID"] == "33332"].set_index("Player")
+    assert no_showdown.loc["VillainF", "FinalRank"] == 4
 
 
 # ---------------------------------------------------------------------------

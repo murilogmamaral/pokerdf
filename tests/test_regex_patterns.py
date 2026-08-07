@@ -376,6 +376,33 @@ def test_get_final_rank_placed_finishes_take_precedence(
     assert r.get_final_rank("garciamurilo", satellite_final_hand) == [1]
 
 
+def test_get_final_rank_without_a_showdown(
+    no_showdown_elimination_hand: list[str],
+) -> None:
+    # A player all-in on the blind post is eliminated when everyone folds,
+    # so the finish line appears in a hand with no SHOW DOWN section
+    assert r.get_final_rank("VillainF", no_showdown_elimination_hand) == [4]
+    assert r.get_final_rank("VillainE", no_showdown_elimination_hand) == [-1]
+
+
+def test_get_final_rank_and_prize_of_a_win_without_a_showdown() -> None:
+    # Synthetic hand: the tournament ends with a fold, so the win and the
+    # prize are reported without a SHOW DOWN section
+    hand = [
+        "Hand #1: Tournament #2, ...",
+        "HOLE CARDS ***\n"
+        "VillainA: folds \n"
+        "garciamurilo collected 40 from pot\n"
+        "VillainA finished the tournament in 2nd place\n"
+        "garciamurilo wins the tournament and receives $0.50 - congratulations!",
+        "SUMMARY ***\nTotal pot 40 | Rake 0 ",
+    ]
+    assert r.get_final_rank("garciamurilo", hand) == [1]
+    assert r.get_final_rank("VillainA", hand) == [2]
+    expected: list[Any] = ["0.50"]
+    assert r.get_prize("garciamurilo", hand) == expected
+
+
 def test_get_prize_of_tournament_winner(final_hand: list[str]) -> None:
     # The value is captured as text; pydantic coerces it to float downstream
     expected: list[Any] = ["6.00"]

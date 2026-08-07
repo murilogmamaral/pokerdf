@@ -961,6 +961,10 @@ class RegexPatterns:
         """
         Get final rank of the player in the tournament, if defined in the hand.
 
+        The finish lines usually follow the showdown, but a hand can end
+        without one (for example, a player all-in on the blind post when
+        everyone folds), so the whole hand is searched.
+
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
@@ -972,59 +976,45 @@ class RegexPatterns:
                 place (for example, club knockout tournaments), and [-1] when the
                 rank is not defined in the hand.
         """
-        # Filter content from SHOW_DOWN
-        hand = [x for x in hand if "SHOW DOWN ***" in x]
+        # The finish can be reported at any stage, so search the whole hand
+        target = "\n".join(hand)
 
-        if hand != []:
+        # Pattern to extract
+        regex = rf"{player} finished the tournament in (\d+).*"
 
-            # Pattern to extract
-            regex = rf"{player} finished the tournament in (\d+).*"
+        # Apply regex
+        list_of_results = re.findall(regex, target)
 
-            # Get the first SHOW_DOWN content of a played hand
-            target = hand[0]
+        # Normalize
+        list_of_int = [
+            int(x) if x.replace(".", "").isdigit() else -1 for x in list_of_results
+        ]
 
-            # Apply regex
-            list_of_results = re.findall(regex, target)
+        # Get the maximum value and return in a list
+        if list_of_int != []:
+            return [max(list_of_int)]
 
-            # Normalize
-            list_of_int = [
-                int(x) if x.replace(".", "").isdigit() else -1 for x in list_of_results
-            ]
+        # Try another pattern: position 1, if wins
+        regex = rf"{player} wins the tournament"
+        if re.findall(regex, target) != []:
+            return [1]
 
-            # Try another pattern, if nothing is found
-            if list_of_int == []:
+        # Some logs report the finish without a place (for example, club
+        # knockout tournaments): 0 marks "finished, place not reported",
+        # keeping -1 for "not defined in the hand"
+        regex = rf"{player} finished the tournament\s*$"
+        if re.findall(regex, target, flags=re.MULTILINE) != []:
+            return [0]
 
-                # Pattern to extract
-                regex = rf"{player} (wins) the tournament"
-
-                # Apply regex again
-                result_of_regex = re.findall(regex, target)
-
-                # Position 1, if wins
-                if result_of_regex == ["wins"]:
-                    return [1]
-
-                # Some logs report the finish without a place (for example,
-                # club knockout tournaments): 0 marks "finished, place not
-                # reported", keeping -1 for "not defined in the hand"
-                regex = rf"{player} finished the tournament\s*$"
-                if re.findall(regex, target, flags=re.MULTILINE) != []:
-                    return [0]
-
-                return [-1]
-            else:
-                # Get the maximum value and return in a list
-                result = [max(list_of_int)]
-
-                return result
-
-        # If no SHOW_DOWN content is found, return -1
-        else:
-            return [-1]
+        return [-1]
 
     def get_prize(self, player: str, hand: list[str]) -> list[float] | list[None]:
         """
         Get prize received by the player, if awarded in the hand.
+
+        The prize lines usually follow the showdown, but a hand can end
+        without one (for example, when the runner-up folds an all-in blind
+        post), so the whole hand is searched.
 
         Args:
             player (str): Name of the player.
@@ -1037,31 +1027,25 @@ class RegexPatterns:
                 are captured through the face value in the ticket name
                 (for example, "wins a 'Fast Track $1' ticket" -> ['1']).
         """
-        # Filter content from SHOW_DOWN
-        hand = [x for x in hand if "SHOW DOWN ***" in x]
+        # The prize can be awarded at any stage, so search the whole hand
+        target = "\n".join(hand)
 
-        if hand != []:
+        # Pattern to extract
+        regex = (
+            rf"{player} .* (?:and receives|and received) (?:[$€£]?)\s*(\d+(?:\.\d+)?)"
+        )
 
-            # Pattern to extract
-            regex = rf"{player} .* (?:and receives|and received) (?:[$€£]?)\s*(\d+(?:\.\d+)?)"
+        # Apply regex
+        final_result = re.findall(regex, target)[:1]
 
-            # Get the first SHOW_DOWN content of a played hand
-            target = hand[0]
+        # Satellite tickets are not cash prizes: the face value in the
+        # ticket name is captured instead
+        if final_result == []:
+            regex_ticket = rf"{player} wins a '[^']*\$(\d+(?:\.\d+)?)[^']*' ticket"
+            final_result = re.findall(regex_ticket, target)[:1]
 
-            # Apply regex
-            final_result = re.findall(regex, target)[:1]
-
-            # Satellite tickets are not cash prizes: the face value in the
-            # ticket name is captured instead
-            if final_result == []:
-                regex_ticket = rf"{player} wins a '[^']*\$(\d+(?:\.\d+)?)[^']*' ticket"
-                final_result = re.findall(regex_ticket, target)[:1]
-
-            # Normalize output
-            if final_result == []:
-                return [None]
-            else:
-                return final_result
-
-        else:
+        # Normalize output
+        if final_result == []:
             return [None]
+
+        return final_result
