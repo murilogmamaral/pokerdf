@@ -42,6 +42,11 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["pokerdf"]
 
+[tool.hatch.build.targets.sdist]
+# Ship only what is needed to build and install the package: keeps test
+# fixtures (hand histories) and images out of the PyPI source distribution
+include = ["pokerdf", "README.md", "LICENSE", "pyproject.toml"]
+
 [tool.flake8]
 max-line-length = 120
 extend-ignore = ["E203", "W503"]
