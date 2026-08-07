@@ -61,6 +61,12 @@ For advanced analytics, you will need to transform the data generated with the p
 
 ![data-modeling](https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/data-modeling.svg)
 
+You can generate these five tables automatically with the `modeling` command, pointing to a folder of _.parquet_ files produced by the `convert` command:
+```
+pokerdf modeling /path/to/parquet/files
+```
+The command concatenates all files and saves the five tables as _.parquet_ inside `./modeling/{SESSION_ID}/`. In `fact_player_actions`, the hierarchical action columns of the converted data are exploded so that each row represents one single action of a player, with `ActionIndex` preserving the order of the actions within each round.
+
 
 ## Installation
 ```

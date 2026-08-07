@@ -1,0 +1,272 @@
+"""Unit tests for the star schema modeling functions.
+
+The input of the modeling functions is produced by converting the real hand
+history fixture and saving it as .parquet, exactly like the convert command
+does, so the whole pipeline convert -> parquet -> star schema is exercised.
+"""
+
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+from pokerdf.core.read_and_convert import convert_txt_to_tabular_data
+from pokerdf.modeling.star_schema import (
+    _roman_to_int,
+    build_dim_final_rank,
+    build_dim_hand_summary,
+    build_dim_player_summary,
+    build_dim_tourn_summary,
+    build_fact_player_actions,
+    build_star_schema,
+    load_converted_data,
+)
+
+FIXTURE_PATH = (
+    Path(__file__).parent
+    / "input"
+    / "HH20250516 T99999 No Limit Hold_em US$ 1,84 + US$ 0,16.txt"
+)
+
+
+@pytest.fixture(scope="module")
+def converted_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Directory with the fixture converted to .parquet, like convert does."""
+    df = convert_txt_to_tabular_data(str(FIXTURE_PATH)).reset_index(drop=True)
+    folder = tmp_path_factory.mktemp("converted")
+    df.to_parquet(folder / "20201011-T99999.parquet", index=False)
+    return folder
+
+
+@pytest.fixture(scope="module")
+def source_df(converted_dir: Path) -> pd.DataFrame:
+    return load_converted_data(str(converted_dir))
+
+
+@pytest.fixture(scope="module")
+def fact(source_df: pd.DataFrame) -> pd.DataFrame:
+    return build_fact_player_actions(source_df)
+
+
+# ---------------------------------------------------------------------------
+# _roman_to_int
+# ---------------------------------------------------------------------------
+def test_roman_to_int_converts_roman_numerals() -> None:
+    assert _roman_to_int("I") == 1
+    assert _roman_to_int("IV") == 4
+    assert _roman_to_int("IX") == 9
+    assert _roman_to_int("XIV") == 14
+    assert _roman_to_int("XXIX") == 29
+    assert _roman_to_int("XL") == 40
+
+
+def test_roman_to_int_accepts_numeric_strings() -> None:
+    assert _roman_to_int("5") == 5
+
+
+def test_roman_to_int_returns_none_for_invalid_values() -> None:
+    assert _roman_to_int(None) is None
+    assert _roman_to_int("??") is None
+
+
+# ---------------------------------------------------------------------------
+# load_converted_data
+# ---------------------------------------------------------------------------
+def test_load_converted_data_loads_all_rows(
+    converted_dir: Path, source_df: pd.DataFrame
+) -> None:
+    df_expected = pd.read_parquet(converted_dir / "20201011-T99999.parquet")
+    assert len(source_df) == len(df_expected)
+
+
+def test_load_converted_data_casts_prize_to_float(source_df: pd.DataFrame) -> None:
+    # Prize is captured as text by the converter; the unified schema loads it
+    # as float64 so all files can be concatenated
+    assert source_df["Prize"].dtype == "float64"
+    assert source_df["Prize"].max() == 6.0
+
+
+# ---------------------------------------------------------------------------
+# fact_player_actions
+# ---------------------------------------------------------------------------
+def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
+    assert list(fact.columns) == [
+        "TournID",
+        "HandID",
+        "Player",
+        "Round",
+        "ActionIndex",
+        "Action",
+        "Value",
+    ]
+    assert set(fact["Round"]) <= {"preflop", "flop", "turn", "river"}
+    assert fact["TournID"].dtype == "int64"
+    assert fact["HandID"].dtype == "int64"
+
+
+def test_fact_each_row_is_one_action(fact: pd.DataFrame) -> None:
+    # The grain is one action: the composite key must be unique and there can
+    # be no placeholder rows of rounds in which the player did not act
+    keys = ["TournID", "HandID", "Player", "Round", "ActionIndex"]
+    assert not fact.duplicated(subset=keys).any()
+    assert (fact["Action"] != "").all()
+    assert fact["Action"].notna().all()
+
+
+def test_fact_explodes_single_action(fact: pd.DataFrame) -> None:
+    # Hand 11111: garciamurilo only folds preflop
+    rows = fact[(fact["HandID"] == 11111) & (fact["Player"] == "garciamurilo")]
+    assert rows[["Round", "ActionIndex", "Action"]].values.tolist() == [
+        ["preflop", 1, "folds"]
+    ]
+    assert rows["Value"].isna().all()
+
+
+def test_fact_explodes_multiple_actions_in_the_same_round(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269903263: garciamurilo calls 15, VillainB raises, and then
+    # garciamurilo calls 60 more, all during preflop
+    rows = fact[
+        (fact["HandID"] == 219269903263)
+        & (fact["Player"] == "garciamurilo")
+        & (fact["Round"] == "preflop")
+    ]
+    assert rows[["ActionIndex", "Action", "Value"]].values.tolist() == [
+        [1, "calls", 15.0],
+        [2, "calls", 60.0],
+    ]
+
+
+def test_fact_preserves_actions_across_rounds(fact: pd.DataFrame) -> None:
+    # Hand 219269866589: garciamurilo calls preflop and checks on the flop,
+    # the turn and the river, all the way to the showdown
+    rows = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "garciamurilo")]
+    assert rows[["Round", "Action"]].values.tolist() == [
+        ["preflop", "calls"],
+        ["flop", "checks"],
+        ["turn", "checks"],
+        ["river", "checks"],
+    ]
+
+
+# ---------------------------------------------------------------------------
+# dim_tourn_summary
+# ---------------------------------------------------------------------------
+def test_dim_tourn_summary(source_df: pd.DataFrame) -> None:
+    dim = build_dim_tourn_summary(source_df)
+    assert len(dim) == 1
+    row = dim.iloc[0]
+    assert row["TournID"] == 99999
+    assert row["LocalStartTime"] == pd.Timestamp("2020-10-11 03:22:15")
+    assert row["Modality"] == "USD Hold'em No Limit"
+    assert row["TableSize"] == 3
+    assert row["BuyIn"] == "$1.84+$0.16"
+    assert row["Owner"] == "garciamurilo"
+
+
+# ---------------------------------------------------------------------------
+# dim_hand_summary
+# ---------------------------------------------------------------------------
+def test_dim_hand_summary_has_one_row_per_hand(
+    source_df: pd.DataFrame, tournament_text: str
+) -> None:
+    dim = build_dim_hand_summary(source_df)
+    assert len(dim) == tournament_text.count("PokerStars Hand #")
+    assert not dim.duplicated(subset=["TournID", "HandID"]).any()
+
+
+def test_dim_hand_summary_flattens_blinds_and_owner_cards(
+    source_df: pd.DataFrame,
+) -> None:
+    dim = build_dim_hand_summary(source_df)
+    row = dim[dim["HandID"] == 11111].iloc[0]
+    assert row["Level"] == 1
+    assert row["Playing"] == 3
+    assert row["SmallBlind"] == 10.0
+    assert row["BigBlind"] == 20.0
+    assert row["OwnerC1"] == "3s"
+    assert row["OwnerC2"] == "Jh"
+    # No flop in this hand: the board columns stay empty
+    assert row[["BoardC1", "BoardC2", "BoardC3", "BoardC4", "BoardC5"]].isna().all()
+
+
+def test_dim_hand_summary_uses_the_most_complete_board(
+    source_df: pd.DataFrame,
+) -> None:
+    dim = build_dim_hand_summary(source_df)
+    # Hand 219269911437 went to the river with board [Ts 6s Jd 6h 9h]
+    row = dim[dim["HandID"] == 219269911437].iloc[0]
+    board = row[["BoardC1", "BoardC2", "BoardC3", "BoardC4", "BoardC5"]]
+    assert board.tolist() == ["Ts", "6s", "Jd", "6h", "9h"]
+    assert row["Level"] == 2
+
+
+# ---------------------------------------------------------------------------
+# dim_player_summary
+# ---------------------------------------------------------------------------
+def test_dim_player_summary_has_one_row_per_player_per_hand(
+    source_df: pd.DataFrame,
+) -> None:
+    dim = build_dim_player_summary(source_df)
+    assert len(dim) == len(source_df)
+    assert not dim.duplicated(subset=["TournID", "HandID", "Player"]).any()
+
+
+def test_dim_player_summary_values(source_df: pd.DataFrame) -> None:
+    dim = build_dim_player_summary(source_df)
+    row = dim[(dim["HandID"] == 11111) & (dim["Player"] == "garciamurilo")].iloc[0]
+    assert row["Seat"] == 2
+    assert row["Position"] == "small blind"
+    assert row["Stack"] == 500.0
+    assert row["PostedBlind"] == 10.0
+    assert row["Result"] == "folded"
+
+
+def test_dim_player_summary_flattens_showdown_cards(
+    source_df: pd.DataFrame,
+) -> None:
+    dim = build_dim_player_summary(source_df)
+    row = dim[(dim["HandID"] == 219269866589) & (dim["Player"] == "garciamurilo")].iloc[
+        0
+    ]
+    assert row["ShowDownC1"] == "8h"
+    assert row["ShowDownC2"] == "Kh"
+    assert row["PokerHand"] == "a pair of Jacks"
+    assert row["Balance"] == 40.0
+
+
+# ---------------------------------------------------------------------------
+# dim_final_rank
+# ---------------------------------------------------------------------------
+def test_dim_final_rank(source_df: pd.DataFrame) -> None:
+    dim = build_dim_final_rank(source_df)
+    assert len(dim) == 3
+    ranks = dim.set_index("Player")
+    assert ranks.loc["garciamurilo", "FinalRank"] == 1
+    assert ranks.loc["garciamurilo", "Prize"] == 6.0
+    assert ranks.loc["VillainB", "FinalRank"] == 2
+    assert ranks.loc["VillainA", "FinalRank"] == 3
+    assert pd.isna(ranks.loc["VillainA", "Prize"])
+
+
+# ---------------------------------------------------------------------------
+# build_star_schema
+# ---------------------------------------------------------------------------
+def test_build_star_schema_saves_the_five_tables(
+    converted_dir: Path, tmp_path: Path
+) -> None:
+    number_of_rows = build_star_schema(str(converted_dir), str(tmp_path))
+
+    expected_tables = [
+        "fact_player_actions",
+        "dim_tourn_summary",
+        "dim_hand_summary",
+        "dim_player_summary",
+        "dim_final_rank",
+    ]
+    assert list(number_of_rows.keys()) == expected_tables
+    for name in expected_tables:
+        table = pd.read_parquet(tmp_path / f"{name}.parquet")
+        assert len(table) == number_of_rows[name]
+        assert len(table) > 0
