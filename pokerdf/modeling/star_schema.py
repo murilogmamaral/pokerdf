@@ -198,12 +198,12 @@ def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, HandID, Player, Stack, PostedAnte,
-            PostedBlind, Result, Balance, ShowDownC1, ShowDownC2 and
-            PokerHand (the cards revealed by the player at showdown, also
-            for the losers — valuable for range studies). Seat and Position
-            belong to the fact table, where they define who acts first in
-            each round.
+        pd.DataFrame: Columns TournID, HandID, Player, Result, Balance,
+            ShowDownC1, ShowDownC2 and PokerHand (the cards revealed by the
+            player at showdown, also for the losers — valuable for range
+            studies). Seat, Position, the dynamic Stack and the ante/blind
+            posts live in the fact table, as rows and columns of the events
+            of the hand.
     """
     # One row per player per hand
     players = df.drop_duplicates(
@@ -215,9 +215,6 @@ def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
             Column.TOURN_ID: players[Column.TOURN_ID].astype("int64"),
             Column.HAND_ID: players[Column.HAND_ID].astype("int64"),
             Column.PLAYER: players[Column.PLAYER],
-            Column.STACK: players[Column.STACK],
-            Column.POSTED_ANTE: players[Column.POSTED_ANTE],
-            Column.POSTED_BLIND: players[Column.POSTED_BLIND],
             Column.RESULT: players[Column.RESULT],
             Column.BALANCE: players[Column.BALANCE],
             ModelColumn.SHOW_DOWN_C1: [
@@ -264,26 +261,55 @@ def build_dim_final_rank(df: pd.DataFrame) -> pd.DataFrame:
     return dim
 
 
+def _blind_post_action(position: Any, posted: float, blinds: Any) -> str:
+    """
+    Name the blind post action of a player.
+
+    Args:
+        position (Any): Position of the player (button, small blind, big blind).
+        posted (float): Amount posted by the player.
+        blinds (Any): Nominal [small blind, big blind] of the hand.
+
+    Returns:
+        str: "posts small blind" or "posts big blind". In heads-up the button
+            is the small blind; without a position, the nominal values decide.
+    """
+    if position == "big blind":
+        return "posts big blind"
+    if position in ("small blind", "button"):
+        return "posts small blind"
+
+    return (
+        "posts big blind" if posted == _get_element(blinds, 1) else "posts small blind"
+    )
+
+
 def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Explode the hierarchical action columns into one row per action.
+    Explode the hierarchical action columns into one row per action, adding
+    one row per ante and blind post.
+
+    The posts are events of the hand like any other action: they carry the
+    real amount that left the player's stack (partial when all-in), and they
+    give a row to players that never acted voluntarily, like a big blind
+    that wins a walk or goes all-in on the post.
 
     Args:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: One row per action, with the keys, seat, position,
-            posted blind, big blind amount, round, action, value, action index
-            and the board of each round still attached.
+        pd.DataFrame: One row per post or action, with the keys, the context
+            of the hand and an internal _phase marker (0 antes, 1 blinds,
+            2 voluntary actions). ActionIndex is 0 for posts and restarts at
+            1 for each player/round of voluntary actions.
     """
     # One row per player per hand, with the four hierarchical action columns
-    # and the context needed downstream (seat, position, blinds, ante, the
+    # and the context needed downstream (seat, position, posts, stack, the
     # hand context that goes into the fact table, and the boards)
     context_columns = [
         Column.SEAT,
         Column.POSITION,
-        Column.POSTED_BLIND,
-        Column.POSTED_ANTE,
+        Column.STACK,
         Column.BLINDS,
         Column.TABLE_SIZE,
         Column.LEVEL,
@@ -303,18 +329,34 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
             Column.HAND_ID,
             Column.PLAYER,
             *context_columns,
+            Column.POSTED_ANTE,
+            Column.POSTED_BLIND,
             *ROUNDS.keys(),
         ],
     ]
 
-    # The bet level the preflop actually starts at: the largest blind posted
-    # in the hand. It is usually the nominal big blind, but a short-stacked
-    # big blind that goes all-in on the post lowers it (and the platform
-    # computes every "raises X to Y" of the hand on top of the posted value).
-    # Non-acting players matter here, so it is computed before the explosion
-    base["_effective_big_blind"] = base.groupby([Column.TOURN_ID, Column.HAND_ID])[
-        Column.POSTED_BLIND
-    ].transform("max")
+    # One row per ante posted, before any voluntary action
+    antes = base[base[Column.POSTED_ANTE].astype("float64").notna()].copy()
+    antes[ModelColumn.ROUND] = Round.PREFLOP
+    antes[ModelColumn.ACTION] = "posts ante"
+    antes[ModelColumn.VALUE] = antes[Column.POSTED_ANTE].astype("float64")
+    antes["_phase"] = 0
+
+    # One row per blind posted, after the antes: the small blind posts
+    # first, then the big blind (also in heads-up, where the button is the
+    # small blind)
+    blinds = base[base[Column.POSTED_BLIND].astype("float64").notna()].copy()
+    blinds[ModelColumn.ROUND] = Round.PREFLOP
+    blinds[ModelColumn.ACTION] = [
+        _blind_post_action(position, posted, nominal)
+        for position, posted, nominal in zip(
+            blinds[Column.POSITION],
+            blinds[Column.POSTED_BLIND],
+            blinds[Column.BLINDS],
+        )
+    ]
+    blinds[ModelColumn.VALUE] = blinds[Column.POSTED_BLIND].astype("float64")
+    blinds["_phase"] = (blinds[ModelColumn.ACTION] == "posts big blind").astype(int) + 1
 
     # Turn the four action columns into rows, one per round
     melted = base.melt(
@@ -323,7 +365,6 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
             Column.HAND_ID,
             Column.PLAYER,
             *context_columns,
-            "_effective_big_blind",
         ],
         value_vars=list(ROUNDS.keys()),
         var_name=ModelColumn.ROUND,
@@ -333,47 +374,60 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
 
     # Explode the list of [action, amount] pairs: one row per action taken,
     # preserving the order in which the actions happened within the round
-    fact = melted.explode("Pair", ignore_index=True)
+    actions = melted.explode("Pair", ignore_index=True)
 
     # Split each pair into the action and its amount
-    fact[ModelColumn.ACTION] = [_get_element(x, 0) for x in fact["Pair"]]
-    fact[ModelColumn.VALUE] = pd.to_numeric(
-        pd.Series([_get_element(x, 1) for x in fact["Pair"]]), errors="coerce"
+    actions[ModelColumn.ACTION] = [_get_element(x, 0) for x in actions["Pair"]]
+    actions[ModelColumn.VALUE] = pd.to_numeric(
+        pd.Series([_get_element(x, 1) for x in actions["Pair"]]), errors="coerce"
     )
+    actions = actions.drop(columns="Pair")
+    actions["_phase"] = 3
 
     # Discard placeholders of rounds in which the player did not act
-    fact = fact[fact[ModelColumn.ACTION].notna() & (fact[ModelColumn.ACTION] != "")]
+    actions = actions[
+        actions[ModelColumn.ACTION].notna() & (actions[ModelColumn.ACTION] != "")
+    ]
 
     # Order of the action within its player/round, following the exploded
     # order. In a betting round the action moves clockwise in orbits, so this
     # index also identifies the orbit in which the action happened
-    fact[ModelColumn.ACTION_INDEX] = (
-        fact.groupby(
+    actions[ModelColumn.ACTION_INDEX] = (
+        actions.groupby(
             [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER, ModelColumn.ROUND]
         ).cumcount()
         + 1
     )
+
+    # Posts come before the voluntary actions, with ActionIndex 0
+    posts = pd.concat([antes, blinds], ignore_index=True).drop(
+        columns=[Column.POSTED_ANTE, Column.POSTED_BLIND, *ROUNDS.keys()]
+    )
+    posts[ModelColumn.ACTION_INDEX] = 0
+
+    fact = pd.concat([posts, actions], ignore_index=True)
 
     return fact
 
 
 def _sort_chronologically(fact: pd.DataFrame, players: pd.DataFrame) -> pd.DataFrame:
     """
-    Sort the actions of each hand in the order in which they were taken.
+    Sort the events of each hand in the order in which they happened.
 
-    Inside a betting round the action moves clockwise in orbits: the round
-    starts on the seat after the big blind (preflop) or after the button
-    (postflop, which also covers heads-up), everyone acts once, and further
-    orbits happen when a bet or raise reopens the action. Sorting by round,
-    orbit (ActionIndex) and the rotation of the seats from the first seat to
-    act reproduces the exact sequence of the hand.
+    The posts open the hand in seat order from the small blind (antes first,
+    then the blinds). Inside a betting round the voluntary action moves
+    clockwise in orbits: the round starts on the seat after the big blind
+    (preflop) or after the button (postflop, which also covers heads-up),
+    everyone acts once, and further orbits happen when a bet or raise
+    reopens the action. Sorting by round, orbit (ActionIndex), phase and the
+    rotation of the seats reproduces the exact sequence of the hand.
 
     Args:
-        fact (pd.DataFrame): Exploded actions, one row per action.
+        fact (pd.DataFrame): Exploded posts and actions, one row per event.
         players (pd.DataFrame): One row per player per hand, with seat and
             position. This must include every player of the hand — a big
-            blind or button that goes all-in on the blind/ante has no action
-            rows, but still anchors the order of the others.
+            blind or button that goes all-in on the blind/ante has no
+            voluntary action, but still anchors the order of the others.
 
     Returns:
         pd.DataFrame: The same rows sorted chronologically, with ActionOrder
@@ -407,25 +461,31 @@ def _sort_chronologically(fact: pd.DataFrame, players: pd.DataFrame) -> pd.DataF
     fact["_button_seat"] = fact["_button_seat"].fillna(fact["_bb_seat"])
 
     # Rotation of the seats from the first seat to act: seats are 1 to 9, so
-    # the cyclic distance modulo 10 preserves the clockwise order of play
-    first_to_act = (
-        fact["_bb_seat"].where(
-            fact[ModelColumn.ROUND] == Round.PREFLOP, fact["_button_seat"]
-        )
-        + 1
+    # the cyclic distance modulo 10 preserves the clockwise order of play.
+    # The voluntary preflop starts after the big blind; postflop rounds
+    # start after the button
+    preflop_voluntary = (fact[ModelColumn.ROUND] == Round.PREFLOP) & (
+        fact["_phase"] == 3
     )
+    first_to_act = fact["_bb_seat"].where(preflop_voluntary, fact["_button_seat"]) + 1
     fact["_rotation"] = (fact[Column.SEAT] - first_to_act).mod(10)
 
-    # Chronological order: round, orbit, rotation inside the orbit
+    # Posts are ordered by phase (antes, then small blind, then big blind)
+    # and, among the antes, by plain seat order like the platform does
+    posts = fact["_phase"] < 3
+    fact.loc[posts, "_rotation"] = fact.loc[posts, Column.SEAT]
+
+    # Chronological order: round, orbit, phase (antes, blinds, actions),
+    # rotation inside the orbit
     round_order = {round_name: order for order, round_name in enumerate(Round)}
     fact = fact.assign(
         _round_order=fact[ModelColumn.ROUND].map(round_order)
     ).sort_values(
-        [*keys, "_round_order", ModelColumn.ACTION_INDEX, "_rotation"],
+        [*keys, "_round_order", ModelColumn.ACTION_INDEX, "_phase", "_rotation"],
         ignore_index=True,
     )
 
-    # Sequence of the action inside the hand
+    # Sequence of the event inside the hand
     fact[ModelColumn.ACTION_ORDER] = fact.groupby(keys).cumcount() + 1
 
     return fact.drop(columns=["_bb_seat", "_button_seat", "_rotation", "_round_order"])
@@ -433,170 +493,145 @@ def _sort_chronologically(fact: pd.DataFrame, players: pd.DataFrame) -> pd.DataF
 
 def _compute_bet_amounts(fact: pd.DataFrame) -> pd.DataFrame:
     """
-    Compute AddedValue and TotalValue for each action.
+    Compute AddedValue, TotalValue and the dynamic Stack for each event.
 
     The Value captured from the logs is ambiguous: "calls X" means X chips
     added, but "raises X to Y" means the bet was increased BY X, and the
     chips the player actually added depend on what was already committed.
-    The amounts are reconstructed by replaying each betting round with a
-    state machine that follows the arithmetic of the platform:
+    The amounts are reconstructed by replaying each hand with a state
+    machine that follows the arithmetic of the platform:
 
-    - The bet level of a round (amount to match) is the largest total
-      committed by any player so far. On preflop it starts at the effective
-      posted big blind (a short all-in big blind lowers it) and postflop at
-      zero.
-    - A player's committed amount starts at the posted blind on preflop and
-      at zero postflop.
-    - bets/raises reach the new level (TotalValue = level + X); calls add X
-      to the committed amount; checks and folds add nothing.
-    - Every TotalValue can push the level up. This also covers the short
-      all-in big blind: the first caller still pays the nominal big blind,
-      and that call becomes the new level for the raises that follow.
+    - The bet level of a round (amount to match) is the largest total bet
+      by any player so far. The blind posts build it on preflop — so a
+      short all-in big blind lowers it, exactly like the platform — and
+      postflop it starts at zero.
+    - Posts and calls add their amount to the player's total; bets/raises
+      reach the new level (level + X). Checks and folds add nothing.
+    - Every total can push the level up. This also covers the short all-in
+      big blind: the first caller still pays the nominal big blind, and
+      that call becomes the new level for the raises that follow.
     - AddedValue is the difference to the previously committed amount, i.e.
-      the chips the player actually pushed with the action.
-    - After the replay, the posted ante is added to the preflop TotalValue,
-      so the preflop total reflects everything the player put in during the
-      round: ante, blind and betting. The ante does not change AddedValue
-      nor the bet level (the platform arithmetic excludes it).
-
-    Uncalled bets returned at the end of the hand are not discounted.
+      the chips the player actually pushed with the event.
+    - TotalValue is everything the player put in during the round after the
+      event: on preflop it includes the posted ante and blind.
+    - Stack is the stack of the player right after the event: the starting
+      stack minus everything pushed so far in the hand. Uncalled bets
+      returned at the end of the hand are not discounted.
 
     Args:
-        fact (pd.DataFrame): Exploded actions sorted chronologically.
+        fact (pd.DataFrame): Exploded posts and actions sorted chronologically.
 
     Returns:
-        pd.DataFrame: The same rows with AddedValue and TotalValue attached.
+        pd.DataFrame: The same rows with AddedValue, TotalValue and the
+            dynamic Stack attached.
     """
-    # Initial bet level of the preflop: the effective posted big blind (a
-    # short all-in big blind lowers it), falling back to the nominal value
-    nominal_big_blind = pd.Series(
-        [_get_element(x, 1) for x in fact[Column.BLINDS]], index=fact.index
-    ).astype("float64")
-    effective_big_blind = fact["_effective_big_blind"].fillna(nominal_big_blind)
-
-    # Replay the rounds in chronological order (the rows already are)
+    # Replay the hands in chronological order (the rows already are)
     added_values: list[float] = []
     total_values: list[float] = []
     levels: dict[tuple[Any, ...], float] = {}
-    committed_amounts: dict[tuple[Any, ...], float] = {}
-    for tourn_id, hand_id, round_name, player, action, value, posted_blind, bb in zip(
+    betting: dict[tuple[Any, ...], float] = {}
+    antes: dict[tuple[Any, ...], float] = {}
+    for tourn_id, hand_id, round_name, player, action, value in zip(
         fact[Column.TOURN_ID],
         fact[Column.HAND_ID],
         fact[ModelColumn.ROUND],
         fact[Column.PLAYER],
         fact[ModelColumn.ACTION],
         fact[ModelColumn.VALUE],
-        fact[Column.POSTED_BLIND],
-        effective_big_blind,
     ):
-        is_preflop = round_name == Round.PREFLOP
         round_key = (tourn_id, hand_id, round_name)
         player_key = (tourn_id, hand_id, round_name, player)
+        ante_key = (tourn_id, hand_id, player)
 
-        # Current bet level of the round and committed amount of the player
-        if round_key not in levels:
-            levels[round_key] = float(bb) if is_preflop and pd.notna(bb) else 0.0
-        blind = float(posted_blind) if pd.notna(posted_blind) else 0.0
-        committed = committed_amounts.get(player_key, blind if is_preflop else 0.0)
+        # Current bet level of the round and amounts of the player
+        level = levels.get(round_key, 0.0)
+        committed = betting.get(player_key, 0.0)
+        ante = antes.get(ante_key, 0.0)
+        amount = float(value) if pd.notna(value) else float("nan")
 
-        # The arithmetic of each action type
-        if action in ("bets", "raises"):
-            total = (
-                levels[round_key] + float(value) if pd.notna(value) else float("nan")
-            )
-        elif action == "calls":
-            total = committed + float(value) if pd.notna(value) else float("nan")
+        # The arithmetic of each event type
+        if action == "posts ante":
+            ante += amount
+            total = committed
+        elif action in ("posts small blind", "posts big blind", "calls"):
+            total = committed + amount
+        elif action in ("bets", "raises"):
+            total = level + amount
         else:
             total = committed
 
         # Update the state of the round and of the player
         if pd.notna(total):
-            levels[round_key] = max(levels[round_key], total)
-            committed_amounts[player_key] = total
+            levels[round_key] = max(level, total)
+            betting[player_key] = total
+        if pd.notna(ante):
+            antes[ante_key] = ante
 
-        added_values.append(total - committed)
-        total_values.append(total)
+        # The chips pushed by the event and the round total of the player,
+        # which on preflop includes the posted ante
+        if action == "posts ante":
+            added_values.append(amount)
+        else:
+            added_values.append(total - committed)
+        in_round_ante = ante if round_name == Round.PREFLOP else 0.0
+        total_values.append(total + in_round_ante)
 
     fact[ModelColumn.ADDED_VALUE] = added_values
     fact[ModelColumn.TOTAL_VALUE] = total_values
 
-    # The ante is part of everything the player put in during the preflop
-    posted_ante = fact[Column.POSTED_ANTE].astype("float64").fillna(0.0)
-    is_preflop_row = fact[ModelColumn.ROUND] == Round.PREFLOP
-    fact[ModelColumn.TOTAL_VALUE] = fact[ModelColumn.TOTAL_VALUE] + posted_ante.where(
-        is_preflop_row, 0.0
-    )
+    # The stack right after each event: the starting stack minus everything
+    # the player pushed so far in the hand (posts included)
+    pushed = fact.groupby([Column.TOURN_ID, Column.HAND_ID, Column.PLAYER])[
+        ModelColumn.ADDED_VALUE
+    ].cumsum()
+    fact[Column.STACK] = fact[Column.STACK].astype("float64") - pushed
 
     return fact
 
 
-def _compute_total_pot(fact: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
+def _compute_total_pot(fact: pd.DataFrame) -> pd.DataFrame:
     """
-    Compute TotalPot: the total pot right after each action.
+    Compute TotalPot: the total pot right after each event.
 
-    The pot starts with everything posted before the first action — the
-    antes and blinds of every player of the hand, including players that
-    never acted (for example, all-in on the post) and partial posts of
-    short stacks — and grows with the chips pushed by each action
-    (AddedValue), following the chronological order of the rows.
-
-    Uncalled bets returned at the end of the hand are not discounted, so
-    after the last action TotalPot equals the "Total pot" reported by the
-    platform plus the returned amount, when there is one.
+    With the ante and blind posts materialized as rows, the pot is simply
+    everything pushed so far in the hand. Uncalled bets returned at the end
+    of the hand are not discounted, so after the last event TotalPot equals
+    the "Total pot" reported by the platform plus the returned amount, when
+    there is one.
 
     Args:
-        fact (pd.DataFrame): Actions sorted chronologically, with AddedValue.
-        df (pd.DataFrame): Converted data, used to sum the posts of every
-            player of each hand.
+        fact (pd.DataFrame): Events sorted chronologically, with AddedValue.
 
     Returns:
         pd.DataFrame: The same rows with TotalPot attached.
     """
-    keys = [Column.TOURN_ID, Column.HAND_ID]
+    fact[ModelColumn.TOTAL_POT] = fact.groupby([Column.TOURN_ID, Column.HAND_ID])[
+        ModelColumn.ADDED_VALUE
+    ].cumsum()
 
-    # Antes and blinds of every player, posted before any action
-    posts = df.drop_duplicates(subset=[*keys, Column.PLAYER])
-    initial_pot = (
-        (
-            posts[Column.POSTED_ANTE].astype("float64").fillna(0.0)
-            + posts[Column.POSTED_BLIND].astype("float64").fillna(0.0)
-        )
-        .groupby([posts[key] for key in keys])
-        .sum()
-        .reset_index(name="_initial_pot")
-    )
-
-    # The pot after each action accumulates the chips pushed so far
-    fact = fact.merge(initial_pot, on=keys, how="left")
-    fact[ModelColumn.TOTAL_POT] = (
-        fact["_initial_pot"].fillna(0.0)
-        + fact.groupby(keys)[ModelColumn.ADDED_VALUE].cumsum()
-    )
-
-    return fact.drop(columns="_initial_pot")
+    return fact
 
 
 def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Build the fact table, with one row per action taken by a player in a hand.
+    Build the fact table, with one row per event of a player in a hand.
 
-    The hierarchical action columns (PreflopAction, FlopAction, TurnAction and
-    RiverAction) hold a list of [action, amount] pairs per player per round.
-    They are exploded so that each row of the fact represents one single
-    action, then sorted exactly as the hand unfolded: rounds in chronological
-    order, starting from the first seat to act (the seat after the big blind
-    on preflop, the seat after the button postflop).
+    The ante and blind posts are materialized as rows ("posts ante",
+    "posts small blind", "posts big blind", with the real — possibly
+    partial — amounts), followed by the voluntary actions exploded from the
+    hierarchical action columns (PreflopAction, FlopAction, TurnAction and
+    RiverAction). Everything is sorted exactly as the hand unfolded: posts
+    in seat order, then rounds in chronological order starting from the
+    first seat to act (the seat after the big blind on preflop, the seat
+    after the button postflop).
 
-    Each row carries the seat and position of the player, the context of the
-    hand (table size, level, players active, ante, blinds and owner cards),
-    the board visible at the moment of the action, and the reconstructed
-    amounts:
+    Each row carries the context of the hand and the reconstructed amounts:
 
-    - AddedValue: the exact chips pushed by the action.
+    - AddedValue: the exact chips pushed by the event.
     - TotalValue: the total put in by the player in that round after the
-      action — on preflop it includes the posted ante and blind.
-    - TotalPot: the total pot right after the action, summing the antes and
-      blinds of every player plus all the chips pushed so far in the hand.
+      event — on preflop it includes the posted ante and blind.
+    - TotalPot: the total pot right after the event.
+    - Stack: the stack of the player right after the event.
 
     Args:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
@@ -604,23 +639,21 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Columns TournID, HandID, TableSize, Playing, Level,
             Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
-            PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder,
-            AddedValue, TotalValue, TotalPot, BoardC1 to BoardC5, OwnerC1
-            and OwnerC2, sorted by ActionOrder inside each hand. PostedAnte
-            and PostedBlind are the real amounts posted by the player
-            (partial when all-in), the same values used to reconstruct the
-            amounts. ActionIndex restarts at 1 for each player/round.
+            Stack, Action, ActionIndex, ActionOrder, AddedValue, TotalValue,
+            TotalPot, BoardC1 to BoardC5, OwnerC1 and OwnerC2, sorted by
+            ActionOrder inside each hand. ActionIndex is 0 for posts and
+            restarts at 1 for each player/round of voluntary actions.
     """
-    # One row per action, sorted as the action unfolded, with the amounts.
+    # One row per event, sorted as the hand unfolded, with the amounts.
     # The full list of players anchors the order even when the big blind or
-    # the button had no action (for example, all-in on the blind or ante)
+    # the button had no voluntary action
     players = df.drop_duplicates(
         subset=[Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
     ).loc[:, [Column.TOURN_ID, Column.HAND_ID, Column.SEAT, Column.POSITION]]
     fact = _explode_actions(df)
     fact = _sort_chronologically(fact, players)
     fact = _compute_bet_amounts(fact)
-    fact = _compute_total_pot(fact, df)
+    fact = _compute_total_pot(fact)
 
     # The board visible at the moment of the action, according to the round:
     # no cards on preflop, then the board of the round of the action
@@ -671,8 +704,7 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             Column.PLAYER,
             Column.SEAT,
             Column.POSITION,
-            Column.POSTED_ANTE,
-            Column.POSTED_BLIND,
+            Column.STACK,
             ModelColumn.ACTION,
             ModelColumn.ACTION_INDEX,
             ModelColumn.ACTION_ORDER,

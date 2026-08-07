@@ -69,7 +69,7 @@ The command concatenates all files and saves the five tables as _.parquet_ insid
 
 ##### fact_player_actions
 
-One row per action taken by a player, sorted exactly as each hand unfolded: rounds in chronological order, starting from the first seat to act (the seat after the big blind on preflop, the seat after the button postflop). The betting amounts are reconstructed by replaying each round with the betting rules of the game, so they reflect the chips that actually moved — including partial (all-in) blind and ante posts.
+One row per event of a player: the ante and blind posts open each hand as rows (with the real — possibly partial — amounts that left each stack), followed by every action, sorted exactly as the hand unfolded: rounds in chronological order, starting from the first seat to act (the seat after the big blind on preflop, the seat after the button postflop). The amounts are reconstructed by replaying each round with the betting rules of the game, so they reflect the chips that actually moved.
 
 | Column      | Description                                                                                           | Example     |
 |-------------|-------------------------------------------------------------------------------------------------------|-------------|
@@ -85,10 +85,9 @@ One row per action taken by a player, sorted exactly as each hand unfolded: roun
 | Player      | Player who acted                                                                                      | playername  |
 | Seat        | Seat number of the player                                                                             | 4           |
 | Position    | Position of the player (button, small blind, big blind), when any                                     | big blind   |
-| PostedAnte  | Ante actually posted by the player (partial when all-in)                                              | 4.0         |
-| PostedBlind | Blind actually posted by the player (partial when all-in)                                             | 30.0        |
-| Action      | The action taken (folds, checks, calls, bets, raises)                                                 | raises      |
-| ActionIndex | Order of the action among the player's actions in the round                                           | 1           |
+| Stack       | Stack of the player right after the event (starting stack minus everything pushed so far)             | 2340.0      |
+| Action      | The event (posts ante, posts small/big blind, folds, checks, calls, bets, raises)                     | raises      |
+| ActionIndex | Order of the action among the player's actions in the round (0 for posts)                             | 1           |
 | ActionOrder | Chronological sequence of the action inside the hand (1..n)                                           | 3           |
 | AddedValue  | Exact chips pushed by the action                                                                      | 50.0        |
 | TotalValue  | Total put in by the player in the round after the action (on preflop includes the posted ante/blind)  | 64.0        |
@@ -120,16 +119,13 @@ One row per hand.
 
 ##### dim_player_summary
 
-One row per player in each hand. The showdown columns hold the cards revealed by the player (also for the losers, useful for range studies), and are null when the player did not reveal them. PostedAnte and PostedBlind also live here because this table covers every player of the hand — including the ones with no action rows in the fact, like a big blind that wins a walk or goes all-in on the post.
+One row per player in each hand. The showdown columns hold the cards revealed by the player (also for the losers, useful for range studies), and are null when the player did not reveal them. Seat, Position, the dynamic Stack and the ante/blind posts live in the fact table, as rows and columns of the events of the hand.
 
 | Column         | Description                                                | Example    |
 |----------------|-------------------------------------------------------------|------------|
 | TournID        | Tournament of the hand                                     | 2928882649 |
 | HandID         | Hand in which the player participated                      | 215024616736 |
 | Player         | Name of the player                                         | playername |
-| Stack          | Stack of the player at the start of the hand               | 2500.0     |
-| PostedAnte     | Ante posted by the player (partial when all-in)            | 4.0        |
-| PostedBlind    | Blind posted by the player (partial when all-in)           | 30.0       |
 | Result         | Result of the hand (folded, lost, mucked, non-sd win, won) | won        |
 | Balance        | Total collected from the pot in the hand                   | 156.0      |
 | ShowDownC1..C2 | Cards revealed by the player at showdown                   | Ah, Ac     |
