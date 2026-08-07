@@ -174,6 +174,18 @@ def test_apply_regex_captures_the_pot_decomposition(ko_tournament_text: str) -> 
     assert hand["TotalPotLog"].iloc[0] == 700.0
 
 
+def test_apply_regex_captures_satellite_finishes(
+    satellite_tournament_text: str,
+) -> None:
+    df = apply_regex(satellite_tournament_text).set_index("Player")
+    assert df.loc["garciamurilo", "FinalRank"] == 1
+    # The ticket face value is the prize (as text; coerced downstream)
+    assert df.loc["garciamurilo", "Prize"] == "1"
+    assert df.loc["VillainB", "FinalRank"] == 2
+    # VillainC finished without a reported place
+    assert df.loc["VillainC", "FinalRank"] == 0
+
+
 # ---------------------------------------------------------------------------
 # convert_txt_to_tabular_data
 # ---------------------------------------------------------------------------

@@ -138,8 +138,8 @@ You may want to build a pipeline to incrementally feed your table with new hand 
 | TotalPotLog       | Total pot of the hand, as reported in the summary            | 840.00                            | float           |
 | Rake              | Rake of the hand, as reported in the summary                 | 0.00                              | float           |
 | PotBreakdown      | Pots of the hand: main and side pots, or the total pot alone | [5820.0, 3316.0]                  | list[float]     |
-| FinalRank         | Player's final ranking in the tournament                     | 1                                 | int             |
-| Prize             | Prize won by the player, if any                              | 30000.00                          | float           |
+| FinalRank         | Final ranking (0 = finished without a reported place, -1 = unknown) | 1                          | int             |
+| Prize             | Prize won by the player, if any (satellite tickets: face value) | 30000.00                       | float           |
 
 ## Data Modeling
 For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of dimensional model (star schema) split into four tables that may be useful for most cases: `fact_player_actions` works as the fact table, holding one row per event of a player in a hand, while `dim_tourn_summary`, `dim_player_summary`, and `dim_final_rank` work as dimension tables.
@@ -225,7 +225,7 @@ One row per player in each tournament.
 |-----------|--------------------------------------------------------------------------|------------|
 | TournID   | Tournament played                                                       | 2928882649 |
 | Player    | Name of the player                                                      | playername |
-| FinalRank | Final rank in the tournament (-1 when not registered in the logs)       | 27         |
+| FinalRank | Final rank in the tournament (0 when finished without a reported place, -1 when not registered in the logs) | 27         |
 | Prize     | Prize received, when any                                                | 0.24       |
 
 ## License

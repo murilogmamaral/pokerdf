@@ -968,7 +968,9 @@ class RegexPatterns:
         Returns:
             list: List containing the final rank of the player, like [3] when the
                 player is eliminated in the hand, or [1] when the player wins the
-                tournament. Returns [-1] when the rank is not defined in the hand.
+                tournament. Returns [0] when the log reports the finish without a
+                place (for example, club knockout tournaments), and [-1] when the
+                rank is not defined in the hand.
         """
         # Filter content from SHOW_DOWN
         hand = [x for x in hand if "SHOW DOWN ***" in x]
@@ -1001,8 +1003,15 @@ class RegexPatterns:
                 # Position 1, if wins
                 if result_of_regex == ["wins"]:
                     return [1]
-                else:
-                    return [-1]
+
+                # Some logs report the finish without a place (for example,
+                # club knockout tournaments): 0 marks "finished, place not
+                # reported", keeping -1 for "not defined in the hand"
+                regex = rf"{player} finished the tournament\s*$"
+                if re.findall(regex, target, flags=re.MULTILINE) != []:
+                    return [0]
+
+                return [-1]
             else:
                 # Get the maximum value and return in a list
                 result = [max(list_of_int)]
@@ -1024,7 +1033,9 @@ class RegexPatterns:
         Returns:
             list: List containing the prize as captured from the text, without
                 the currency symbol (for example, ['6.00']), or [None] if no
-                prize was awarded to the player in the hand.
+                prize was awarded to the player in the hand. Satellite tickets
+                are captured through the face value in the ticket name
+                (for example, "wins a 'Fast Track $1' ticket" -> ['1']).
         """
         # Filter content from SHOW_DOWN
         hand = [x for x in hand if "SHOW DOWN ***" in x]
@@ -1039,6 +1050,12 @@ class RegexPatterns:
 
             # Apply regex
             final_result = re.findall(regex, target)[:1]
+
+            # Satellite tickets are not cash prizes: the face value in the
+            # ticket name is captured instead
+            if final_result == []:
+                regex_ticket = rf"{player} wins a '[^']*\$(\d+(?:\.\d+)?)[^']*' ticket"
+                final_result = re.findall(regex_ticket, target)[:1]
 
             # Normalize output
             if final_result == []:

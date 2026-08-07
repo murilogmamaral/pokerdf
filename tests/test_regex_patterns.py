@@ -362,6 +362,20 @@ def test_get_final_rank_returns_minus_one_when_not_defined(
     assert r.get_final_rank("garciamurilo", first_hand) == [-1]
 
 
+def test_get_final_rank_finished_without_a_place(
+    satellite_final_hand: list[str],
+) -> None:
+    # Some logs report the finish without a place: 0 marks it
+    assert r.get_final_rank("VillainC", satellite_final_hand) == [0]
+
+
+def test_get_final_rank_placed_finishes_take_precedence(
+    satellite_final_hand: list[str],
+) -> None:
+    assert r.get_final_rank("VillainB", satellite_final_hand) == [2]
+    assert r.get_final_rank("garciamurilo", satellite_final_hand) == [1]
+
+
 def test_get_prize_of_tournament_winner(final_hand: list[str]) -> None:
     # The value is captured as text; pydantic coerces it to float downstream
     expected: list[Any] = ["6.00"]
@@ -372,3 +386,15 @@ def test_get_prize_returns_none_when_no_prize_is_awarded(
     final_hand: list[str],
 ) -> None:
     assert r.get_prize("VillainB", final_hand) == [None]
+
+
+def test_get_prize_satellite_ticket(satellite_final_hand: list[str]) -> None:
+    # The prize of a satellite is a ticket: its face value is captured
+    expected: list[Any] = ["1"]
+    assert r.get_prize("garciamurilo", satellite_final_hand) == expected
+
+
+def test_get_prize_ticket_is_not_awarded_to_the_other_players(
+    satellite_final_hand: list[str],
+) -> None:
+    assert r.get_prize("VillainB", satellite_final_hand) == [None]

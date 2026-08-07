@@ -127,3 +127,24 @@ def pko_elimination_hand(get_ko_hand: Callable[[str], list[str]]) -> list[str]:
 def ko_final_hand(get_ko_hand: Callable[[str], list[str]]) -> list[str]:
     """Regular knockout finale: garciamurilo wins VillainB's whole bounty."""
     return get_ko_hand("22222")
+
+
+SATELLITE_FIXTURE_PATH = (
+    Path(__file__).parent
+    / "input"
+    / "HH20250518 T77777 Satellite Hold_em US$ 0,89 + US$ 0,11.txt"
+)
+
+
+@pytest.fixture(scope="session")
+def satellite_tournament_text() -> str:
+    """Raw text of the satellite tournament hand history file."""
+    return SATELLITE_FIXTURE_PATH.read_text(encoding="utf-8")
+
+
+@pytest.fixture(scope="session")
+def satellite_final_hand(satellite_tournament_text: str) -> list[str]:
+    """Satellite finale: a ticket prize, a 2nd place and a placeless finish."""
+    chunks = satellite_tournament_text.split(f"{PLATFORM} ")
+    hand = next(h for h in chunks if h.startswith("Hand #33333:"))
+    return hand.split("\n*** ")

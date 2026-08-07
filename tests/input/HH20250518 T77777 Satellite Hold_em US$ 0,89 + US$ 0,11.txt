@@ -1,0 +1,32 @@
+PokerStars Hand #33333: Tournament #77777, $0.89+$0.11 USD Hold'em No Limit - Level V (50/100) - 2025/05/18 11:00:00 BRT [2025/05/18 10:00:00 ET]
+Table '77777 1' 3-max Seat #1 is the button
+Seat 1: garciamurilo (900 in chips)
+Seat 2: VillainB (600 in chips)
+Seat 3: VillainC (300 in chips)
+VillainB: posts small blind 50
+VillainC: posts big blind 100
+*** HOLE CARDS ***
+Dealt to garciamurilo [Ad Ac]
+garciamurilo: raises 800 to 900 and is all-in
+VillainB: calls 550 and is all-in
+VillainC: calls 200 and is all-in
+Uncalled bet (300) returned to garciamurilo
+*** FLOP *** [2h 7c Jd]
+*** TURN *** [2h 7c Jd] [5s]
+*** RIVER *** [2h 7c Jd 5s] [9c]
+*** SHOW DOWN ***
+VillainC: shows [Kc Qc] (high card King)
+VillainB: shows [8d 8s] (a pair of Eights)
+garciamurilo: shows [Ad Ac] (a pair of Aces)
+garciamurilo collected 600 from side pot
+garciamurilo collected 900 from main pot
+VillainC finished the tournament
+VillainB finished the tournament in 2nd place
+garciamurilo wins the tournament - congratulations!
+garciamurilo wins a 'Fast Track $1' ticket
+*** SUMMARY ***
+Total pot 1500 Main pot 900. Side pot 600. | Rake 0
+Board [2h 7c Jd 5s 9c]
+Seat 1: garciamurilo (button) showed [Ad Ac] and won (1500) with a pair of Aces
+Seat 2: VillainB (small blind) showed [8d 8s] and lost with a pair of Eights
+Seat 3: VillainC (big blind) showed [Kc Qc] and lost with high card King
