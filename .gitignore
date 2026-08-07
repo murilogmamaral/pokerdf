@@ -176,3 +176,4 @@ cython_debug/
 # Other files
 *.DS_Store
 output/
+/modeling/
