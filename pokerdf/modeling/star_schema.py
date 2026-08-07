@@ -167,29 +167,6 @@ def build_dim_tourn_summary(df: pd.DataFrame) -> pd.DataFrame:
     return dim
 
 
-def build_dim_hand_summary(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Build the hand dimension, with one row per hand of each tournament.
-
-    Args:
-        df (pd.DataFrame): Converted data loaded with load_converted_data.
-
-    Returns:
-        pd.DataFrame: Columns TournID, HandID and LocalTime. The betting
-            context of the hand (level, blinds, ante, owner cards) belongs
-            to the fact table, and the showdown of each player belongs to
-            dim_player_summary.
-    """
-    # One row per hand
-    dim = (
-        df.drop_duplicates(subset=[Column.TOURN_ID, Column.HAND_ID])
-        .loc[:, [Column.TOURN_ID, Column.HAND_ID, Column.LOCAL_TIME]]
-        .astype({Column.TOURN_ID: "int64", Column.HAND_ID: "int64"})
-    )
-
-    return dim.sort_values([Column.TOURN_ID, Column.HAND_ID], ignore_index=True)
-
-
 def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
     """
     Build the player dimension, with one row per player in each hand.
@@ -201,9 +178,9 @@ def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: Columns TournID, HandID, Player, Result, Balance,
             ShowDownC1, ShowDownC2 and PokerHand (the cards revealed by the
             player at showdown, also for the losers — valuable for range
-            studies). Seat, Position, the dynamic Stack and the ante/blind
-            posts live in the fact table, as rows and columns of the events
-            of the hand.
+            studies). Everything that describes the events of the hand —
+            seat, position, the dynamic Stack, the posts and LocalTime —
+            lives in the fact table.
     """
     # One row per player per hand
     players = df.drop_duplicates(
@@ -307,6 +284,7 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
     # and the context needed downstream (seat, position, posts, stack, the
     # hand context that goes into the fact table, and the boards)
     context_columns = [
+        Column.LOCAL_TIME,
         Column.SEAT,
         Column.POSITION,
         Column.STACK,
@@ -637,8 +615,8 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, HandID, TableSize, Playing, Level,
-            Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
+        pd.DataFrame: Columns TournID, HandID, LocalTime, TableSize, Playing,
+            Level, Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
             Stack, PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder, AddedValue, TotalValue,
             TotalPot, BoardC1 to BoardC5, OwnerC1 and OwnerC2, sorted by
             ActionOrder inside each hand. ActionIndex is 0 for posts and
@@ -694,6 +672,7 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
         [
             Column.TOURN_ID,
             Column.HAND_ID,
+            Column.LOCAL_TIME,
             Column.TABLE_SIZE,
             Column.PLAYING,
             Column.LEVEL,
@@ -731,9 +710,9 @@ def build_star_schema(source: str, destination: str) -> dict[str, int]:
     Build the star schema from converted data and save it as .parquet files.
 
     Reads all .parquet files produced by the convert command, concatenates
-    them and splits the result into one fact table and four dimensions:
-    fact_player_actions, dim_tourn_summary, dim_hand_summary,
-    dim_player_summary and dim_final_rank.
+    them and splits the result into one fact table and three dimensions:
+    fact_player_actions, dim_tourn_summary, dim_player_summary and
+    dim_final_rank.
 
     Args:
         source (str): Directory containing the converted .parquet files.
@@ -745,11 +724,10 @@ def build_star_schema(source: str, destination: str) -> dict[str, int]:
     # Load all converted files as a single DataFrame
     df = load_converted_data(source)
 
-    # Build the five tables of the star schema
+    # Build the four tables of the star schema
     tables = {
         ModelTable.FACT_PLAYER_ACTIONS: build_fact_player_actions(df),
         ModelTable.DIM_TOURN_SUMMARY: build_dim_tourn_summary(df),
-        ModelTable.DIM_HAND_SUMMARY: build_dim_hand_summary(df),
         ModelTable.DIM_PLAYER_SUMMARY: build_dim_player_summary(df),
         ModelTable.DIM_FINAL_RANK: build_dim_final_rank(df),
     }

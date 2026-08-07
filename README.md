@@ -136,7 +136,14 @@ You may want to build a pipeline to incrementally feed your table with new hand 
 | Prize             | Prize won by the player, if any                              | 30000.00                          | float           |
 
 ## Data Modeling
-For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of dimensional model (star schema) split into five tables that may be useful for most cases: `fact_player_actions` works as the fact table, holding one row per action taken by a player in a hand, while `dim_tourn_summary`, `dim_hand_summary`, `dim_player_summary`, and `dim_final_rank` work as dimension tables.  
+For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of dimensional model (star schema) split into four tables that may be useful for most cases: `fact_player_actions` works as the fact table, holding one row per event of a player in a hand, while `dim_tourn_summary`, `dim_player_summary`, and `dim_final_rank` work as dimension tables.
+
+The reasoning behind this design:
+
+- **The fact is deliberately wide and analysis-ready.** Everything that describes an event — who, where, when, with which stack, facing which board — lives on the row itself, so feature engineering needs no joins. The repetition of hand-level context (level, blinds, table size) is intentional: columnar formats like parquet compress constant-per-hand values to almost nothing, so the storage cost is negligible while every query gets simpler.
+- **Posts are events, not metadata.** The ante and blind posts are rows like any action, carrying the real (possibly partial, when all-in) amounts. This makes the pot a pure running sum, gives a row to players that never acted voluntarily (a big blind winning a walk, an all-in on the post), and lets the dynamic `Stack` be reconstructed uniformly.
+- **Each dimension answers one question at one grain.** `dim_tourn_summary` describes the tournament (context for slicing); `dim_player_summary` holds the outcome of each player in each hand (result, amount collected, revealed cards); `dim_final_rank` holds the outcome of each player in the tournament. There is no hand dimension on purpose: after moving the hand context into the fact, it would keep a single attribute, and a dimension that thin is better dissolved (`HandID` works as a degenerate dimension, and `LocalTime` lives in the fact).
+- **The reconstructed amounts follow the platform's own arithmetic** (bet levels, short all-in blinds, calls above a short post) and were validated against the raw logs: the final `TotalPot` matches the reported "Total pot" in 100% of 135k+ real hands.  
 
 
 ![data-modeling](https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/data-modeling.svg)
@@ -155,6 +162,7 @@ One row per event of a player: the ante and blind posts open each hand as rows (
 |-------------|-------------------------------------------------------------------------------------------------------|-------------|
 | TournID     | Tournament in which the action happened                                                               | 2928882649  |
 | HandID      | Hand in which the action happened                                                                     | 215024616736|
+| LocalTime   | Time when the hand was played                                                                         | 2020-06-07 07:52:12 |
 | TableSize   | Maximum number of players at the table                                                                | 9           |
 | Playing     | Number of players active in the hand                                                                  | 6           |
 | Level       | Level of the tournament, as an integer                                                                | 15          |
@@ -189,19 +197,9 @@ One row per tournament.
 | BuyIn          | The buy-in of the tournament         | $4.60+$0.40          |
 | Owner          | Owner of the hand history files      | ownername            |
 
-#### dim_hand_summary
-
-One row per hand.
-
-| Column         | Description                                     | Example              |
-|----------------|--------------------------------------------------|----------------------|
-| TournID        | Tournament of the hand                          | 2928882649           |
-| HandID         | Unique identifier of the hand                   | 215024616736         |
-| LocalTime      | Time when the hand was played                   | 2020-06-07 07:52:12  |
-
 #### dim_player_summary
 
-One row per player in each hand. The showdown columns hold the cards revealed by the player (also for the losers, useful for range studies), and are null when the player did not reveal them. Seat, Position, the dynamic Stack and the ante/blind posts live in the fact table, as rows and columns of the events of the hand.
+One row per player in each hand, holding the outcome: the result, the amount collected and the cards revealed at showdown (also for the losers, useful for range studies — null when the player did not reveal them).
 
 | Column         | Description                                                | Example    |
 |----------------|-------------------------------------------------------------|------------|

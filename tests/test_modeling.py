@@ -14,7 +14,6 @@ from pokerdf.core.read_and_convert import convert_txt_to_tabular_data
 from pokerdf.modeling.star_schema import (
     _roman_to_int,
     build_dim_final_rank,
-    build_dim_hand_summary,
     build_dim_player_summary,
     build_dim_tourn_summary,
     build_fact_player_actions,
@@ -93,6 +92,7 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
     assert list(fact.columns) == [
         "TournID",
         "HandID",
+        "LocalTime",
         "TableSize",
         "Playing",
         "Level",
@@ -149,6 +149,7 @@ def test_fact_carries_hand_context(fact: pd.DataFrame) -> None:
     # Hand 11111: 3-max at level I (blinds 10/20), 3 players, no ante,
     # with the owner holding 3s Jh
     row = fact[fact["HandID"] == 11111].iloc[0]
+    assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:22:15")
     assert row["TableSize"] == 3
     assert row["Level"] == 1
     assert row["Playing"] == 3
@@ -457,26 +458,6 @@ def test_dim_tourn_summary(source_df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
-# dim_hand_summary
-# ---------------------------------------------------------------------------
-def test_dim_hand_summary_has_one_row_per_hand(
-    source_df: pd.DataFrame, tournament_text: str
-) -> None:
-    dim = build_dim_hand_summary(source_df)
-    assert len(dim) == tournament_text.count("PokerStars Hand #")
-    assert not dim.duplicated(subset=["TournID", "HandID"]).any()
-
-
-def test_dim_hand_summary_carries_only_hand_identity_and_time(
-    source_df: pd.DataFrame,
-) -> None:
-    dim = build_dim_hand_summary(source_df)
-    assert list(dim.columns) == ["TournID", "HandID", "LocalTime"]
-    row = dim[dim["HandID"] == 219269866589].iloc[0]
-    assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:23:44")
-
-
-# ---------------------------------------------------------------------------
 # dim_player_summary
 # ---------------------------------------------------------------------------
 def test_dim_player_summary_has_one_row_per_player_per_hand(
@@ -545,7 +526,6 @@ def test_build_star_schema_saves_the_five_tables(
     expected_tables = [
         "fact_player_actions",
         "dim_tourn_summary",
-        "dim_hand_summary",
         "dim_player_summary",
         "dim_final_rank",
     ]
@@ -564,6 +544,7 @@ def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:
         {
             "TournID": ["1"] * 4,
             "HandID": ["100"] * 4,
+            "LocalTime": [pd.Timestamp("2020-01-01 12:00:00")] * 4,
             "Player": ["sb", "bb", "utg", "btn"],
             "Seat": [1, 2, 4, 9],
             "Position": ["small blind", "big blind", None, "button"],

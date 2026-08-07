@@ -33,11 +33,10 @@ def test_round_is_in_chronological_order() -> None:
     assert [round.value for round in Round] == ["preflop", "flop", "turn", "river"]
 
 
-def test_model_table_lists_the_five_tables_of_the_star_schema() -> None:
+def test_model_table_lists_the_four_tables_of_the_star_schema() -> None:
     assert [table.value for table in ModelTable] == [
         "fact_player_actions",
         "dim_tourn_summary",
-        "dim_hand_summary",
         "dim_player_summary",
         "dim_final_rank",
     ]
