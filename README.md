@@ -75,24 +75,24 @@ One row per action taken by a player, sorted exactly as each hand unfolded: roun
 |-------------|-------------------------------------------------------------------------------------------------------|-------------|
 | TournID     | Tournament in which the action happened                                                               | 2928882649  |
 | HandID      | Hand in which the action happened                                                                     | 215024616736|
-| ActionOrder | Chronological sequence of the action inside the hand (1..n)                                           | 3           |
+| TableSize   | Maximum number of players at the table                                                                | 9           |
+| Playing     | Number of players active in the hand                                                                  | 6           |
+| Level       | Level of the tournament, as an integer                                                                | 15          |
+| Ante        | Ante of the hand                                                                                      | 4.0         |
+| SmallBlind  | Nominal small blind of the hand                                                                       | 15.0        |
+| BigBlind    | Nominal big blind of the hand                                                                         | 30.0        |
 | Round       | Round of the action (preflop, flop, turn, river)                                                      | preflop     |
-| ActionIndex | Order of the action among the player's actions in the round                                           | 1           |
 | Player      | Player who acted                                                                                      | playername  |
 | Seat        | Seat number of the player                                                                             | 4           |
 | Position    | Position of the player (button, small blind, big blind), when any                                     | big blind   |
 | Action      | The action taken (folds, checks, calls, bets, raises)                                                 | raises      |
+| ActionIndex | Order of the action among the player's actions in the round                                           | 1           |
+| ActionOrder | Chronological sequence of the action inside the hand (1..n)                                           | 3           |
 | AddedValue  | Exact chips pushed by the action                                                                      | 50.0        |
 | TotalValue  | Total put in by the player in the round after the action (on preflop includes the posted ante/blind)  | 64.0        |
 | TotalPot    | Total pot right after the action (uncalled bets returned at the end are not discounted)               | 156.0       |
-| TableSize   | Maximum number of players at the table                                                                | 9           |
-| Level       | Level of the tournament, as an integer                                                                | 15          |
-| Playing     | Number of players active in the hand                                                                  | 6           |
-| Ante        | Ante of the hand                                                                                      | 4.0         |
-| SmallBlind  | Nominal small blind of the hand                                                                       | 15.0        |
-| BigBlind    | Nominal big blind of the hand                                                                         | 30.0        |
-| OwnerC1..C2 | Hole cards of the owner of the logs                                                                   | Ah, Qd      |
 | BoardC1..C5 | Board visible at the moment of the action (empty on preflop, 3 cards on flop, 4 on turn, 5 on river)  | 4d, Tc, 7s  |
+| OwnerC1..C2 | Hole cards of the owner of the logs                                                                   | Ah, Qd      |
 
 ##### dim_tourn_summary
 

@@ -602,12 +602,12 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, HandID, ActionOrder, Round,
-            ActionIndex, Player, Seat, Position, Action, AddedValue,
-            TotalValue, TotalPot, TableSize, Level, Playing, Ante,
-            SmallBlind, BigBlind, OwnerC1, OwnerC2 and BoardC1 to BoardC5,
-            sorted by ActionOrder inside each hand. ActionIndex restarts at 1
-            for each player/round.
+        pd.DataFrame: Columns TournID, HandID, TableSize, Playing, Level,
+            Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
+            Action, ActionIndex, ActionOrder, AddedValue, TotalValue,
+            TotalPot, BoardC1 to BoardC5, OwnerC1 and OwnerC2, sorted by
+            ActionOrder inside each hand. ActionIndex restarts at 1 for each
+            player/round.
     """
     # One row per action, sorted as the action unfolded, with the amounts.
     # The full list of players anchors the order even when the big blind or
@@ -659,29 +659,29 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
         [
             Column.TOURN_ID,
             Column.HAND_ID,
-            ModelColumn.ACTION_ORDER,
+            Column.TABLE_SIZE,
+            Column.PLAYING,
+            Column.LEVEL,
+            Column.ANTE,
+            ModelColumn.SMALL_BLIND,
+            ModelColumn.BIG_BLIND,
             ModelColumn.ROUND,
-            ModelColumn.ACTION_INDEX,
             Column.PLAYER,
             Column.SEAT,
             Column.POSITION,
             ModelColumn.ACTION,
+            ModelColumn.ACTION_INDEX,
+            ModelColumn.ACTION_ORDER,
             ModelColumn.ADDED_VALUE,
             ModelColumn.TOTAL_VALUE,
             ModelColumn.TOTAL_POT,
-            Column.TABLE_SIZE,
-            Column.LEVEL,
-            Column.PLAYING,
-            Column.ANTE,
-            ModelColumn.SMALL_BLIND,
-            ModelColumn.BIG_BLIND,
-            ModelColumn.OWNER_C1,
-            ModelColumn.OWNER_C2,
             ModelColumn.BOARD_C1,
             ModelColumn.BOARD_C2,
             ModelColumn.BOARD_C3,
             ModelColumn.BOARD_C4,
             ModelColumn.BOARD_C5,
+            ModelColumn.OWNER_C1,
+            ModelColumn.OWNER_C2,
         ],
     ]
 
