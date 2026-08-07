@@ -107,6 +107,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history and tags, required to build the release notes
+          fetch-depth: 0
 
       - name: Retrieve release distributions
         uses: actions/download-artifact@v4
@@ -124,7 +127,19 @@ jobs:
             echo "::error::Tag $TAG already exists. Check the version in pyproject.toml."
             exit 1
           fi
-          gh release create "$TAG" dist/* --title "$TAG" --generate-notes --target "$TARGET_SHA"
+
+          # Release notes: one bullet per commit since the last tag.
+          # The commits are the source of the notes because changes land on
+          # main directly (GitHub's --generate-notes only lists pull requests,
+          # but still appends the "Full Changelog" comparison link).
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then RANGE="$LAST_TAG..$TARGET_SHA"; else RANGE="$TARGET_SHA"; fi
+          {
+            echo "## Changes"
+            git log "$RANGE" --no-merges --pretty="- %s (%h)" | grep -v "^- bump version to" || true
+          } > notes.md
+
+          gh release create "$TAG" dist/* --title "$TAG" --notes-file notes.md --generate-notes --target "$TARGET_SHA"
 
   pypi-publish:
     runs-on: ubuntu-latest
