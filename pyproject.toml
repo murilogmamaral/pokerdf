@@ -1,6 +1,6 @@
 [project]
 name = "pokerdf"
-version = "1.0.6"
+version = "1.1.0"
 description = "Converts poker hand history files to pandas DataFrames."
 readme = "README.md"
 authors = [{ name = "Murilo Amaral", email = "murilogmamaral@gmail.com" }]
