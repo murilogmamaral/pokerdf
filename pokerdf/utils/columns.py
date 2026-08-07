@@ -35,6 +35,7 @@ class Column(StrEnum):
     POSITION = "Position"
     POSTED_BLIND = "PostedBlind"
     STACK = "Stack"
+    BOUNTY = "Bounty"
     PREFLOP_ACTION = "PreflopAction"
     FLOP_ACTION = "FlopAction"
     TURN_ACTION = "TurnAction"
@@ -52,6 +53,7 @@ class Column(StrEnum):
     RESULT = "Result"
     BALANCE = "Balance"
     UNCALLED_RETURNED = "UncalledReturned"
+    BOUNTY_WON = "BountyWon"
     FINAL_RANK = "FinalRank"
     PRIZE = "Prize"
 

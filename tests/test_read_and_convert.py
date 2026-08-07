@@ -41,6 +41,7 @@ EXPECTED_COLUMNS = [
     "Position",
     "PostedBlind",
     "Stack",
+    "Bounty",
     "PreflopAction",
     "FlopAction",
     "TurnAction",
@@ -58,6 +59,7 @@ EXPECTED_COLUMNS = [
     "Result",
     "Balance",
     "UncalledReturned",
+    "BountyWon",
     "FinalRank",
     "Prize",
 ]
@@ -143,6 +145,16 @@ def test_apply_regex_captures_tournament_wide_values(tournament_text: str) -> No
     assert set(df["TournID"]) == {"99999"}
     assert set(df["Owner"]) == {"garciamurilo"}
     assert set(df["Modality"]) == {"USD Hold'em No Limit"}
+
+
+def test_apply_regex_captures_bounties(ko_tournament_text: str) -> None:
+    df = apply_regex(ko_tournament_text)
+    hand = df[df["HandID"] == "22221"].set_index("Player")
+    # Every player has a bounty on their head in a knockout tournament
+    assert hand["Bounty"].tolist() == [0.5, 0.5, 0.5]
+    # garciamurilo eliminated VillainA and won the cash part of the bounty
+    assert hand.loc["garciamurilo", "BountyWon"] == 0.25
+    assert pd.isna(hand.loc["VillainB", "BountyWon"])
 
 
 # ---------------------------------------------------------------------------

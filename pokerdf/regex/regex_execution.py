@@ -78,6 +78,7 @@ def capture_specific_data_of_the_player(
     row[Column.POSITION] = r.get_position(player, splitted_hand)
     row[Column.POSTED_BLIND] = r.get_posted_blind(player, splitted_hand)
     row[Column.STACK] = r.get_stack(player, splitted_hand)
+    row[Column.BOUNTY] = r.get_bounty(player, splitted_hand)
     row[Column.PREFLOP_ACTION] = r.get_actions(
         player, splitted_hand, stage="HOLE CARDS ***"
     )
@@ -98,6 +99,7 @@ def capture_specific_data_of_the_player(
     row[Column.RESULT] = r.get_result(player, splitted_hand)
     row[Column.BALANCE] = r.get_balance(player, splitted_hand)
     row[Column.UNCALLED_RETURNED] = r.get_uncalled_returned(player, splitted_hand)
+    row[Column.BOUNTY_WON] = r.get_bounty_won(player, splitted_hand)
     row[Column.FINAL_RANK] = r.get_final_rank(player, splitted_hand)
     row[Column.PRIZE] = r.get_prize(player, splitted_hand)
 

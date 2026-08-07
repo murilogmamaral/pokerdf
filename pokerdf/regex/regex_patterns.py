@@ -398,6 +398,37 @@ class RegexPatterns:
 
         return result
 
+    def get_bounty(self, player: str, hand: list[str]) -> list[float | None]:
+        """
+        Get the bounty on the player's head, in knockout tournaments.
+
+        The bounty is listed next to the stack in the seat line, like
+        "Seat 1: player (3000 in chips, $0.46 bounty)". The currency symbol
+        is dropped, so only the numeric value is captured.
+
+        Args:
+            player (str): Name of the player.
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the bounty on the player's head (for example,
+                [0.46]), or [None] if the tournament has no bounties.
+        """
+        # Pattern to extract
+        regex = rf"Seat \d+: {player} \(\d+ in chips, [$€£]?(\d+(?:\.\d+)?) bounty\)"
+
+        # Get the first content of a played hand
+        target = hand[0]
+
+        # Apply regex
+        result = re.findall(regex, target)
+
+        # Normalize output
+        result = [float(x) for x in result]
+        result = self._guarantee_unicity(result, fill=None)
+
+        return result
+
     def get_posted_blind(self, player: str, hand: list[str]) -> list[float | None]:
         """
         Get blind posted by the player (small or big blind).
@@ -673,6 +704,50 @@ class RegexPatterns:
             return [None]
 
         # Sum all the returns of the hand
+        return [sum(float(x) for x in result)]
+
+    def get_bounty_won(self, player: str, hand: list[str]) -> list[float | None]:
+        """
+        Get the total bounty amount won by the player in the hand.
+
+        Knockout tournaments award bounties in two formats: regular knockouts
+        ("wins the $X bounty for eliminating"), where the whole bounty of the
+        eliminated player is won, and progressive knockouts ("wins $X for
+        eliminating ... and their own bounty increases by $Y to $Z"), where
+        the cash part is won and the rest feeds the player's own bounty.
+        Only the amount effectively won is captured, and multiple
+        eliminations in the same hand are summed.
+
+        Args:
+            player (str): Name of the player.
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the total bounty won by the player (for example,
+                [0.46]), or [None] if no bounty was won in the hand.
+        """
+        # Patterns to extract, one per knockout format
+        regex_regular = (
+            rf"{player} wins the [$€£]?(\d+(?:\.\d+)?) bounty for eliminating"
+        )
+        regex_progressive = (
+            rf"{player} wins [$€£]?(\d+(?:\.\d+)?) for eliminating "
+            rf".* and their own bounty increases"
+        )
+
+        # Bounties are awarded at any stage, so search the whole hand
+        target = "\n".join(hand)
+
+        # Apply regex
+        result = re.findall(regex_regular, target) + re.findall(
+            regex_progressive, target
+        )
+
+        # No bounty won by the player in the hand
+        if result == []:
+            return [None]
+
+        # Sum all the bounties of the hand
         return [sum(float(x) for x in result)]
 
     def get_board(

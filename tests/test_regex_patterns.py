@@ -150,6 +150,33 @@ def test_get_posted_ante_returns_none_when_no_ante_is_posted(
     assert r.get_posted_ante("garciamurilo", first_hand) == [None]
 
 
+def test_get_bounty(pko_elimination_hand: list[str]) -> None:
+    assert r.get_bounty("VillainA", pko_elimination_hand) == [0.5]
+    assert r.get_bounty("garciamurilo", pko_elimination_hand) == [0.5]
+
+
+def test_get_bounty_returns_none_without_bounties(first_hand: list[str]) -> None:
+    assert r.get_bounty("garciamurilo", first_hand) == [None]
+
+
+def test_get_bounty_won_progressive_knockout(
+    pko_elimination_hand: list[str],
+) -> None:
+    # Progressive knockout: only the cash part of the bounty is won
+    assert r.get_bounty_won("garciamurilo", pko_elimination_hand) == [0.25]
+
+
+def test_get_bounty_won_regular_knockout(ko_final_hand: list[str]) -> None:
+    # Regular knockout: the whole bounty of the eliminated player is won
+    assert r.get_bounty_won("garciamurilo", ko_final_hand) == [0.5]
+
+
+def test_get_bounty_won_returns_none_when_no_bounty_is_won(
+    pko_elimination_hand: list[str],
+) -> None:
+    assert r.get_bounty_won("VillainB", pko_elimination_hand) == [None]
+
+
 def test_get_actions_preflop(first_hand: list[str]) -> None:
     result = r.get_actions("garciamurilo", first_hand, stage="HOLE CARDS ***")
     assert result == [[("folds", "")]]
