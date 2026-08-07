@@ -143,6 +143,15 @@ def test_apply_regex_keeps_the_output_schema(tournament_text: str) -> None:
     assert list(df.columns) == EXPECTED_COLUMNS
 
 
+def test_apply_regex_deduplicates_repeated_hands(tournament_text: str) -> None:
+    # Client reconnections can write the same hand more than once in the
+    # file: only the first occurrence must be converted
+    first_hand = "PokerStars " + tournament_text.split("PokerStars ")[1]
+    df = apply_regex(tournament_text + "\n\n" + first_hand)
+    assert not df.duplicated(subset=["HandID", "Player"]).any()
+    assert df["HandID"].nunique() == tournament_text.count("PokerStars Hand #")
+
+
 def test_apply_regex_captures_tournament_wide_values(tournament_text: str) -> None:
     df = apply_regex(tournament_text)
     assert set(df["TournID"]) == {"99999"}
