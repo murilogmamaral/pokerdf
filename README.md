@@ -86,6 +86,8 @@ One row per event of a player: the ante and blind posts open each hand as rows (
 | Seat        | Seat number of the player                                                                             | 4           |
 | Position    | Position of the player (button, small blind, big blind), when any                                     | big blind   |
 | Stack       | Stack of the player right after the event (starting stack minus everything pushed so far)             | 2340.0      |
+| PostedAnte  | Ante posted by the player in the hand (partial when all-in)                                           | 4.0         |
+| PostedBlind | Blind posted by the player in the hand (partial when all-in)                                          | 30.0        |
 | Action      | The event (posts ante, posts small/big blind, folds, checks, calls, bets, raises)                     | raises      |
 | ActionIndex | Order of the action among the player's actions in the round (0 for posts)                             | 1           |
 | ActionOrder | Chronological sequence of the action inside the hand (1..n)                                           | 3           |

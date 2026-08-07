@@ -310,6 +310,8 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
         Column.SEAT,
         Column.POSITION,
         Column.STACK,
+        Column.POSTED_ANTE,
+        Column.POSTED_BLIND,
         Column.BLINDS,
         Column.TABLE_SIZE,
         Column.LEVEL,
@@ -329,8 +331,6 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
             Column.HAND_ID,
             Column.PLAYER,
             *context_columns,
-            Column.POSTED_ANTE,
-            Column.POSTED_BLIND,
             *ROUNDS.keys(),
         ],
     ]
@@ -401,7 +401,7 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
 
     # Posts come before the voluntary actions, with ActionIndex 0
     posts = pd.concat([antes, blinds], ignore_index=True).drop(
-        columns=[Column.POSTED_ANTE, Column.POSTED_BLIND, *ROUNDS.keys()]
+        columns=list(ROUNDS.keys())
     )
     posts[ModelColumn.ACTION_INDEX] = 0
 
@@ -639,7 +639,7 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Columns TournID, HandID, TableSize, Playing, Level,
             Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
-            Stack, Action, ActionIndex, ActionOrder, AddedValue, TotalValue,
+            Stack, PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder, AddedValue, TotalValue,
             TotalPot, BoardC1 to BoardC5, OwnerC1 and OwnerC2, sorted by
             ActionOrder inside each hand. ActionIndex is 0 for posts and
             restarts at 1 for each player/round of voluntary actions.
@@ -705,6 +705,8 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             Column.SEAT,
             Column.POSITION,
             Column.STACK,
+            Column.POSTED_ANTE,
+            Column.POSTED_BLIND,
             ModelColumn.ACTION,
             ModelColumn.ACTION_INDEX,
             ModelColumn.ACTION_ORDER,

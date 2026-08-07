@@ -104,6 +104,8 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "Seat",
         "Position",
         "Stack",
+        "PostedAnte",
+        "PostedBlind",
         "Action",
         "ActionIndex",
         "ActionOrder",
@@ -182,6 +184,14 @@ def test_fact_materializes_the_posts_as_rows(fact: pd.DataFrame) -> None:
     walk_winner = rows[rows["Player"] == "VillainB"]
     assert walk_winner["Action"].tolist() == ["posts big blind"]
     assert walk_winner.iloc[0]["TotalPot"] == 30.0
+
+
+def test_fact_carries_the_posted_amounts_on_every_row(fact: pd.DataFrame) -> None:
+    # Hand 11111: every row of garciamurilo shows his posted small blind,
+    # even after the post row itself
+    rows = fact[(fact["HandID"] == 11111) & (fact["Player"] == "garciamurilo")]
+    assert (rows["PostedBlind"] == 10.0).all()
+    assert rows["PostedAnte"].isna().all()
 
 
 def test_fact_stack_is_dynamic(fact: pd.DataFrame) -> None:
