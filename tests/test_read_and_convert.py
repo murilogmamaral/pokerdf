@@ -143,6 +143,15 @@ def test_apply_regex_keeps_the_output_schema(tournament_text: str) -> None:
     assert list(df.columns) == EXPECTED_COLUMNS
 
 
+def test_apply_regex_deduplicates_repeated_hands(tournament_text: str) -> None:
+    # Client reconnections can write the same hand more than once in the
+    # file: only the first occurrence must be converted
+    first_hand = "PokerStars " + tournament_text.split("PokerStars ")[1]
+    df = apply_regex(tournament_text + "\n\n" + first_hand)
+    assert not df.duplicated(subset=["HandID", "Player"]).any()
+    assert df["HandID"].nunique() == tournament_text.count("PokerStars Hand #")
+
+
 def test_apply_regex_captures_tournament_wide_values(tournament_text: str) -> None:
     df = apply_regex(tournament_text)
     assert set(df["TournID"]) == {"99999"}
@@ -177,13 +186,17 @@ def test_apply_regex_captures_the_pot_decomposition(ko_tournament_text: str) -> 
 def test_apply_regex_captures_satellite_finishes(
     satellite_tournament_text: str,
 ) -> None:
-    df = apply_regex(satellite_tournament_text).set_index("Player")
-    assert df.loc["garciamurilo", "FinalRank"] == 1
+    df = apply_regex(satellite_tournament_text)
+    final = df[df["HandID"] == "33333"].set_index("Player")
+    assert final.loc["garciamurilo", "FinalRank"] == 1
     # The ticket face value is the prize (as text; coerced downstream)
-    assert df.loc["garciamurilo", "Prize"] == "1"
-    assert df.loc["VillainB", "FinalRank"] == 2
+    assert final.loc["garciamurilo", "Prize"] == "1"
+    assert final.loc["VillainB", "FinalRank"] == 2
     # VillainC finished without a reported place
-    assert df.loc["VillainC", "FinalRank"] == 0
+    assert final.loc["VillainC", "FinalRank"] == 0
+    # Elimination with no SHOW DOWN section (all-in blind post, all fold)
+    no_showdown = df[df["HandID"] == "33332"].set_index("Player")
+    assert no_showdown.loc["VillainF", "FinalRank"] == 4
 
 
 # ---------------------------------------------------------------------------
@@ -244,6 +257,29 @@ def test_data_processing_run_logs_failure_without_raising(tmp_path: Path) -> Non
     assert "FAIL" in fail_log
     assert "HHmissing.txt" in fail_log
     assert list(destination.glob("*.parquet")) == []
+
+
+def test_data_processing_run_refuses_to_overwrite_an_existing_output(
+    tmp_path: Path,
+) -> None:
+    # Two inputs of the same tournament map to the same output name: the
+    # second conversion must fail loudly instead of silently overwriting
+    source_a = tmp_path / "HH20250516 T99999 original.txt"
+    source_b = tmp_path / "HH20250516 T99999 copy.txt"
+    shutil.copy(FIXTURE_PATH, source_a)
+    shutil.copy(FIXTURE_PATH, source_b)
+    destination = tmp_path / "output"
+    destination.mkdir()
+
+    DataProcessing(str(source_a), str(destination)).run()
+    DataProcessing(str(source_b), str(destination)).run()
+
+    assert "HH20250516 T99999 original.txt" in (destination / "success.txt").read_text()
+    fail_log = (destination / "fail.txt").read_text()
+    assert "HH20250516 T99999 copy.txt" in fail_log
+    assert "refusing to overwrite" in fail_log
+    # The parquet from the first conversion is intact
+    assert len(pd.read_parquet(destination / "20201011-T99999.parquet")) > 0
 
 
 # ---------------------------------------------------------------------------

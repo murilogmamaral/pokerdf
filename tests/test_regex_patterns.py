@@ -205,6 +205,21 @@ def test_get_bounty_won_returns_none_when_no_bounty_is_won(
     assert r.get_bounty_won("VillainB", pko_elimination_hand) == [None]
 
 
+def test_get_bounty_won_split_elimination() -> None:
+    # Two players splitting an elimination each win their share
+    hand = [
+        "Hand #1: Tournament #2, ...",
+        "SHOW DOWN ***\n"
+        "VillainA wins $0.34 for splitting the elimination of VillainC "
+        "and their own bounty increases by $0.34 to $14.55\n"
+        "VillainB wins $0.34 for splitting the elimination of VillainC "
+        "and their own bounty increases by $0.33 to $1.20",
+    ]
+    assert r.get_bounty_won("VillainA", hand) == [0.34]
+    assert r.get_bounty_won("VillainB", hand) == [0.34]
+    assert r.get_bounty_won("VillainC", hand) == [None]
+
+
 def test_get_actions_preflop(first_hand: list[str]) -> None:
     result = r.get_actions("garciamurilo", first_hand, stage="HOLE CARDS ***")
     assert result == [[("folds", "")]]
@@ -374,6 +389,33 @@ def test_get_final_rank_placed_finishes_take_precedence(
 ) -> None:
     assert r.get_final_rank("VillainB", satellite_final_hand) == [2]
     assert r.get_final_rank("garciamurilo", satellite_final_hand) == [1]
+
+
+def test_get_final_rank_without_a_showdown(
+    no_showdown_elimination_hand: list[str],
+) -> None:
+    # A player all-in on the blind post is eliminated when everyone folds,
+    # so the finish line appears in a hand with no SHOW DOWN section
+    assert r.get_final_rank("VillainF", no_showdown_elimination_hand) == [4]
+    assert r.get_final_rank("VillainE", no_showdown_elimination_hand) == [-1]
+
+
+def test_get_final_rank_and_prize_of_a_win_without_a_showdown() -> None:
+    # Synthetic hand: the tournament ends with a fold, so the win and the
+    # prize are reported without a SHOW DOWN section
+    hand = [
+        "Hand #1: Tournament #2, ...",
+        "HOLE CARDS ***\n"
+        "VillainA: folds \n"
+        "garciamurilo collected 40 from pot\n"
+        "VillainA finished the tournament in 2nd place\n"
+        "garciamurilo wins the tournament and receives $0.50 - congratulations!",
+        "SUMMARY ***\nTotal pot 40 | Rake 0 ",
+    ]
+    assert r.get_final_rank("garciamurilo", hand) == [1]
+    assert r.get_final_rank("VillainA", hand) == [2]
+    expected: list[Any] = ["0.50"]
+    assert r.get_prize("garciamurilo", hand) == expected
 
 
 def test_get_prize_of_tournament_winner(final_hand: list[str]) -> None:

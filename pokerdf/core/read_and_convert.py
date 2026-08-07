@@ -127,7 +127,8 @@ def apply_regex(txt: str) -> pd.DataFrame:
 
     Each hand is parsed at three levels: tournament-wide data, hand-wide data
     and player-specific data. The output has one row per player per hand, and
-    every row is validated with pydantic before being appended.
+    every row is validated with pydantic before being appended. Hands repeated
+    inside the file (client reconnections re-log them) are converted once.
 
     Args:
         txt (str): The text content of the poker hand history file.
@@ -151,6 +152,9 @@ def apply_regex(txt: str) -> pd.DataFrame:
     # Capture common info about the tournament
     common = capture_common_data(list_of_hands_as_text[0].split("\n*** "))
 
+    # Hands already converted, to skip duplicates
+    processed_hands: set[str] = set()
+
     for hand in list_of_hands_as_text:
 
         # Split hand in stages (pre-flop/flop/turn/river)
@@ -158,6 +162,13 @@ def apply_regex(txt: str) -> pd.DataFrame:
 
         # Capture general info of the hand
         general = capture_general_data_of_the_hand(splited_hand)
+
+        # Client reconnections can write the same hand more than once in
+        # the file: only the first occurrence is converted
+        hand_id = general[Column.HAND_ID][0]
+        if hand_id in processed_hands:
+            continue
+        processed_hands.add(hand_id)
 
         # Get players
         players = r.get_players(splited_hand)
@@ -239,8 +250,10 @@ class DataProcessing:
 
         Converts the file to a DataFrame and saves it as
         "{DATE_OF_TOURNAMENT}-T{TOURNAMENT_ID}.parquet" in the destination
-        folder. Successes are appended to success.txt and failures to
-        fail.txt (with the error message); a failure never raises.
+        folder. If another input file already produced the same output name,
+        the conversion fails instead of silently overwriting it. Successes
+        are appended to success.txt and failures to fail.txt (with the error
+        message); a failure never raises.
         """
         try:
 
@@ -255,6 +268,18 @@ class DataProcessing:
 
             # Path to save the file
             destination_path = os.path.join(self.destination, file_name)
+
+            # Reserve the output atomically: two input files can map to the
+            # same {date}-T{tournament} name, and silently overwriting the
+            # first conversion would lose data
+            try:
+                os.close(
+                    os.open(destination_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                )
+            except FileExistsError:
+                raise FileExistsError(
+                    f"{file_name} already exists, refusing to overwrite it"
+                ) from None
 
             # Save the table
             df.to_parquet(destination_path, index=False)

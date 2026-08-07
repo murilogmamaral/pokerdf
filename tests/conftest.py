@@ -148,3 +148,11 @@ def satellite_final_hand(satellite_tournament_text: str) -> list[str]:
     chunks = satellite_tournament_text.split(f"{PLATFORM} ")
     hand = next(h for h in chunks if h.startswith("Hand #33333:"))
     return hand.split("\n*** ")
+
+
+@pytest.fixture(scope="session")
+def no_showdown_elimination_hand(satellite_tournament_text: str) -> list[str]:
+    """VillainF folds an all-in blind post and is eliminated with no showdown."""
+    chunks = satellite_tournament_text.split(f"{PLATFORM} ")
+    hand = next(h for h in chunks if h.startswith("Hand #33332:"))
+    return hand.split("\n*** ")
