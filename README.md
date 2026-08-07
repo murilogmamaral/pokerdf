@@ -129,7 +129,7 @@ One row per player in each hand. The showdown columns hold the cards revealed by
 | HandID         | Hand in which the player participated                      | 215024616736 |
 | Player         | Name of the player                                         | playername |
 | Result         | Result of the hand (folded, lost, mucked, non-sd win, won) | won        |
-| Balance        | Total collected from the pot in the hand                   | 156.0      |
+| Balance        | Amount collected from the pot by the player in the hand (null when nothing was collected; the winners' amounts sum to the pot) | 840.0      |
 | ShowDownC1..C2 | Cards revealed by the player at showdown                   | Ah, Ac     |
 | PokerHand      | Card combination shown by the player                       | a pair of Aces |
 
