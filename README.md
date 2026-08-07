@@ -152,7 +152,7 @@ You can generate these four tables automatically with the `modeling` command, po
 ```
 pokerdf modeling /path/to/parquet/files
 ```
-The command concatenates all files and saves the five tables as _.parquet_ inside `./modeling/{SESSION_ID}/`.
+The command concatenates all files and saves the four tables as _.parquet_ inside `./modeling/{SESSION_ID}/`.
 
 #### fact_player_actions
 

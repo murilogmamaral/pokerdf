@@ -97,7 +97,7 @@ def main() -> None:
     - 'convert': converts hand history .txt files into .parquet files,
       saving them in ./output/{SESSION_ID}.
     - 'modeling': reads converted .parquet files and splits them into a star
-      schema (one fact table and four dimensions), saving the five tables
+      schema (one fact table and three dimensions), saving the four tables
       in ./modeling/{SESSION_ID}.
 
     Raises:

@@ -716,7 +716,7 @@ def build_star_schema(source: str, destination: str) -> dict[str, int]:
 
     Args:
         source (str): Directory containing the converted .parquet files.
-        destination (str): Directory where the five tables will be saved.
+        destination (str): Directory where the four tables will be saved.
 
     Returns:
         dict[str, int]: Number of rows of each generated table.
