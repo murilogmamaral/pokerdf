@@ -148,7 +148,7 @@ The reasoning behind this design:
 
 ![data-modeling](https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/data-modeling.svg)
 
-You can generate these five tables automatically with the `modeling` command, pointing to a folder of _.parquet_ files produced by the `convert` command:
+You can generate these four tables automatically with the `modeling` command, pointing to a folder of _.parquet_ files produced by the `convert` command:
 ```
 pokerdf modeling /path/to/parquet/files
 ```
