@@ -395,28 +395,13 @@ def test_dim_hand_summary_has_one_row_per_hand(
     assert not dim.duplicated(subset=["TournID", "HandID"]).any()
 
 
-def test_dim_hand_summary_carries_the_winner_showdown(
+def test_dim_hand_summary_carries_only_hand_identity_and_time(
     source_df: pd.DataFrame,
 ) -> None:
     dim = build_dim_hand_summary(source_df)
-    # Hand 219269866589: garciamurilo won the showdown with a pair of Jacks
+    assert list(dim.columns) == ["TournID", "HandID", "LocalTime"]
     row = dim[dim["HandID"] == 219269866589].iloc[0]
     assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:23:44")
-    assert row["ShowDownC1"] == "8h"
-    assert row["ShowDownC2"] == "Kh"
-    assert row["PokerHand"] == "a pair of Jacks"
-
-
-def test_dim_hand_summary_showdown_is_null_without_showdown(
-    source_df: pd.DataFrame,
-) -> None:
-    dim = build_dim_hand_summary(source_df)
-    # Hand 11111 ended with everyone folding preflop
-    row = dim[dim["HandID"] == 11111].iloc[0]
-    assert row[["ShowDownC1", "ShowDownC2", "PokerHand"]].isna().all()
-    # The betting context of the hand belongs to the fact table
-    assert "SmallBlind" not in dim.columns
-    assert "Level" not in dim.columns
 
 
 # ---------------------------------------------------------------------------
@@ -441,7 +426,7 @@ def test_dim_player_summary_values(source_df: pd.DataFrame) -> None:
     assert "Position" not in dim.columns
 
 
-def test_dim_player_summary_keeps_balance_but_not_showdown(
+def test_dim_player_summary_flattens_showdown_cards(
     source_df: pd.DataFrame,
 ) -> None:
     dim = build_dim_player_summary(source_df)
@@ -449,9 +434,20 @@ def test_dim_player_summary_keeps_balance_but_not_showdown(
         0
     ]
     assert row["Balance"] == 40.0
-    # The showdown of the hand belongs to dim_hand_summary now
-    assert "ShowDownC1" not in dim.columns
-    assert "PokerHand" not in dim.columns
+    assert row["ShowDownC1"] == "8h"
+    assert row["ShowDownC2"] == "Kh"
+    assert row["PokerHand"] == "a pair of Jacks"
+
+
+def test_dim_player_summary_keeps_the_losers_revealed_cards(
+    source_df: pd.DataFrame,
+) -> None:
+    # Hand 219269866589: VillainB lost and mucked [7h Td] — the revealed
+    # cards of the losers matter for range studies
+    dim = build_dim_player_summary(source_df)
+    row = dim[(dim["HandID"] == 219269866589) & (dim["Player"] == "VillainB")].iloc[0]
+    assert row["ShowDownC1"] == "7h"
+    assert row["ShowDownC2"] == "Td"
 
 
 # ---------------------------------------------------------------------------

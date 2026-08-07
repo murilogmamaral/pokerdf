@@ -175,41 +175,17 @@ def build_dim_hand_summary(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, HandID, LocalTime, ShowDownC1,
-            ShowDownC2 and PokerHand: when and how the hand ended. The
-            showdown columns hold the cards and combination of the showdown
-            winner, and are null when the hand ended without a showdown.
-            The betting context of the hand (level, blinds, ante, owner
-            cards) belongs to the fact table.
+        pd.DataFrame: Columns TournID, HandID and LocalTime. The betting
+            context of the hand (level, blinds, ante, owner cards) belongs
+            to the fact table, and the showdown of each player belongs to
+            dim_player_summary.
     """
     # One row per hand
-    hands = df.drop_duplicates(subset=[Column.TOURN_ID, Column.HAND_ID]).loc[
-        :, [Column.TOURN_ID, Column.HAND_ID, Column.LOCAL_TIME]
-    ]
-
-    # The showdown that decided the hand: the winner's revealed cards and
-    # combination (in split pots, the winner with the largest balance)
-    winners = (
-        df[df[Column.RESULT] == "won"]
-        .sort_values(Column.BALANCE, ascending=False)
-        .drop_duplicates(subset=[Column.TOURN_ID, Column.HAND_ID])
+    dim = (
+        df.drop_duplicates(subset=[Column.TOURN_ID, Column.HAND_ID])
+        .loc[:, [Column.TOURN_ID, Column.HAND_ID, Column.LOCAL_TIME]]
+        .astype({Column.TOURN_ID: "int64", Column.HAND_ID: "int64"})
     )
-    showdown = pd.DataFrame(
-        {
-            Column.TOURN_ID: winners[Column.TOURN_ID],
-            Column.HAND_ID: winners[Column.HAND_ID],
-            ModelColumn.SHOW_DOWN_C1: [
-                _get_element(x, 0) for x in winners[Column.SHOW_DOWN]
-            ],
-            ModelColumn.SHOW_DOWN_C2: [
-                _get_element(x, 1) for x in winners[Column.SHOW_DOWN]
-            ],
-            ModelColumn.POKER_HAND: winners[Column.CARD_COMBINATION],
-        }
-    )
-
-    dim = hands.merge(showdown, on=[Column.TOURN_ID, Column.HAND_ID], how="left")
-    dim = dim.astype({Column.TOURN_ID: "int64", Column.HAND_ID: "int64"})
 
     return dim.sort_values([Column.TOURN_ID, Column.HAND_ID], ignore_index=True)
 
@@ -223,9 +199,11 @@ def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: Columns TournID, HandID, Player, Stack, PostedAnte,
-            PostedBlind, Result and Balance. Seat and Position belong to the
-            fact table, where they define who acts first in each round, and
-            the showdown of the hand belongs to dim_hand_summary.
+            PostedBlind, Result, Balance, ShowDownC1, ShowDownC2 and
+            PokerHand (the cards revealed by the player at showdown, also
+            for the losers — valuable for range studies). Seat and Position
+            belong to the fact table, where they define who acts first in
+            each round.
     """
     # One row per player per hand
     players = df.drop_duplicates(
@@ -242,6 +220,13 @@ def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
             Column.POSTED_BLIND: players[Column.POSTED_BLIND],
             Column.RESULT: players[Column.RESULT],
             Column.BALANCE: players[Column.BALANCE],
+            ModelColumn.SHOW_DOWN_C1: [
+                _get_element(x, 0) for x in players[Column.SHOW_DOWN]
+            ],
+            ModelColumn.SHOW_DOWN_C2: [
+                _get_element(x, 1) for x in players[Column.SHOW_DOWN]
+            ],
+            ModelColumn.POKER_HAND: players[Column.CARD_COMBINATION],
         }
     )
 

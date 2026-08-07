@@ -108,30 +108,30 @@ One row per tournament.
 
 ##### dim_hand_summary
 
-One row per hand: when it was played and how it ended. The showdown columns hold the revealed cards and combination of the showdown winner, and are null when the hand ended without a showdown.
+One row per hand.
 
 | Column         | Description                                     | Example              |
 |----------------|--------------------------------------------------|----------------------|
 | TournID        | Tournament of the hand                          | 2928882649           |
 | HandID         | Unique identifier of the hand                   | 215024616736         |
 | LocalTime      | Time when the hand was played                   | 2020-06-07 07:52:12  |
-| ShowDownC1..C2 | Cards of the showdown winner                    | Ah, Ac               |
-| PokerHand      | Winning combination of the showdown             | a pair of Aces       |
 
 ##### dim_player_summary
 
-One row per player in each hand.
+One row per player in each hand. The showdown columns hold the cards revealed by the player (also for the losers, useful for range studies), and are null when the player did not reveal them.
 
-| Column      | Description                                                | Example    |
-|-------------|-------------------------------------------------------------|------------|
-| TournID     | Tournament of the hand                                     | 2928882649 |
-| HandID      | Hand in which the player participated                      | 215024616736 |
-| Player      | Name of the player                                         | playername |
-| Stack       | Stack of the player at the start of the hand               | 2500.0     |
-| PostedAnte  | Ante posted by the player (partial when all-in)            | 4.0        |
-| PostedBlind | Blind posted by the player (partial when all-in)           | 30.0       |
-| Result      | Result of the hand (folded, lost, mucked, non-sd win, won) | won        |
-| Balance     | Total collected from the pot in the hand                   | 156.0      |
+| Column         | Description                                                | Example    |
+|----------------|-------------------------------------------------------------|------------|
+| TournID        | Tournament of the hand                                     | 2928882649 |
+| HandID         | Hand in which the player participated                      | 215024616736 |
+| Player         | Name of the player                                         | playername |
+| Stack          | Stack of the player at the start of the hand               | 2500.0     |
+| PostedAnte     | Ante posted by the player (partial when all-in)            | 4.0        |
+| PostedBlind    | Blind posted by the player (partial when all-in)           | 30.0       |
+| Result         | Result of the hand (folded, lost, mucked, non-sd win, won) | won        |
+| Balance        | Total collected from the pot in the hand                   | 156.0      |
+| ShowDownC1..C2 | Cards revealed by the player at showdown                   | Ah, Ac     |
+| PokerHand      | Card combination shown by the player                       | a pair of Aces |
 
 ##### dim_final_rank
 
