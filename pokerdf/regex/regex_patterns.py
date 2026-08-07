@@ -560,23 +560,29 @@ class RegexPatterns:
 
     def get_showed_card(
         self, player: str, hand: list[str]
-    ) -> list[list[str]] | list[list[None]]:
+    ) -> list[tuple[str, str | None]] | list[list[None]]:
         """
         Get the cards of the player, if they were showed or mucked at showdown.
+
+        The cards usually come from the summary ("showed [As Ks]" or
+        "mucked [7h Td]"). A player can also voluntarily show a single card
+        ("shows [Ah]"), which is not mirrored in the summary, so the body of
+        the hand is used as a fallback and the second card is None.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the cards of the player, like [('As', 'Ks')],
-                or [[None, None]] if the player did not reveal the cards.
+            list: List containing the cards of the player, like [('As', 'Ks')]
+                or [('Ah', None)], or [[None, None]] if the player did not
+                reveal any card.
         """
-        # Pattern to extract
-        regex = rf"{player} .*(?:mucked|showed) \[(\S+) (\S+)\]"
+        # Pattern to extract from the summary (the second card is optional)
+        regex = rf"{player} .*(?:mucked|showed) \[(\S+)(?: (\S+))?\]"
 
         # Default value for empty results
-        fill_empty = [[None, None]]
+        fill_empty: list[list[None]] = [[None, None]]
 
         # Get the last content of a played hand
         target = hand[-1]
@@ -584,11 +590,19 @@ class RegexPatterns:
         # Apply regex
         result = re.findall(regex, target)
 
-        # Guarantee that an empty list will not be returned
-        if result == []:
-            return fill_empty
+        if result != []:
+            first, second = result[0]
+            cards: list[tuple[str, str | None]] = [(first, second if second else None)]
+            return cards
 
-        return result
+        # Fallback: single-card shows only appear in the body of the hand
+        body_regex = rf"{player}: shows \[(\S+)\]"
+        body_result = re.findall(body_regex, "\n".join(hand))
+        if body_result != []:
+            cards = [(body_result[0], None)]
+            return cards
+
+        return fill_empty
 
     def get_card_combination(self, player: str, hand: list[str]) -> list[str]:
         """

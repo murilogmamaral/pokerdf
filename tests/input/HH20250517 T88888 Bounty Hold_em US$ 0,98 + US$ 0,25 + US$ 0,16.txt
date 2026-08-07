@@ -1,3 +1,31 @@
+PokerStars Hand #22219: Tournament #88888, $0.98+$0.25+$0.16 USD Hold'em No Limit - Level I (10/20) - 2025/05/17 9:57:00 BRT [2025/05/17 8:57:00 ET]
+Table '88888 1' 3-max Seat #2 is the button
+Seat 1: VillainA (120 in chips, $0.50 bounty)
+Seat 2: garciamurilo (520 in chips, $0.50 bounty)
+Seat 3: VillainB (860 in chips, $0.50 bounty)
+VillainB: posts small blind 10
+VillainA: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [9c 3h]
+garciamurilo: calls 20
+VillainB: calls 10
+VillainA: checks
+*** FLOP *** [Qd 8c 2h]
+VillainB: bets 40
+VillainA: folds
+garciamurilo: folds
+Uncalled bet (40) returned to VillainB
+VillainB collected 60 from pot
+VillainB: shows [Qs]
+*** SUMMARY ***
+Total pot 60 | Rake 0
+Board [Qd 8c 2h]
+Seat 1: VillainA (big blind) folded on the Flop
+Seat 2: garciamurilo (button) folded on the Flop
+Seat 3: VillainB (small blind) collected (60)
+
+
+
 PokerStars Hand #22220: Tournament #88888, $0.98+$0.25+$0.16 USD Hold'em No Limit - Level I (10/20) - 2025/05/17 9:58:30 BRT [2025/05/17 8:58:30 ET]
 Table '88888 1' 3-max Seat #3 is the button
 Seat 1: VillainA (100 in chips, $0.50 bounty)

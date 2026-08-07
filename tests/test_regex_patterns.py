@@ -263,6 +263,21 @@ def test_get_showed_card_returns_none_when_cards_are_not_revealed(
     assert r.get_showed_card("VillainA", showdown_hand) == [[None, None]]
 
 
+def test_get_showed_card_single_card_show(
+    single_card_show_hand: list[str],
+) -> None:
+    # A voluntary single-card show is not mirrored in the summary, so it is
+    # captured from the body of the hand, with None as the second card
+    expected: list[Any] = [("Qs", None)]
+    assert r.get_showed_card("VillainB", single_card_show_hand) == expected
+
+
+def test_get_showed_card_single_card_show_ignores_other_players(
+    single_card_show_hand: list[str],
+) -> None:
+    assert r.get_showed_card("garciamurilo", single_card_show_hand) == [[None, None]]
+
+
 def test_get_card_combination(showdown_hand: list[str]) -> None:
     assert r.get_card_combination("garciamurilo", showdown_hand) == ["a pair of Jacks"]
 

@@ -106,6 +106,12 @@ def get_ko_hand(ko_tournament_text: str) -> Callable[[str], list[str]]:
 
 
 @pytest.fixture(scope="session")
+def single_card_show_hand(get_ko_hand: Callable[[str], list[str]]) -> list[str]:
+    """VillainB wins uncontested and voluntarily shows a single card."""
+    return get_ko_hand("22219")
+
+
+@pytest.fixture(scope="session")
 def side_pot_hand(get_ko_hand: Callable[[str], list[str]]) -> list[str]:
     """Side pot: VillainA is all-in, the others keep betting a side pot."""
     return get_ko_hand("22220")

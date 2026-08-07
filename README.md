@@ -129,7 +129,7 @@ You may want to build a pipeline to incrementally feed your table with new hand 
 | BoardFlop         | Cards dealt on the flop                                      | [4d, Qs, Ad]                      | list[string]    |
 | BoardTurn         | Card dealt on the turn                                       | [4d, Qs, Ad, 7d]                  | list[string]    |
 | BoardRiver        | Card dealt on the river                                      | [4d, Qs, Ad, 7d, 2d]              | list[string]    |
-| ShowDown          | Player's cards if went to showdown                           | [Ah, Ac]                          | list[string]    |
+| ShowDown          | Cards revealed by the player (second is null on single-card shows) | [Ah, Ac]                    | list[string]    |
 | CardCombination   | Card combination held by the player                          | three of a kind, Aces             | string          |
 | Result            | Result of the hand (folded, lost, mucked, non-sd win, won)   | won                               | string          |
 | Balance           | Total value won in a hand                                    | 9150.25                           | float           |

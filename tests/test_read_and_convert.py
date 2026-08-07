@@ -160,6 +160,12 @@ def test_apply_regex_captures_bounties(ko_tournament_text: str) -> None:
     assert pd.isna(hand.loc["VillainB", "BountyWon"])
 
 
+def test_apply_regex_captures_single_card_shows(ko_tournament_text: str) -> None:
+    df = apply_regex(ko_tournament_text)
+    hand = df[df["HandID"] == "22219"].set_index("Player")
+    assert hand.loc["VillainB", "ShowDown"] == ("Qs", None)
+
+
 def test_apply_regex_captures_the_pot_decomposition(ko_tournament_text: str) -> None:
     df = apply_regex(ko_tournament_text)
     hand = df[df["HandID"] == "22220"]
