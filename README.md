@@ -56,7 +56,7 @@ Seat 3: VillainB (big blind) collected (40)
 <br>
 
 #### Data Modeling
-For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of relational data model split into five tables that may be useful for most cases.  
+For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of dimensional model (star schema) split into five tables that may be useful for most cases: `fact_player_actions` works as the fact table, holding one row per action taken by a player in a hand, while `dim_tourn_summary`, `dim_hand_summary`, `dim_player_summary`, and `dim_final_rank` work as dimension tables.  
 
 
 ![data-modeling](https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/data-modeling.svg)
