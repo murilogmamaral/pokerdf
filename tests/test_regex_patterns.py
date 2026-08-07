@@ -128,6 +128,16 @@ def test_get_rake(first_hand: list[str]) -> None:
     assert r.get_rake(first_hand) == [0.0]
 
 
+def test_get_pot_breakdown_with_side_pots(side_pot_hand: list[str]) -> None:
+    # Main pot first, then each side pot
+    assert r.get_pot_breakdown(side_pot_hand) == [(300.0, 400.0)]
+
+
+def test_get_pot_breakdown_with_a_single_pot(first_hand: list[str]) -> None:
+    # Without side pots the breakdown is the total pot itself
+    assert r.get_pot_breakdown(first_hand) == [(20.0,)]
+
+
 # ---------------------------------------------------------------------------
 # Player-specific data
 # ---------------------------------------------------------------------------

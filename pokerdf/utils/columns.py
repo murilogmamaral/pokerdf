@@ -56,6 +56,7 @@ class Column(StrEnum):
     BOUNTY_WON = "BountyWon"
     TOTAL_POT_LOG = "TotalPotLog"
     RAKE = "Rake"
+    POT_BREAKDOWN = "PotBreakdown"
     FINAL_RANK = "FinalRank"
     PRIZE = "Prize"
 

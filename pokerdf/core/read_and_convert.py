@@ -109,6 +109,7 @@ def compose_dataframe() -> pd.DataFrame:
         Column.BOUNTY_WON: "float64",
         Column.TOTAL_POT_LOG: "float64",
         Column.RAKE: "float64",
+        Column.POT_BREAKDOWN: "object",
         Column.FINAL_RANK: "int64",
         Column.PRIZE: "float64",
     }

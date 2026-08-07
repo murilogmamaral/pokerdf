@@ -43,5 +43,6 @@ class ValidateInput(BaseModel):
     BountyWon: list[float | None]
     TotalPotLog: list[float | None]
     Rake: list[float | None]
+    PotBreakdown: list[tuple[float, ...]]
     FinalRank: list[int]
     Prize: list[float | None]

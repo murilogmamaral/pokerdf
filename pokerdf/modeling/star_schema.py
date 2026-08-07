@@ -57,6 +57,7 @@ SOURCE_SCHEMA = pa.schema(
         (Column.BOUNTY_WON, pa.float64()),
         (Column.TOTAL_POT_LOG, pa.float64()),
         (Column.RAKE, pa.float64()),
+        (Column.POT_BREAKDOWN, pa.list_(pa.float64())),
         (Column.FINAL_RANK, pa.int64()),
         (Column.PRIZE, pa.float64()),
     ]

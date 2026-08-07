@@ -41,6 +41,7 @@ def test_capture_general_data_of_the_hand(first_hand: list[str]) -> None:
         "BoardRiver": [()],
         "TotalPotLog": [20.0],
         "Rake": [0.0],
+        "PotBreakdown": [(20.0,)],
     }
 
 

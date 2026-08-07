@@ -54,6 +54,7 @@ def capture_general_data_of_the_hand(splitted_hand: list[str]) -> dict[str, Any]
     row[Column.BOARD_RIVER] = r.get_board(splitted_hand, stage="RIVER ***")
     row[Column.TOTAL_POT_LOG] = r.get_total_pot_log(splitted_hand)
     row[Column.RAKE] = r.get_rake(splitted_hand)
+    row[Column.POT_BREAKDOWN] = r.get_pot_breakdown(splitted_hand)
 
     return row
 

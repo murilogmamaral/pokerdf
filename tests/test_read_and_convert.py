@@ -62,6 +62,7 @@ EXPECTED_COLUMNS = [
     "BountyWon",
     "TotalPotLog",
     "Rake",
+    "PotBreakdown",
     "FinalRank",
     "Prize",
 ]
@@ -157,6 +158,14 @@ def test_apply_regex_captures_bounties(ko_tournament_text: str) -> None:
     # garciamurilo eliminated VillainA and won the cash part of the bounty
     assert hand.loc["garciamurilo", "BountyWon"] == 0.25
     assert pd.isna(hand.loc["VillainB", "BountyWon"])
+
+
+def test_apply_regex_captures_the_pot_decomposition(ko_tournament_text: str) -> None:
+    df = apply_regex(ko_tournament_text)
+    hand = df[df["HandID"] == "22220"]
+    # Main and side pots are decomposed, and the breakdown sums to the total
+    assert hand["PotBreakdown"].iloc[0] == (300.0, 400.0)
+    assert hand["TotalPotLog"].iloc[0] == 700.0
 
 
 # ---------------------------------------------------------------------------

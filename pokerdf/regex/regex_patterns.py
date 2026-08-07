@@ -809,6 +809,40 @@ class RegexPatterns:
 
         return result
 
+    def get_pot_breakdown(self, hand: list[str]) -> list[tuple[float, ...]]:
+        """
+        Get the decomposition of the pot, as reported in the summary.
+
+        When a player is all-in and the others keep betting, the pot is
+        decomposed ("Total pot 9136 Main pot 5820. Side pot 3316. | Rake 0")
+        and each portion can be collected by a different player. The
+        breakdown is captured as (main pot, side pot, ...) when the hand has
+        side pots, or as a single-element tuple with the total pot otherwise,
+        so the sum of the breakdown always equals TotalPotLog.
+
+        Args:
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the tuple of pots (for example, [(5820.0, 3316.0)]),
+                or [()] if the summary does not report a pot.
+        """
+        # Get the last content of a played hand (the summary)
+        target = hand[-1]
+
+        # Decomposed pot: the main pot first, then each side pot
+        main = re.findall(r"Main pot (\d+(?:\.\d+)?)", target)
+        sides = re.findall(r"Side pot(?:-\d+)? (\d+(?:\.\d+)?)", target)
+        if main:
+            return [tuple(float(x) for x in main + sides)]
+
+        # Single pot: the breakdown is the total itself
+        total = re.findall(r"Total pot (\d+(?:\.\d+)?)", target)
+        if total:
+            return [(float(total[0]),)]
+
+        return [()]
+
     def get_board(
         self, hand: list[str], stage: str
     ) -> (
