@@ -259,6 +259,29 @@ def test_data_processing_run_logs_failure_without_raising(tmp_path: Path) -> Non
     assert list(destination.glob("*.parquet")) == []
 
 
+def test_data_processing_run_refuses_to_overwrite_an_existing_output(
+    tmp_path: Path,
+) -> None:
+    # Two inputs of the same tournament map to the same output name: the
+    # second conversion must fail loudly instead of silently overwriting
+    source_a = tmp_path / "HH20250516 T99999 original.txt"
+    source_b = tmp_path / "HH20250516 T99999 copy.txt"
+    shutil.copy(FIXTURE_PATH, source_a)
+    shutil.copy(FIXTURE_PATH, source_b)
+    destination = tmp_path / "output"
+    destination.mkdir()
+
+    DataProcessing(str(source_a), str(destination)).run()
+    DataProcessing(str(source_b), str(destination)).run()
+
+    assert "HH20250516 T99999 original.txt" in (destination / "success.txt").read_text()
+    fail_log = (destination / "fail.txt").read_text()
+    assert "HH20250516 T99999 copy.txt" in fail_log
+    assert "refusing to overwrite" in fail_log
+    # The parquet from the first conversion is intact
+    assert len(pd.read_parquet(destination / "20201011-T99999.parquet")) > 0
+
+
 # ---------------------------------------------------------------------------
 # execute_in_parallel
 # ---------------------------------------------------------------------------

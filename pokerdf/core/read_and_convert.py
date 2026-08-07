@@ -250,8 +250,10 @@ class DataProcessing:
 
         Converts the file to a DataFrame and saves it as
         "{DATE_OF_TOURNAMENT}-T{TOURNAMENT_ID}.parquet" in the destination
-        folder. Successes are appended to success.txt and failures to
-        fail.txt (with the error message); a failure never raises.
+        folder. If another input file already produced the same output name,
+        the conversion fails instead of silently overwriting it. Successes
+        are appended to success.txt and failures to fail.txt (with the error
+        message); a failure never raises.
         """
         try:
 
@@ -266,6 +268,18 @@ class DataProcessing:
 
             # Path to save the file
             destination_path = os.path.join(self.destination, file_name)
+
+            # Reserve the output atomically: two input files can map to the
+            # same {date}-T{tournament} name, and silently overwriting the
+            # first conversion would lose data
+            try:
+                os.close(
+                    os.open(destination_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                )
+            except FileExistsError:
+                raise FileExistsError(
+                    f"{file_name} already exists, refusing to overwrite it"
+                ) from None
 
             # Save the table
             df.to_parquet(destination_path, index=False)
