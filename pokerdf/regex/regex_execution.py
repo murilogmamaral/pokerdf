@@ -52,6 +52,9 @@ def capture_general_data_of_the_hand(splitted_hand: list[str]) -> dict[str, Any]
     row[Column.BOARD_FLOP] = r.get_board(splitted_hand, stage="FLOP ***")
     row[Column.BOARD_TURN] = r.get_board(splitted_hand, stage="TURN ***")
     row[Column.BOARD_RIVER] = r.get_board(splitted_hand, stage="RIVER ***")
+    row[Column.TOTAL_POT_LOG] = r.get_total_pot_log(splitted_hand)
+    row[Column.RAKE] = r.get_rake(splitted_hand)
+    row[Column.POT_BREAKDOWN] = r.get_pot_breakdown(splitted_hand)
 
     return row
 
@@ -78,6 +81,7 @@ def capture_specific_data_of_the_player(
     row[Column.POSITION] = r.get_position(player, splitted_hand)
     row[Column.POSTED_BLIND] = r.get_posted_blind(player, splitted_hand)
     row[Column.STACK] = r.get_stack(player, splitted_hand)
+    row[Column.BOUNTY] = r.get_bounty(player, splitted_hand)
     row[Column.PREFLOP_ACTION] = r.get_actions(
         player, splitted_hand, stage="HOLE CARDS ***"
     )
@@ -97,6 +101,8 @@ def capture_specific_data_of_the_player(
     row[Column.CARD_COMBINATION] = r.get_card_combination(player, splitted_hand)
     row[Column.RESULT] = r.get_result(player, splitted_hand)
     row[Column.BALANCE] = r.get_balance(player, splitted_hand)
+    row[Column.UNCALLED_RETURNED] = r.get_uncalled_returned(player, splitted_hand)
+    row[Column.BOUNTY_WON] = r.get_bounty_won(player, splitted_hand)
     row[Column.FINAL_RANK] = r.get_final_rank(player, splitted_hand)
     row[Column.PRIZE] = r.get_prize(player, splitted_hand)
 

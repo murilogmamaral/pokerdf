@@ -41,6 +41,7 @@ EXPECTED_COLUMNS = [
     "Position",
     "PostedBlind",
     "Stack",
+    "Bounty",
     "PreflopAction",
     "FlopAction",
     "TurnAction",
@@ -57,6 +58,11 @@ EXPECTED_COLUMNS = [
     "CardCombination",
     "Result",
     "Balance",
+    "UncalledReturned",
+    "BountyWon",
+    "TotalPotLog",
+    "Rake",
+    "PotBreakdown",
     "FinalRank",
     "Prize",
 ]
@@ -142,6 +148,42 @@ def test_apply_regex_captures_tournament_wide_values(tournament_text: str) -> No
     assert set(df["TournID"]) == {"99999"}
     assert set(df["Owner"]) == {"garciamurilo"}
     assert set(df["Modality"]) == {"USD Hold'em No Limit"}
+
+
+def test_apply_regex_captures_bounties(ko_tournament_text: str) -> None:
+    df = apply_regex(ko_tournament_text)
+    hand = df[df["HandID"] == "22221"].set_index("Player")
+    # Every player has a bounty on their head in a knockout tournament
+    assert hand["Bounty"].tolist() == [0.5, 0.5, 0.5]
+    # garciamurilo eliminated VillainA and won the cash part of the bounty
+    assert hand.loc["garciamurilo", "BountyWon"] == 0.25
+    assert pd.isna(hand.loc["VillainB", "BountyWon"])
+
+
+def test_apply_regex_captures_single_card_shows(ko_tournament_text: str) -> None:
+    df = apply_regex(ko_tournament_text)
+    hand = df[df["HandID"] == "22219"].set_index("Player")
+    assert hand.loc["VillainB", "ShowDown"] == ("Qs", None)
+
+
+def test_apply_regex_captures_the_pot_decomposition(ko_tournament_text: str) -> None:
+    df = apply_regex(ko_tournament_text)
+    hand = df[df["HandID"] == "22220"]
+    # Main and side pots are decomposed, and the breakdown sums to the total
+    assert hand["PotBreakdown"].iloc[0] == (300.0, 400.0)
+    assert hand["TotalPotLog"].iloc[0] == 700.0
+
+
+def test_apply_regex_captures_satellite_finishes(
+    satellite_tournament_text: str,
+) -> None:
+    df = apply_regex(satellite_tournament_text).set_index("Player")
+    assert df.loc["garciamurilo", "FinalRank"] == 1
+    # The ticket face value is the prize (as text; coerced downstream)
+    assert df.loc["garciamurilo", "Prize"] == "1"
+    assert df.loc["VillainB", "FinalRank"] == 2
+    # VillainC finished without a reported place
+    assert df.loc["VillainC", "FinalRank"] == 0
 
 
 # ---------------------------------------------------------------------------

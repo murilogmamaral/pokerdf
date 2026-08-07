@@ -110,6 +110,34 @@ def test_get_board_returns_empty_tuple_when_stage_is_not_reached(
     assert r.get_board(flop_hand, stage="TURN ***") == [()]
 
 
+def test_get_total_pot_log(first_hand: list[str]) -> None:
+    assert r.get_total_pot_log(first_hand) == [20.0]
+
+
+def test_get_total_pot_log_with_side_pots() -> None:
+    # With side pots the summary decomposes the total, but the first number
+    # is still the total pot
+    hand = [
+        "Hand #1: ...",
+        "SUMMARY ***\nTotal pot 9136 Main pot 5820. Side pot 3316. | Rake 0",
+    ]
+    assert r.get_total_pot_log(hand) == [9136.0]
+
+
+def test_get_rake(first_hand: list[str]) -> None:
+    assert r.get_rake(first_hand) == [0.0]
+
+
+def test_get_pot_breakdown_with_side_pots(side_pot_hand: list[str]) -> None:
+    # Main pot first, then each side pot
+    assert r.get_pot_breakdown(side_pot_hand) == [(300.0, 400.0)]
+
+
+def test_get_pot_breakdown_with_a_single_pot(first_hand: list[str]) -> None:
+    # Without side pots the breakdown is the total pot itself
+    assert r.get_pot_breakdown(first_hand) == [(20.0,)]
+
+
 # ---------------------------------------------------------------------------
 # Player-specific data
 # ---------------------------------------------------------------------------
@@ -148,6 +176,33 @@ def test_get_posted_ante_returns_none_when_no_ante_is_posted(
     first_hand: list[str],
 ) -> None:
     assert r.get_posted_ante("garciamurilo", first_hand) == [None]
+
+
+def test_get_bounty(pko_elimination_hand: list[str]) -> None:
+    assert r.get_bounty("VillainA", pko_elimination_hand) == [0.5]
+    assert r.get_bounty("garciamurilo", pko_elimination_hand) == [0.5]
+
+
+def test_get_bounty_returns_none_without_bounties(first_hand: list[str]) -> None:
+    assert r.get_bounty("garciamurilo", first_hand) == [None]
+
+
+def test_get_bounty_won_progressive_knockout(
+    pko_elimination_hand: list[str],
+) -> None:
+    # Progressive knockout: only the cash part of the bounty is won
+    assert r.get_bounty_won("garciamurilo", pko_elimination_hand) == [0.25]
+
+
+def test_get_bounty_won_regular_knockout(ko_final_hand: list[str]) -> None:
+    # Regular knockout: the whole bounty of the eliminated player is won
+    assert r.get_bounty_won("garciamurilo", ko_final_hand) == [0.5]
+
+
+def test_get_bounty_won_returns_none_when_no_bounty_is_won(
+    pko_elimination_hand: list[str],
+) -> None:
+    assert r.get_bounty_won("VillainB", pko_elimination_hand) == [None]
 
 
 def test_get_actions_preflop(first_hand: list[str]) -> None:
@@ -208,6 +263,21 @@ def test_get_showed_card_returns_none_when_cards_are_not_revealed(
     assert r.get_showed_card("VillainA", showdown_hand) == [[None, None]]
 
 
+def test_get_showed_card_single_card_show(
+    single_card_show_hand: list[str],
+) -> None:
+    # A voluntary single-card show is not mirrored in the summary, so it is
+    # captured from the body of the hand, with None as the second card
+    expected: list[Any] = [("Qs", None)]
+    assert r.get_showed_card("VillainB", single_card_show_hand) == expected
+
+
+def test_get_showed_card_single_card_show_ignores_other_players(
+    single_card_show_hand: list[str],
+) -> None:
+    assert r.get_showed_card("garciamurilo", single_card_show_hand) == [[None, None]]
+
+
 def test_get_card_combination(showdown_hand: list[str]) -> None:
     assert r.get_card_combination("garciamurilo", showdown_hand) == ["a pair of Jacks"]
 
@@ -244,6 +314,39 @@ def test_get_balance_returns_none_when_nothing_is_collected(
     assert r.get_balance("VillainA", showdown_hand) == [None]
 
 
+def test_get_uncalled_returned(first_hand: list[str]) -> None:
+    # VillainB's unmatched part of the big blind comes back when everyone folds
+    assert r.get_uncalled_returned("VillainB", first_hand) == [10.0]
+
+
+def test_get_uncalled_returned_returns_none_when_nothing_is_returned(
+    first_hand: list[str],
+) -> None:
+    assert r.get_uncalled_returned("garciamurilo", first_hand) == [None]
+
+
+def test_get_uncalled_returned_sums_multiple_returns() -> None:
+    # Synthetic hand: the excess of a raise over a short all-in is returned
+    # preflop, and an uncalled bet is returned on the flop
+    hand = [
+        "Hand #1: Tournament #2, ...",
+        "HOLE CARDS ***\n"
+        "VillainA: raises 380 to 400 and is all-in\n"
+        "garciamurilo: raises 600 to 1000\n"
+        "Uncalled bet (600) returned to garciamurilo",
+        "FLOP *** [2c 7d 9h]\n"
+        "garciamurilo: bets 200\n"
+        "Uncalled bet (200) returned to garciamurilo",
+    ]
+    assert r.get_uncalled_returned("garciamurilo", hand) == [800.0]
+
+
+def test_get_uncalled_returned_does_not_match_a_longer_player_name() -> None:
+    # "Vill" must not capture the return of "VillainA"
+    hand = ["HOLE CARDS ***\nUncalled bet (50) returned to VillainA"]
+    assert r.get_uncalled_returned("Vill", hand) == [None]
+
+
 def test_get_final_rank_of_eliminated_player(elimination_hand: list[str]) -> None:
     assert r.get_final_rank("VillainA", elimination_hand) == [3]
 
@@ -259,6 +362,20 @@ def test_get_final_rank_returns_minus_one_when_not_defined(
     assert r.get_final_rank("garciamurilo", first_hand) == [-1]
 
 
+def test_get_final_rank_finished_without_a_place(
+    satellite_final_hand: list[str],
+) -> None:
+    # Some logs report the finish without a place: 0 marks it
+    assert r.get_final_rank("VillainC", satellite_final_hand) == [0]
+
+
+def test_get_final_rank_placed_finishes_take_precedence(
+    satellite_final_hand: list[str],
+) -> None:
+    assert r.get_final_rank("VillainB", satellite_final_hand) == [2]
+    assert r.get_final_rank("garciamurilo", satellite_final_hand) == [1]
+
+
 def test_get_prize_of_tournament_winner(final_hand: list[str]) -> None:
     # The value is captured as text; pydantic coerces it to float downstream
     expected: list[Any] = ["6.00"]
@@ -269,3 +386,15 @@ def test_get_prize_returns_none_when_no_prize_is_awarded(
     final_hand: list[str],
 ) -> None:
     assert r.get_prize("VillainB", final_hand) == [None]
+
+
+def test_get_prize_satellite_ticket(satellite_final_hand: list[str]) -> None:
+    # The prize of a satellite is a ticket: its face value is captured
+    expected: list[Any] = ["1"]
+    assert r.get_prize("garciamurilo", satellite_final_hand) == expected
+
+
+def test_get_prize_ticket_is_not_awarded_to_the_other_players(
+    satellite_final_hand: list[str],
+) -> None:
+    assert r.get_prize("VillainB", satellite_final_hand) == [None]

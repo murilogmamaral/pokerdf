@@ -1,0 +1,119 @@
+PokerStars Hand #22219: Tournament #88888, $0.98+$0.25+$0.16 USD Hold'em No Limit - Level I (10/20) - 2025/05/17 9:57:00 BRT [2025/05/17 8:57:00 ET]
+Table '88888 1' 3-max Seat #2 is the button
+Seat 1: VillainA (120 in chips, $0.50 bounty)
+Seat 2: garciamurilo (520 in chips, $0.50 bounty)
+Seat 3: VillainB (860 in chips, $0.50 bounty)
+VillainB: posts small blind 10
+VillainA: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [9c 3h]
+garciamurilo: calls 20
+VillainB: calls 10
+VillainA: checks
+*** FLOP *** [Qd 8c 2h]
+VillainB: bets 40
+VillainA: folds
+garciamurilo: folds
+Uncalled bet (40) returned to VillainB
+VillainB collected 60 from pot
+VillainB: shows [Qs]
+*** SUMMARY ***
+Total pot 60 | Rake 0
+Board [Qd 8c 2h]
+Seat 1: VillainA (big blind) folded on the Flop
+Seat 2: garciamurilo (button) folded on the Flop
+Seat 3: VillainB (small blind) collected (60)
+
+
+
+PokerStars Hand #22220: Tournament #88888, $0.98+$0.25+$0.16 USD Hold'em No Limit - Level I (10/20) - 2025/05/17 9:58:30 BRT [2025/05/17 8:58:30 ET]
+Table '88888 1' 3-max Seat #3 is the button
+Seat 1: VillainA (100 in chips, $0.50 bounty)
+Seat 2: garciamurilo (500 in chips, $0.50 bounty)
+Seat 3: VillainB (900 in chips, $0.50 bounty)
+VillainA: posts small blind 10
+garciamurilo: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [Ah Kd]
+VillainB: raises 80 to 100
+VillainA: calls 90 and is all-in
+garciamurilo: calls 80
+*** FLOP *** [Ac 5h 9d]
+garciamurilo: bets 200
+VillainB: calls 200
+*** TURN *** [Ac 5h 9d] [4c]
+garciamurilo: checks
+VillainB: checks
+*** RIVER *** [Ac 5h 9d 4c] [8s]
+garciamurilo: checks
+VillainB: checks
+*** SHOW DOWN ***
+garciamurilo: shows [Ah Kd] (a pair of Aces)
+VillainB: mucks hand
+garciamurilo collected 400 from side pot
+VillainA: shows [7d 6d] (a straight, Five to Nine)
+VillainA collected 300 from main pot
+*** SUMMARY ***
+Total pot 700 Main pot 300. Side pot 400. | Rake 0
+Board [Ac 5h 9d 4c 8s]
+Seat 1: VillainA (small blind) showed [7d 6d] and won (300) with a straight, Five to Nine
+Seat 2: garciamurilo (big blind) showed [Ah Kd] and won (400) with a pair of Aces
+Seat 3: VillainB (button) mucked [Qc Jc]
+
+
+
+PokerStars Hand #22221: Tournament #88888, $0.98+$0.25+$0.16 USD Hold'em No Limit - Level I (10/20) - 2025/05/17 10:00:00 BRT [2025/05/17 9:00:00 ET]
+Table '88888 1' 3-max Seat #1 is the button
+Seat 1: VillainA (300 in chips, $0.50 bounty)
+Seat 2: garciamurilo (600 in chips, $0.50 bounty)
+Seat 3: VillainB (600 in chips, $0.50 bounty)
+garciamurilo: posts small blind 10
+VillainB: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [As Ad]
+VillainA: raises 280 to 300 and is all-in
+garciamurilo: calls 290
+VillainB: folds
+*** FLOP *** [2c 7d 9h]
+*** TURN *** [2c 7d 9h] [Jc]
+*** RIVER *** [2c 7d 9h Jc] [3d]
+*** SHOW DOWN ***
+VillainA: shows [Kd Kh] (a pair of Kings)
+garciamurilo: shows [As Ad] (a pair of Aces)
+garciamurilo collected 620 from pot
+garciamurilo wins $0.25 for eliminating VillainA and their own bounty increases by $0.25 to $0.75
+VillainA finished the tournament in 3rd place
+*** SUMMARY ***
+Total pot 620 | Rake 0
+Board [2c 7d 9h Jc 3d]
+Seat 1: VillainA (button) showed [Kd Kh] and lost with a pair of Kings
+Seat 2: garciamurilo (small blind) showed [As Ad] and won (620) with a pair of Aces
+Seat 3: VillainB (big blind) folded before Flop
+
+
+
+PokerStars Hand #22222: Tournament #88888, $0.98+$0.25+$0.16 USD Hold'em No Limit - Level I (10/20) - 2025/05/17 10:01:30 BRT [2025/05/17 9:01:30 ET]
+Table '88888 1' 3-max Seat #2 is the button
+Seat 2: garciamurilo (920 in chips, $0.75 bounty)
+Seat 3: VillainB (580 in chips, $0.50 bounty)
+garciamurilo: posts small blind 10
+VillainB: posts big blind 20
+*** HOLE CARDS ***
+Dealt to garciamurilo [Qs Qd]
+garciamurilo: raises 560 to 580
+VillainB: calls 560 and is all-in
+*** FLOP *** [3c 8d Th]
+*** TURN *** [3c 8d Th] [2s]
+*** RIVER *** [3c 8d Th 2s] [6d]
+*** SHOW DOWN ***
+garciamurilo: shows [Qs Qd] (a pair of Queens)
+VillainB: shows [Ac Jd] (high card Ace)
+garciamurilo collected 1160 from pot
+garciamurilo wins the $0.50 bounty for eliminating VillainB
+VillainB finished the tournament in 2nd place
+garciamurilo wins the tournament and receives $2.94 - congratulations!
+*** SUMMARY ***
+Total pot 1160 | Rake 0
+Board [3c 8d Th 2s 6d]
+Seat 2: garciamurilo (button) (small blind) showed [Qs Qd] and won (1160) with a pair of Queens
+Seat 3: VillainB (big blind) showed [Ac Jd] and lost with high card Ace

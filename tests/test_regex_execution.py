@@ -39,6 +39,9 @@ def test_capture_general_data_of_the_hand(first_hand: list[str]) -> None:
         "BoardFlop": [()],
         "BoardTurn": [()],
         "BoardRiver": [()],
+        "TotalPotLog": [20.0],
+        "Rake": [0.0],
+        "PotBreakdown": [(20.0,)],
     }
 
 
@@ -48,6 +51,7 @@ def test_capture_specific_data_of_the_player(showdown_hand: list[str]) -> None:
     assert result["Seat"] == [2]
     assert result["Position"] == ["small blind"]
     assert result["Stack"] == [560.0]
+    assert result["Bounty"] == [None]
     assert result["PostedBlind"] == [10.0]
     assert result["PostedAnte"] == [None]
     assert result["PreflopAction"] == [[("calls", "10")]]
@@ -63,6 +67,8 @@ def test_capture_specific_data_of_the_player(showdown_hand: list[str]) -> None:
     assert result["CardCombination"] == ["a pair of Jacks"]
     assert result["Result"] == ["won"]
     assert result["Balance"] == [40.0]
+    assert result["UncalledReturned"] == [None]
+    assert result["BountyWon"] == [None]
     assert result["FinalRank"] == [-1]
     assert result["Prize"] == [None]
 

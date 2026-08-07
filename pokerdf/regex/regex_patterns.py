@@ -398,6 +398,37 @@ class RegexPatterns:
 
         return result
 
+    def get_bounty(self, player: str, hand: list[str]) -> list[float | None]:
+        """
+        Get the bounty on the player's head, in knockout tournaments.
+
+        The bounty is listed next to the stack in the seat line, like
+        "Seat 1: player (3000 in chips, $0.46 bounty)". The currency symbol
+        is dropped, so only the numeric value is captured.
+
+        Args:
+            player (str): Name of the player.
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the bounty on the player's head (for example,
+                [0.46]), or [None] if the tournament has no bounties.
+        """
+        # Pattern to extract
+        regex = rf"Seat \d+: {player} \(\d+ in chips, [$€£]?(\d+(?:\.\d+)?) bounty\)"
+
+        # Get the first content of a played hand
+        target = hand[0]
+
+        # Apply regex
+        result = re.findall(regex, target)
+
+        # Normalize output
+        result = [float(x) for x in result]
+        result = self._guarantee_unicity(result, fill=None)
+
+        return result
+
     def get_posted_blind(self, player: str, hand: list[str]) -> list[float | None]:
         """
         Get blind posted by the player (small or big blind).
@@ -529,23 +560,29 @@ class RegexPatterns:
 
     def get_showed_card(
         self, player: str, hand: list[str]
-    ) -> list[list[str]] | list[list[None]]:
+    ) -> list[tuple[str, str | None]] | list[list[None]]:
         """
         Get the cards of the player, if they were showed or mucked at showdown.
+
+        The cards usually come from the summary ("showed [As Ks]" or
+        "mucked [7h Td]"). A player can also voluntarily show a single card
+        ("shows [Ah]"), which is not mirrored in the summary, so the body of
+        the hand is used as a fallback and the second card is None.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the cards of the player, like [('As', 'Ks')],
-                or [[None, None]] if the player did not reveal the cards.
+            list: List containing the cards of the player, like [('As', 'Ks')]
+                or [('Ah', None)], or [[None, None]] if the player did not
+                reveal any card.
         """
-        # Pattern to extract
-        regex = rf"{player} .*(?:mucked|showed) \[(\S+) (\S+)\]"
+        # Pattern to extract from the summary (the second card is optional)
+        regex = rf"{player} .*(?:mucked|showed) \[(\S+)(?: (\S+))?\]"
 
         # Default value for empty results
-        fill_empty = [[None, None]]
+        fill_empty: list[list[None]] = [[None, None]]
 
         # Get the last content of a played hand
         target = hand[-1]
@@ -553,11 +590,19 @@ class RegexPatterns:
         # Apply regex
         result = re.findall(regex, target)
 
-        # Guarantee that an empty list will not be returned
-        if result == []:
-            return fill_empty
+        if result != []:
+            first, second = result[0]
+            cards: list[tuple[str, str | None]] = [(first, second if second else None)]
+            return cards
 
-        return result
+        # Fallback: single-card shows only appear in the body of the hand
+        body_regex = rf"{player}: shows \[(\S+)\]"
+        body_result = re.findall(body_regex, "\n".join(hand))
+        if body_result != []:
+            cards = [(body_result[0], None)]
+            return cards
+
+        return fill_empty
 
     def get_card_combination(self, player: str, hand: list[str]) -> list[str]:
         """
@@ -639,6 +684,178 @@ class RegexPatterns:
         ]
 
         return result
+
+    def get_uncalled_returned(self, player: str, hand: list[str]) -> list[float | None]:
+        """
+        Get the total amount of uncalled bets returned to the player in the hand.
+
+        A bet (or the excess of a raise over an all-in) that nobody calls is
+        given back to the player with an "Uncalled bet (X) returned to" line.
+        The same player can receive more than one return in the same hand
+        (for example, the excess of a raise over a short all-in and, later,
+        an uncalled bet on another street), so the amounts are summed.
+
+        Args:
+            player (str): Name of the player.
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the total amount returned to the player
+                (for example, [320.0]), or [None] if nothing was returned.
+        """
+        # Pattern to extract. The end-of-line anchor prevents a player name
+        # from matching a longer name that starts with it
+        regex = rf"Uncalled bet \((\d+(?:\.\d+)?)\) returned to {player}\s*$"
+
+        # The return can happen at any stage, so search the whole hand
+        target = "\n".join(hand)
+
+        # Apply regex
+        result = re.findall(regex, target, flags=re.MULTILINE)
+
+        # Nothing returned to the player in the hand
+        if result == []:
+            return [None]
+
+        # Sum all the returns of the hand
+        return [sum(float(x) for x in result)]
+
+    def get_bounty_won(self, player: str, hand: list[str]) -> list[float | None]:
+        """
+        Get the total bounty amount won by the player in the hand.
+
+        Knockout tournaments award bounties in two formats: regular knockouts
+        ("wins the $X bounty for eliminating"), where the whole bounty of the
+        eliminated player is won, and progressive knockouts ("wins $X for
+        eliminating ... and their own bounty increases by $Y to $Z"), where
+        the cash part is won and the rest feeds the player's own bounty.
+        Only the amount effectively won is captured, and multiple
+        eliminations in the same hand are summed.
+
+        Args:
+            player (str): Name of the player.
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the total bounty won by the player (for example,
+                [0.46]), or [None] if no bounty was won in the hand.
+        """
+        # Patterns to extract, one per knockout format
+        regex_regular = (
+            rf"{player} wins the [$€£]?(\d+(?:\.\d+)?) bounty for eliminating"
+        )
+        regex_progressive = (
+            rf"{player} wins [$€£]?(\d+(?:\.\d+)?) for eliminating "
+            rf".* and their own bounty increases"
+        )
+
+        # Bounties are awarded at any stage, so search the whole hand
+        target = "\n".join(hand)
+
+        # Apply regex
+        result = re.findall(regex_regular, target) + re.findall(
+            regex_progressive, target
+        )
+
+        # No bounty won by the player in the hand
+        if result == []:
+            return [None]
+
+        # Sum all the bounties of the hand
+        return [sum(float(x) for x in result)]
+
+    def get_total_pot_log(self, hand: list[str]) -> list[float | None]:
+        """
+        Get the total pot of the hand, as reported in the summary.
+
+        This is the value logged by the platform itself ("Total pot 840 |
+        Rake 0"), captured to allow independent verification of any pot
+        reconstruction done downstream.
+
+        Args:
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the total pot of the hand (for example, [840.0]),
+                or [None] if the summary does not report it.
+        """
+        # Pattern to extract
+        regex = r"Total pot (\d+(?:\.\d+)?)"
+
+        # Get the last content of a played hand (the summary)
+        target = hand[-1]
+
+        # Apply regex
+        result = re.findall(regex, target)
+
+        # Normalize output
+        result = [float(x) for x in result]
+        result = self._guarantee_unicity(result, fill=None)
+
+        return result
+
+    def get_rake(self, hand: list[str]) -> list[float | None]:
+        """
+        Get the rake of the hand, as reported in the summary.
+
+        Tournament logs report 0 (the fee is charged in the buy-in), but the
+        value is captured for completeness and future-proofing.
+
+        Args:
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the rake of the hand (for example, [0.0]),
+                or [None] if the summary does not report it.
+        """
+        # Pattern to extract
+        regex = r"\| Rake (\d+(?:\.\d+)?)"
+
+        # Get the last content of a played hand (the summary)
+        target = hand[-1]
+
+        # Apply regex
+        result = re.findall(regex, target)
+
+        # Normalize output
+        result = [float(x) for x in result]
+        result = self._guarantee_unicity(result, fill=None)
+
+        return result
+
+    def get_pot_breakdown(self, hand: list[str]) -> list[tuple[float, ...]]:
+        """
+        Get the decomposition of the pot, as reported in the summary.
+
+        When a player is all-in and the others keep betting, the pot is
+        decomposed ("Total pot 9136 Main pot 5820. Side pot 3316. | Rake 0")
+        and each portion can be collected by a different player. The
+        breakdown is captured as (main pot, side pot, ...) when the hand has
+        side pots, or as a single-element tuple with the total pot otherwise,
+        so the sum of the breakdown always equals TotalPotLog.
+
+        Args:
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the tuple of pots (for example, [(5820.0, 3316.0)]),
+                or [()] if the summary does not report a pot.
+        """
+        # Get the last content of a played hand (the summary)
+        target = hand[-1]
+
+        # Decomposed pot: the main pot first, then each side pot
+        main = re.findall(r"Main pot (\d+(?:\.\d+)?)", target)
+        sides = re.findall(r"Side pot(?:-\d+)? (\d+(?:\.\d+)?)", target)
+        if main:
+            return [tuple(float(x) for x in main + sides)]
+
+        # Single pot: the breakdown is the total itself
+        total = re.findall(r"Total pot (\d+(?:\.\d+)?)", target)
+        if total:
+            return [(float(total[0]),)]
+
+        return [()]
 
     def get_board(
         self, hand: list[str], stage: str
@@ -751,7 +968,9 @@ class RegexPatterns:
         Returns:
             list: List containing the final rank of the player, like [3] when the
                 player is eliminated in the hand, or [1] when the player wins the
-                tournament. Returns [-1] when the rank is not defined in the hand.
+                tournament. Returns [0] when the log reports the finish without a
+                place (for example, club knockout tournaments), and [-1] when the
+                rank is not defined in the hand.
         """
         # Filter content from SHOW_DOWN
         hand = [x for x in hand if "SHOW DOWN ***" in x]
@@ -784,8 +1003,15 @@ class RegexPatterns:
                 # Position 1, if wins
                 if result_of_regex == ["wins"]:
                     return [1]
-                else:
-                    return [-1]
+
+                # Some logs report the finish without a place (for example,
+                # club knockout tournaments): 0 marks "finished, place not
+                # reported", keeping -1 for "not defined in the hand"
+                regex = rf"{player} finished the tournament\s*$"
+                if re.findall(regex, target, flags=re.MULTILINE) != []:
+                    return [0]
+
+                return [-1]
             else:
                 # Get the maximum value and return in a list
                 result = [max(list_of_int)]
@@ -807,7 +1033,9 @@ class RegexPatterns:
         Returns:
             list: List containing the prize as captured from the text, without
                 the currency symbol (for example, ['6.00']), or [None] if no
-                prize was awarded to the player in the hand.
+                prize was awarded to the player in the hand. Satellite tickets
+                are captured through the face value in the ticket name
+                (for example, "wins a 'Fast Track $1' ticket" -> ['1']).
         """
         # Filter content from SHOW_DOWN
         hand = [x for x in hand if "SHOW DOWN ***" in x]
@@ -822,6 +1050,12 @@ class RegexPatterns:
 
             # Apply regex
             final_result = re.findall(regex, target)[:1]
+
+            # Satellite tickets are not cash prizes: the face value in the
+            # ticket name is captured instead
+            if final_result == []:
+                regex_ticket = rf"{player} wins a '[^']*\$(\d+(?:\.\d+)?)[^']*' ticket"
+                final_result = re.findall(regex_ticket, target)[:1]
 
             # Normalize output
             if final_result == []:
