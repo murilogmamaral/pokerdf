@@ -1,30 +1,46 @@
-[tool.poetry]
+[project]
 name = "pokerdf"
 version = "1.0.6"
 description = "Converts poker hand history files to pandas DataFrames."
-authors = ["Murilo Amaral <murilogmamaral@gmail.com>"]
 readme = "README.md"
+authors = [{ name = "Murilo Amaral", email = "murilogmamaral@gmail.com" }]
+requires-python = ">=3.11.5"
+dependencies = [
+    "joblib==1.3.2",
+    "pandas>=2.0.0",
+    "pyarrow>=16.1.0",
+    "pydantic>=2.8.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.11.5"
-joblib = "1.3.2"
-pandas = ">=2.0.0"
-pyarrow = ">=16.1.0"
-pydantic = ">=2.8.0"
-ruff = ">=0.0.0"
-mypy = ">=0.0.0"
-
-[tool.poetry.dev-dependencies]
-flake8 = "^7.0.0" 
-Flake8-pyproject= "^1.2.3"
-black = "^24.4.2"
-pytest = "^7.0.1"
-
-[tool.poetry.scripts]
+[project.scripts]
 pokerdf = "pokerdf.main:main"
 
-[tool.poetry.urls]
-repository = "https://github.com/murilogmamaral/pokerdf"
+[project.urls]
+Repository = "https://github.com/murilogmamaral/pokerdf"
+
+[dependency-groups]
+dev = [
+    "black>=24.4.2",
+    "flake8>=7.0.0",
+    "flake8-pyproject>=1.2.3",
+    "mypy>=1.0.0",
+    "pytest>=7.0.1",
+    "ruff>=0.4.0",
+]
+
+[tool.uv]
+# The output schema and the expected artifacts in tests/ were validated with
+# pandas 2.x (pandas 3 changed the default string dtype on read_parquet).
+# This constrains the local/CI environment only; the published package
+# metadata keeps the ranges declared in [project.dependencies].
+constraint-dependencies = ["pandas<3.0.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pokerdf"]
 
 [tool.flake8]
 max-line-length = 120
@@ -34,6 +50,14 @@ extend-ignore = ["E203", "W503"]
 line-length = 120
 target-version = "py311"
 exclude = ["venv", ".venv", "build"]
+
+[tool.ruff.lint]
+# Pin the classic default rule set, so newer ruff releases with broader
+# defaults do not start flagging existing code
+select = ["E4", "E7", "E9", "F"]
+
+[tool.black]
+target-version = ["py311"]
 
 [tool.mypy]
 python_version = "3.11"
