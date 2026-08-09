@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/logo/pokerdf-logo-dark.png">
+    <img src="https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/logo/pokerdf-logo-light.png" alt="PokerDF" width="360">
+  </picture>
+</p>
+
 # PokerDF
 
 [![PyPI](https://img.shields.io/pypi/v/pokerdf?color=blue)](https://pypi.org/project/pokerdf/)
