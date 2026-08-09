@@ -8,7 +8,7 @@
 
 Converts poker hand history files into structured Pandas DataFrames, making it easier to analyze your games.
 
-Fast and reliable, PokerDF is able to process 4,000 hand history files into _.parquet_ per minute, in a MacBook Air M4 with 10-core CPU. That is 135,000 hands converted in about a minute and a half.
+Fast and reliable, PokerDF is able to process 4,000 hand history files into _.parquet_ per minute, in a MacBook Air M4 with 10-core CPU. In practice, 135,000 hands are converted in about a minute and a half, and the `modeling` command turns them into a star schema of 1 million player events in another 10 seconds.
 
 Currently supports PokerStars. Make sure hand histories are saved in English.
 
