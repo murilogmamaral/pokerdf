@@ -16,11 +16,17 @@
 #
 # Full pipeline:
 #   1. test            -> run the test suite; nothing happens if it fails
-#   2. bump-and-build  -> infer or take the level, bump the version with uv,
-#                         commit the bump back to main, then build sdist/wheel
-#   3. github-release  -> create the git tag and the GitHub release dynamically,
+#   2. plan            -> infer or take the level and compute the exact
+#                         version about to be released, without side effects
+#   3. approve         -> pause until the plan is approved in the Actions UI
+#                         (required reviewers of the release-approval
+#                         environment); nothing is bumped, tagged or
+#                         published before the approval
+#   4. bump-and-build  -> bump the version with uv, commit the bump back to
+#                         main, then build sdist/wheel
+#   5. github-release  -> create the git tag and the GitHub release dynamically,
 #                         named "v{version}", with the distributions attached
-#   4. pypi-publish    -> upload the distributions to PyPI (Trusted Publishing)
+#   6. pypi-publish    -> upload the distributions to PyPI (Trusted Publishing)
 
 name: Upload Python Package
 
@@ -64,16 +70,14 @@ jobs:
       - name: Run tests
         run: uv run python -m pytest tests/ -q
 
-  bump-and-build:
+  plan:
     runs-on: ubuntu-latest
     needs:
       - test
-    permissions:
-      # Required to push the version bump commit to main
-      contents: write
     outputs:
-      version: ${{ steps.bump.outputs.version }}
-      sha: ${{ steps.push.outputs.sha }}
+      level: ${{ steps.level.outputs.level }}
+      current: ${{ steps.next.outputs.current }}
+      next: ${{ steps.next.outputs.next }}
 
     steps:
       - uses: actions/checkout@v4
@@ -135,10 +139,60 @@ jobs:
           echo "Inferred level: $LEVEL"
           echo "level=$LEVEL" >> "$GITHUB_OUTPUT"
 
+      - name: Compute the version about to be released
+        id: next
+        run: |
+          CURRENT=$(uv version --short)
+          NEXT=$(uv version --bump "${{ steps.level.outputs.level }}" --dry-run --short)
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "next=$NEXT" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Release plan"
+            echo ""
+            echo "| Current | Level | Next |"
+            echo "|---------|-------|------|"
+            echo "| $CURRENT | ${{ steps.level.outputs.level }} | **$NEXT** |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  approve:
+    # Pauses the run until a required reviewer of the release-approval
+    # environment approves it in the Actions UI. The summary of the plan
+    # job shows the exact version about to be released, and nothing is
+    # bumped, tagged or published before the approval
+    runs-on: ubuntu-latest
+    needs:
+      - plan
+    environment: release-approval
+
+    steps:
+      - name: Confirm the approved plan
+        run: |
+          echo "Approved release: ${{ needs.plan.outputs.current }} -> ${{ needs.plan.outputs.next }} (${{ needs.plan.outputs.level }})"
+
+  bump-and-build:
+    runs-on: ubuntu-latest
+    needs:
+      - plan
+      - approve
+    permissions:
+      # Required to push the version bump commit to main
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      sha: ${{ steps.push.outputs.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+
       - name: Bump version in pyproject.toml
         id: bump
         run: |
-          uv version --bump "${{ steps.level.outputs.level }}"
+          uv version --bump "${{ needs.plan.outputs.level }}"
           echo "version=$(uv version --short)" >> "$GITHUB_OUTPUT"
 
       - name: Commit and push the bump to main
