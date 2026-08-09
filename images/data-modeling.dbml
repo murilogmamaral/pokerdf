@@ -4,6 +4,7 @@
 
 Table dim_tournament {
   TournID integer [pk]
+  Owner varchar [pk]
   LocalStartTime timestamp
   Modality varchar
   BuyIn varchar
@@ -59,5 +60,6 @@ Table dim_final_rank {
 }
 
 Ref: fact_player_actions.TournID > dim_tournament.TournID
+Ref: fact_player_actions.Owner > dim_tournament.Owner
 Ref: fact_player_actions.TournID > dim_final_rank.TournID
 Ref: fact_player_actions.Player > dim_final_rank.Player

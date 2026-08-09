@@ -179,20 +179,20 @@ def load_converted_data(path: str) -> pd.DataFrame:
 
 def build_dim_tournament(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Build the tournament dimension, with one row per tournament.
+    Build the tournament dimension, with one row per tournament per owner.
 
     Args:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, LocalStartTime, Modality and BuyIn.
-            TableSize and Owner belong to the fact table.
+        pd.DataFrame: Columns TournID, Owner, LocalStartTime, Modality and
+            BuyIn. The key is TournID plus Owner: the dimension describes
+            the tournament as observed by an owner's archive, and each
+            owner can start it at a different time — the start time is the
+            time of the first hand the owner's client logged.
     """
-    # One row per tournament: the start time is the time of its first hand.
-    # The owner is not an attribute of the tournament — archives of more
-    # than one owner can cover the same tournament — so it lives in the fact
     dim = (
-        df.groupby(Column.TOURN_ID, as_index=False)
+        df.groupby([Column.TOURN_ID, Column.OWNER], as_index=False)
         .agg(
             **{
                 ModelColumn.LOCAL_START_TIME: (Column.LOCAL_TIME, "min"),

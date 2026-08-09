@@ -551,17 +551,18 @@ def test_fact_board_shows_five_cards_on_river_actions(fact: pd.DataFrame) -> Non
 # dim_tournament
 # ---------------------------------------------------------------------------
 def test_dim_tournament(source_df: pd.DataFrame) -> None:
+    # One row per tournament per owner: each owner can start the tournament
+    # at a different time, so Owner is part of the key
     dim = build_dim_tournament(source_df)
     assert len(dim) == 1
     row = dim.iloc[0]
     assert row["TournID"] == 99999
+    assert row["Owner"] == "garciamurilo"
     assert row["LocalStartTime"] == pd.Timestamp("2020-10-11 03:22:15")
     assert row["Modality"] == "USD Hold'em No Limit"
     assert row["BuyIn"] == "$1.84+$0.16"
-    # TableSize belongs to the fact table, and so does Owner: archives of
-    # more than one owner can cover the same tournament
+    # TableSize belongs to the fact table
     assert "TableSize" not in dim.columns
-    assert "Owner" not in dim.columns
 
 
 # ---------------------------------------------------------------------------

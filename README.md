@@ -237,12 +237,13 @@ One row per event of a player: the ante and blind posts open each hand as rows (
 
 #### dim_tournament
 
-One row per tournament.
+One row per tournament per owner — the key is `TournID` plus `Owner`: the dimension describes the tournament as observed by an owner's archive, and each owner can start it at a different time.
 
 | Column         | Description                          | Example              |
 |----------------|--------------------------------------|----------------------|
 | TournID        | Unique identifier of the tournament  | 2928882649           |
-| LocalStartTime | Time of the first hand               | 2020-06-07 07:44:35  |
+| Owner          | Owner of the archive that observed the tournament | ownername |
+| LocalStartTime | Time of the first hand logged by the owner's client | 2020-06-07 07:44:35 |
 | Modality       | The type of game being played        | USD Hold'em No Limit |
 | BuyIn          | The buy-in of the tournament         | $4.60+$0.40          |
 
