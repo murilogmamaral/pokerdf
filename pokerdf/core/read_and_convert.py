@@ -1,5 +1,6 @@
 import os
 import warnings
+from typing import Any
 
 import pandas as pd
 from joblib import Parallel, delayed
@@ -136,9 +137,6 @@ def apply_regex(txt: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame containing the parsed data from the hand history.
     """
-    # Generate dataframe
-    df = compose_dataframe()
-
     # Splitting tournament's hands in a list
     list_of_hands_as_text = txt.split(f"{PLATFORM} ")
 
@@ -154,6 +152,10 @@ def apply_regex(txt: str) -> pd.DataFrame:
 
     # Hands already converted, to skip duplicates
     processed_hands: set[str] = set()
+
+    # Rows are accumulated as plain dictionaries and turned into a DataFrame
+    # once at the end: concatenating row by row grows quadratically
+    rows: list[dict[str, Any]] = []
 
     for hand in list_of_hands_as_text:
 
@@ -185,13 +187,15 @@ def apply_regex(txt: str) -> pd.DataFrame:
             # Validate
             ValidateInput(**collected_data)
 
-            # Convert to dataframe
-            result = pd.DataFrame(collected_data)
+            # Every captured value is a single-element list: unwrap it
+            rows.append({key: value[0] for key, value in collected_data.items()})
 
-            # Concat to the final results
-            df = pd.concat([df, result])
+    # Keep the canonical column order and the typed empty frame for the
+    # degenerate case of a file without any convertible hand
+    if not rows:
+        return compose_dataframe()
 
-    return df
+    return pd.DataFrame(rows, columns=list(compose_dataframe().columns))
 
 
 def convert_txt_to_tabular_data(path: str) -> pd.DataFrame:
