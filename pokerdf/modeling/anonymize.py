@@ -60,9 +60,10 @@ PSEUDONYMIZED_COLUMNS = [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
 DROPPED_COLUMNS: list[StrEnum] = [
     Column.HAND_START_TIME_CET,
     Column.HAND_START_TIME_LOCAL,
-    Column.TIMEZONE,
+    Column.HAND_TIMEZONE,
     ModelColumn.TOURN_FIRST_HAND_TIME_CET,
     ModelColumn.TOURN_FIRST_HAND_TIME_LOCAL,
+    ModelColumn.TOURN_TIMEZONE,
 ]
 
 # The private cards of the owner, repeated on every row of the hand. They

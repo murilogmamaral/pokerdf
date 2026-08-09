@@ -24,7 +24,7 @@ class Column(StrEnum):
     HAND_ID = "HandID"
     HAND_START_TIME_CET = "HandStartTimeCET"
     HAND_START_TIME_LOCAL = "HandStartTimeLocal"
-    TIMEZONE = "Timezone"
+    HAND_TIMEZONE = "HandTimezone"
     LEVEL = "Level"
     ANTE = "Ante"
     BLINDS = "Blinds"
@@ -73,6 +73,7 @@ class ModelColumn(StrEnum):
 
     TOURN_FIRST_HAND_TIME_CET = "TournFirstHandTimeCET"
     TOURN_FIRST_HAND_TIME_LOCAL = "TournFirstHandTimeLocal"
+    TOURN_TIMEZONE = "TournTimezone"
     SMALL_BLIND = "SmallBlind"
     BIG_BLIND = "BigBlind"
     OWNER_C1 = "OwnerC1"

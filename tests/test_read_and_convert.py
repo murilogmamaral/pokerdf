@@ -30,7 +30,7 @@ EXPECTED_COLUMNS = [
     "HandID",
     "HandStartTimeCET",
     "HandStartTimeLocal",
-    "Timezone",
+    "HandTimezone",
     "Level",
     "Ante",
     "Blinds",

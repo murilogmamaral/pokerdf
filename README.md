@@ -247,6 +247,7 @@ The moments are those of the **first hand the owner's client logged**, which is 
 | TournID        | Unique identifier of the tournament  | 2928882649           |
 | TournFirstHandTimeCET | Moment of the first hand the owner's client logged, in CET | 2020-06-07 12:44:35 |
 | TournFirstHandTimeLocal | Same moment on the clock of the owner (null when the client wrote no local time) | 2020-06-07 08:44:35 |
+| TournTimezone  | Time zone of the owner at the first hand, as abbreviated by the platform | BRT |
 | Modality       | The type of game being played        | USD Hold'em No Limit |
 | BuyIn          | The buy-in of the tournament         | $4.60+$0.40          |
 

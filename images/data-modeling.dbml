@@ -7,6 +7,7 @@ Table dim_tournament {
   TournID integer [pk]
   TournFirstHandTimeCET timestamp
   TournFirstHandTimeLocal timestamp
+  TournTimezone varchar
   Modality varchar
   BuyIn varchar
 }
@@ -17,7 +18,7 @@ Table dim_hand {
   HandID integer [pk]
   HandStartTimeCET timestamp
   HandStartTimeLocal timestamp
-  Timezone varchar
+  HandTimezone varchar
   TableSize integer
   Playing integer
   Level integer

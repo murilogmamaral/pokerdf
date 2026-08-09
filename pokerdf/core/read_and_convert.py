@@ -75,7 +75,7 @@ def compose_dataframe() -> pd.DataFrame:
         Column.HAND_ID: "object",
         Column.HAND_START_TIME_CET: "datetime64[ns]",
         Column.HAND_START_TIME_LOCAL: "datetime64[ns]",
-        Column.TIMEZONE: "object",
+        Column.HAND_TIMEZONE: "object",
         Column.LEVEL: "object",
         Column.ANTE: "float64",
         Column.BLINDS: "object",

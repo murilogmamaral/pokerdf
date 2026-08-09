@@ -45,7 +45,7 @@ def capture_general_data_of_the_hand(splitted_hand: list[str]) -> dict[str, Any]
     row[Column.TABLE_ID] = r.get_table_id(splitted_hand)
     row[Column.HAND_START_TIME_CET] = r.get_time(splitted_hand)
     row[Column.HAND_START_TIME_LOCAL] = r.get_local_time(splitted_hand)
-    row[Column.TIMEZONE] = r.get_timezone(splitted_hand)
+    row[Column.HAND_TIMEZONE] = r.get_timezone(splitted_hand)
     row[Column.LEVEL] = r.get_level(splitted_hand)
     row[Column.ANTE] = r.get_ante(splitted_hand)
     row[Column.BLINDS] = r.get_blinds(splitted_hand)

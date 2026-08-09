@@ -32,7 +32,7 @@ SOURCE_SCHEMA = pa.schema(
         (Column.HAND_ID, pa.string()),
         (Column.HAND_START_TIME_CET, pa.timestamp("ns")),
         (Column.HAND_START_TIME_LOCAL, pa.timestamp("ns")),
-        (Column.TIMEZONE, pa.string()),
+        (Column.HAND_TIMEZONE, pa.string()),
         (Column.LEVEL, pa.string()),
         (Column.ANTE, pa.float64()),
         (Column.BLINDS, pa.list_(pa.float64())),
@@ -187,9 +187,9 @@ def build_dim_tournament(df: pd.DataFrame) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: Columns Owner, TournID, TournFirstHandTimeCET,
-            TournFirstHandTimeLocal, Modality and BuyIn. The key is Owner
-            plus TournID: the dimension describes the tournament as
-            observed by an owner's archive.
+            TournFirstHandTimeLocal, TournTimezone, Modality and BuyIn. The key
+            is Owner plus TournID: the dimension describes the tournament
+            as observed by an owner's archive.
 
             The moments are those of the first hand the owner's client
             logged, which is not necessarily when the tournament started:
@@ -200,8 +200,12 @@ def build_dim_tournament(df: pd.DataFrame) -> pd.DataFrame:
             they hold, so nothing has to be assumed about how the owner
             plays.
     """
+    # Sorting first makes "first" mean the earliest hand instead of whatever
+    # row happens to come first, which matters for the time zone: it can
+    # change during a tournament that runs across a daylight saving switch
     dim = (
-        df.groupby([Column.OWNER, Column.TOURN_ID], as_index=False)
+        df.sort_values(Column.HAND_START_TIME_CET)
+        .groupby([Column.OWNER, Column.TOURN_ID], as_index=False)
         .agg(
             **{
                 ModelColumn.TOURN_FIRST_HAND_TIME_CET: (
@@ -212,6 +216,7 @@ def build_dim_tournament(df: pd.DataFrame) -> pd.DataFrame:
                     Column.HAND_START_TIME_LOCAL,
                     "min",
                 ),
+                ModelColumn.TOURN_TIMEZONE: (Column.HAND_TIMEZONE, "first"),
                 Column.MODALITY: (Column.MODALITY, "first"),
                 Column.BUY_IN: (Column.BUY_IN, "first"),
             }
@@ -248,7 +253,7 @@ def build_dim_hand(df: pd.DataFrame) -> pd.DataFrame:
             Column.HAND_ID: hands[Column.HAND_ID].astype("int64"),
             Column.HAND_START_TIME_CET: hands[Column.HAND_START_TIME_CET],
             Column.HAND_START_TIME_LOCAL: hands[Column.HAND_START_TIME_LOCAL],
-            Column.TIMEZONE: hands[Column.TIMEZONE],
+            Column.HAND_TIMEZONE: hands[Column.HAND_TIMEZONE],
             Column.TABLE_SIZE: hands[Column.TABLE_SIZE],
             Column.PLAYING: hands[Column.PLAYING],
             Column.LEVEL: hands[Column.LEVEL].map(_roman_to_int).astype("Int64"),
