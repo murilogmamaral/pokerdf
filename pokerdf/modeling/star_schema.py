@@ -185,10 +185,12 @@ def build_dim_tourn_summary(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, LocalStartTime, Modality, BuyIn and
-            Owner. TableSize belongs to the fact table.
+        pd.DataFrame: Columns TournID, LocalStartTime, Modality and BuyIn.
+            TableSize and Owner belong to the fact table.
     """
-    # One row per tournament: the start time is the time of its first hand
+    # One row per tournament: the start time is the time of its first hand.
+    # The owner is not an attribute of the tournament — archives of more
+    # than one owner can cover the same tournament — so it lives in the fact
     dim = (
         df.groupby(Column.TOURN_ID, as_index=False)
         .agg(
@@ -196,7 +198,6 @@ def build_dim_tourn_summary(df: pd.DataFrame) -> pd.DataFrame:
                 ModelColumn.LOCAL_START_TIME: (Column.LOCAL_TIME, "min"),
                 Column.MODALITY: (Column.MODALITY, "first"),
                 Column.BUY_IN: (Column.BUY_IN, "first"),
-                Column.OWNER: (Column.OWNER, "first"),
             }
         )
         .astype({Column.TOURN_ID: "int64"})
@@ -292,6 +293,7 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
         Column.LEVEL,
         Column.PLAYING,
         Column.ANTE,
+        Column.OWNER,
         Column.OWNERS_HAND,
         Column.SHOW_DOWN,
         Column.CARD_COMBINATION,
@@ -616,9 +618,11 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, HandID, LocalTime, TableSize, Playing,
-            Level, Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
-            Stack, PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder,
+        pd.DataFrame: Columns TournID, HandID, Owner (whose archive logged
+            the hand — archives of more than one owner can be modeled
+            together), LocalTime, TableSize, Playing, Level, Ante,
+            SmallBlind, BigBlind, Round, Player, Seat, Position, Stack,
+            PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder,
             AddedValue, TotalValue, TotalPot and BoardC1 to BoardC5, plus
             the cards and combinations: OwnerC1, OwnerC2, OwnerCombination
             and OwnerCombinationScore describe the owner's holding on every
@@ -733,6 +737,7 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
         [
             Column.TOURN_ID,
             Column.HAND_ID,
+            Column.OWNER,
             Column.LOCAL_TIME,
             Column.TABLE_SIZE,
             Column.PLAYING,

@@ -75,6 +75,7 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
     assert list(fact.columns) == [
         "TournID",
         "HandID",
+        "Owner",
         "LocalTime",
         "TableSize",
         "Playing",
@@ -138,8 +139,10 @@ def test_fact_explodes_single_action(fact: pd.DataFrame) -> None:
 
 
 def test_fact_carries_hand_context(fact: pd.DataFrame) -> None:
-    # Hand 11111: 3-max at level I (blinds 10/20), 3 players, no ante
+    # Hand 11111: 3-max at level I (blinds 10/20), 3 players, no ante,
+    # logged by the archive of garciamurilo
     row = fact[fact["HandID"] == 11111].iloc[0]
+    assert row["Owner"] == "garciamurilo"
     assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:22:15")
     assert row["TableSize"] == 3
     assert row["Level"] == 1
@@ -555,9 +558,10 @@ def test_dim_tourn_summary(source_df: pd.DataFrame) -> None:
     assert row["LocalStartTime"] == pd.Timestamp("2020-10-11 03:22:15")
     assert row["Modality"] == "USD Hold'em No Limit"
     assert row["BuyIn"] == "$1.84+$0.16"
-    assert row["Owner"] == "garciamurilo"
-    # TableSize belongs to the fact table now
+    # TableSize belongs to the fact table, and so does Owner: archives of
+    # more than one owner can cover the same tournament
     assert "TableSize" not in dim.columns
+    assert "Owner" not in dim.columns
 
 
 # ---------------------------------------------------------------------------

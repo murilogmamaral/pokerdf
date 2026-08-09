@@ -175,8 +175,8 @@ pokerdf modeling /path/to/parquet/files --gdpr full
 ```
 Two GDPR principles guide what the command does:
 
-- **Data minimisation (Article 5(1)(c))** — what is not needed to analyze the game is not produced. The dimension tables are not generated at all, since they exist to describe who the players are: the nickname of the owner of the logs, the buy-in paid, the final rank and the prizes received. `LocalTime` is removed from the fact table.
-- **Pseudonymisation (Article 4(5))** — `TournID`, `HandID` and `Player` are replaced by salted BLAKE2b digests. The same nickname always maps to the same pseudonym, so grouping and joining keep working, but nothing points back to a person or to a hand that can be looked up on the platform.
+- **Data minimisation (Article 5(1)(c))** — what is not needed to analyze the game is not produced. The dimension tables are not generated at all: they carry the start time of each tournament, the buy-in paid, and the nickname, final rank and prize of every player. `LocalTime` is removed from the fact table.
+- **Pseudonymisation (Article 4(5))** — `TournID`, `HandID`, `Player` and `Owner` are replaced by salted BLAKE2b digests (the owner receives the same pseudonym in `Owner` and in `Player`). The same nickname always maps to the same pseudonym, so grouping and joining keep working, but nothing points back to a person or to a hand that can be looked up on the platform.
 
 Everything that makes the data worth analyzing is preserved: the order of the actions, the amounts, the pot, the stacks, the board, the positions — and the cards. Your own hole cards (`OwnerC1`, `OwnerC2`), the cards revealed at showdown (`RevealedShowDownC1`, `RevealedShowDownC2`) and the combinations derived from them are kept in every mode, since the decisions in the dataset can only be studied against the holdings they were made with, and cards shown at the table describe the game, not a person.
 
@@ -203,6 +203,7 @@ One row per event of a player: the ante and blind posts open each hand as rows (
 |-------------|-------------------------------------------------------------------------------------------------------|-------------|
 | TournID     | Tournament in which the action happened                                                               | 2928882649  |
 | HandID      | Hand in which the action happened                                                                     | 215024616736|
+| Owner       | Owner of the hand history file the hand came from, on every row of the hand (archives of more than one owner can be modeled together) | ownername |
 | LocalTime   | Time when the hand was played                                                                         | 2020-06-07 07:52:12 |
 | TableSize   | Maximum number of players at the table                                                                | 9           |
 | Playing     | Number of players active in the hand                                                                  | 6           |
@@ -244,7 +245,6 @@ One row per tournament.
 | LocalStartTime | Time of the first hand               | 2020-06-07 07:44:35  |
 | Modality       | The type of game being played        | USD Hold'em No Limit |
 | BuyIn          | The buy-in of the tournament         | $4.60+$0.40          |
-| Owner          | Owner of the hand history files      | ownername            |
 
 #### dim_final_rank
 

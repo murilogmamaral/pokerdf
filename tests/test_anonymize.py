@@ -100,6 +100,34 @@ def test_full_mode_pseudonymizes_the_identifiers(fact: pd.DataFrame) -> None:
         assert result[column].nunique() == fact[column].nunique()
 
 
+def test_full_mode_pseudonymizes_the_owner_column(fact: pd.DataFrame) -> None:
+    result = anonymize_fact(fact, "salt", GdprMode.FULL)
+
+    # The Owner column no longer carries the nickname, and the owner
+    # receives the same pseudonym there and in the Player column
+    assert OWNER not in set(result["Owner"])
+    owner_rows = fact["Player"] == OWNER
+    assert (result.loc[owner_rows, "Player"] == result.loc[owner_rows, "Owner"]).all()
+
+
+def test_full_mode_gives_the_owner_matching_pseudonyms_for_escaped_names() -> None:
+    # The Player column stores names escaped for regex; the Owner column
+    # stores them raw. The same person must receive the same pseudonym in
+    # both, also when the name contains regex characters
+    fact = pd.DataFrame(
+        {
+            "TournID": ["1"],
+            "HandID": ["2"],
+            "Player": ["pepek\\.99"],
+            "Owner": ["pepek.99"],
+        }
+    )
+
+    result = anonymize_fact(fact, "salt", GdprMode.FULL)
+
+    assert result["Player"][0] == result["Owner"][0]
+
+
 def test_full_mode_keeps_the_hand_reconstruction(fact: pd.DataFrame) -> None:
     result = anonymize_fact(fact, "salt", GdprMode.FULL)
 
@@ -160,6 +188,13 @@ def test_keep_owner_mode_spares_the_owner(fact: pd.DataFrame) -> None:
     ) - {OWNER}
     assert set(fact["Player"]) - {OWNER} == {"VillainA", "VillainB"}
     assert players.isdisjoint({"VillainA", "VillainB"})
+
+
+def test_keep_owner_mode_keeps_the_owner_column(fact: pd.DataFrame) -> None:
+    result = anonymize_fact(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
+
+    # The owner is identified by choice of the mode, in both columns
+    assert (result["Owner"] == OWNER).all()
 
 
 def test_keep_owner_mode_keeps_the_owner_cards(fact: pd.DataFrame) -> None:
