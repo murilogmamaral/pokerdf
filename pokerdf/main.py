@@ -4,7 +4,7 @@ import os
 import sys
 
 from pokerdf.core.read_and_convert import execute_in_parallel
-from pokerdf.modeling.anonymize import AnonymizationMode
+from pokerdf.modeling.anonymize import GdprMode
 from pokerdf.modeling.star_schema import build_star_schema
 from pokerdf.utils.strings import (
     ANONYMIZATION_REPORT,
@@ -119,19 +119,21 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     modeling.add_argument("path", help="directory containing the .parquet files")
     modeling.add_argument(
-        "--anonymize",
-        choices=[mode.value for mode in AnonymizationMode],
+        "--gdpr",
+        choices=[mode.value for mode in GdprMode],
         help=(
-            "anonymize the output so it can be shared: 'rgpd' builds the fact "
-            "table alone, pseudonymizes the tournament, hand and player "
-            "identifiers, and removes the timestamp and the cards of the owner"
+            "anonymize the output so it can be shared: both modes build the "
+            "fact table alone, pseudonymize the tournament, hand and player "
+            "identifiers and remove the timestamp; 'full' also removes the "
+            "cards of the owner of the logs, while 'keep-owner' keeps the "
+            "owner's nickname and cards"
         ),
     )
     modeling.add_argument(
         "--salt",
         help=(
             "salt of the pseudonyms, to keep them stable across sessions. "
-            "Requires --anonymize. When omitted, a random salt is generated "
+            "Requires --gdpr. When omitted, a random salt is generated "
             "and not stored, which makes the pseudonyms irreversible"
         ),
     )
@@ -147,7 +149,7 @@ def main() -> None:
       saving them in ./output/{SESSION_ID}.
     - 'modeling': reads converted .parquet files and splits them into a star
       schema (one fact table and three dimensions), saving the four tables
-      in ./modeling/{SESSION_ID}. With --anonymize, only the fact table is
+      in ./modeling/{SESSION_ID}. With --gdpr, only the fact table is
       generated, without the columns that identify a person.
 
     Raises:
@@ -159,8 +161,8 @@ def main() -> None:
     command = arguments.command
     source_path = arguments.path
 
-    if command == "modeling" and arguments.salt and not arguments.anonymize:
-        parser.error("--salt requires --anonymize")
+    if command == "modeling" and arguments.salt and not arguments.gdpr:
+        parser.error("--salt requires --gdpr")
 
     if command == "convert":
 
@@ -194,11 +196,11 @@ def main() -> None:
         # Create the destination folder of the session
         destination_path = _create_destination_folder(MODELING_FOLDER)
 
-        # Build the star schema, anonymized when the mode is informed
+        # Build the star schema, anonymized when a GDPR mode is informed
         number_of_rows = build_star_schema(
             source=source_path,
             destination=destination_path,
-            anonymize=arguments.anonymize,
+            gdpr=arguments.gdpr,
             salt=arguments.salt,
         )
 
@@ -207,8 +209,8 @@ def main() -> None:
             print(f"   DONE: {name}{PARQUET_EXTENSION} ({rows} rows)")
 
         # Point to the report of the applied transformations
-        if arguments.anonymize:
-            print(f"   DONE: {ANONYMIZATION_REPORT} ({arguments.anonymize} mode)")
+        if arguments.gdpr:
+            print(f"   DONE: {ANONYMIZATION_REPORT} ({arguments.gdpr} mode)")
 
         # Report the elapsed time
         _print_elapsed_time(start_time)

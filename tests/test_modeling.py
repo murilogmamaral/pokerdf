@@ -518,12 +518,10 @@ def test_build_star_schema_saves_the_four_tables(
         assert len(table) > 0
 
 
-def test_build_star_schema_anonymized_saves_only_the_fact_and_a_report(
+def test_build_star_schema_gdpr_saves_only_the_fact_and_a_report(
     converted_dir: Path, tmp_path: Path
 ) -> None:
-    number_of_rows = build_star_schema(
-        str(converted_dir), str(tmp_path), anonymize="rgpd"
-    )
+    number_of_rows = build_star_schema(str(converted_dir), str(tmp_path), gdpr="full")
 
     # No dimension is generated, and the report sits next to the data
     assert list(number_of_rows.keys()) == ["fact_player_actions"]
@@ -539,16 +537,31 @@ def test_build_star_schema_anonymized_saves_only_the_fact_and_a_report(
     assert "LocalTime" not in table.columns
 
 
-def test_build_star_schema_anonymized_honors_a_given_salt(
+def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(
+    converted_dir: Path, tmp_path: Path
+) -> None:
+    build_star_schema(str(converted_dir), str(tmp_path), gdpr="keep-owner")
+
+    table = pd.read_parquet(tmp_path / "fact_player_actions.parquet")
+    # The owner keeps their nickname and their hole cards; every third
+    # party is pseudonymized and the timestamp is still removed
+    players = set(table["Player"])
+    assert "garciamurilo" in players
+    assert players.isdisjoint({"VillainA", "VillainB"})
+    assert "OwnerC1" in table.columns
+    assert "LocalTime" not in table.columns
+
+
+def test_build_star_schema_gdpr_honors_a_given_salt(
     converted_dir: Path, tmp_path: Path
 ) -> None:
     first, second, third = tmp_path / "a", tmp_path / "b", tmp_path / "c"
     for folder in (first, second, third):
         folder.mkdir()
 
-    build_star_schema(str(converted_dir), str(first), anonymize="rgpd", salt="fixed")
-    build_star_schema(str(converted_dir), str(second), anonymize="rgpd", salt="fixed")
-    build_star_schema(str(converted_dir), str(third), anonymize="rgpd")
+    build_star_schema(str(converted_dir), str(first), gdpr="full", salt="fixed")
+    build_star_schema(str(converted_dir), str(second), gdpr="full", salt="fixed")
+    build_star_schema(str(converted_dir), str(third), gdpr="full")
 
     players = [
         pd.read_parquet(folder / "fact_player_actions.parquet")["Player"]

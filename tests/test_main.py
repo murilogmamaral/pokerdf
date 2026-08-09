@@ -27,22 +27,30 @@ def test_parser_reads_the_convert_command() -> None:
 def test_parser_defaults_modeling_to_no_anonymization() -> None:
     arguments = _build_parser().parse_args(["modeling", "/tmp/parquets"])
 
-    assert arguments.anonymize is None
+    assert arguments.gdpr is None
     assert arguments.salt is None
 
 
-def test_parser_reads_the_anonymization_arguments() -> None:
+def test_parser_reads_the_gdpr_arguments() -> None:
     arguments = _build_parser().parse_args(
-        ["modeling", "/tmp/parquets", "--anonymize", "rgpd", "--salt", "secret"]
+        ["modeling", "/tmp/parquets", "--gdpr", "full", "--salt", "secret"]
     )
 
-    assert arguments.anonymize == "rgpd"
+    assert arguments.gdpr == "full"
     assert arguments.salt == "secret"
 
 
-def test_parser_rejects_an_unknown_anonymization_mode() -> None:
+def test_parser_reads_the_keep_owner_mode() -> None:
+    arguments = _build_parser().parse_args(
+        ["modeling", "/tmp/parquets", "--gdpr", "keep-owner"]
+    )
+
+    assert arguments.gdpr == "keep-owner"
+
+
+def test_parser_rejects_an_unknown_gdpr_mode() -> None:
     with pytest.raises(SystemExit):
-        _build_parser().parse_args(["modeling", "/tmp/parquets", "--anonymize", "gdpr"])
+        _build_parser().parse_args(["modeling", "/tmp/parquets", "--gdpr", "rgpd"])
 
 
 def test_parser_rejects_an_unknown_command() -> None:

@@ -1,4 +1,4 @@
-"""Unit tests for the anonymization of the modeled data.
+"""Unit tests for the GDPR anonymization of the modeled data.
 
 The tests pin both halves of the contract: what must no longer be there
 (identifiers, timestamps, private cards) and what must survive untouched,
@@ -9,13 +9,17 @@ import pandas as pd
 
 from pokerdf.modeling.anonymize import (
     DROPPED_COLUMNS,
+    OWNER_CARD_COLUMNS,
     PSEUDONYMIZED_COLUMNS,
-    AnonymizationMode,
+    GdprMode,
     anonymize_fact,
     describe,
     generate_salt,
     pseudonymize,
 )
+
+# The owner of the fixture, as written in the Player column of the fact
+OWNER = "garciamurilo"
 
 
 # ---------------------------------------------------------------------------
@@ -53,22 +57,31 @@ def test_pseudonymize_preserves_nulls() -> None:
     assert pd.isna(result[1])
 
 
+def test_pseudonymize_spares_the_kept_values() -> None:
+    values = pd.Series(["garciamurilo", "VillainA"])
+
+    result = pseudonymize(values, "salt", keep={"garciamurilo"})
+
+    assert result[0] == "garciamurilo"
+    assert result[1] != "VillainA"
+
+
 def test_generate_salt_is_random() -> None:
     assert generate_salt() != generate_salt()
 
 
 # ---------------------------------------------------------------------------
-# anonymize_fact
+# anonymize_fact: full mode
 # ---------------------------------------------------------------------------
-def test_anonymize_fact_removes_the_identifying_columns(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt")
+def test_full_mode_removes_the_identifying_columns(fact: pd.DataFrame) -> None:
+    result = anonymize_fact(fact, "salt", GdprMode.FULL)
 
-    for column in DROPPED_COLUMNS:
+    for column in [*DROPPED_COLUMNS, *OWNER_CARD_COLUMNS]:
         assert column not in result.columns
 
 
-def test_anonymize_fact_pseudonymizes_the_identifiers(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt")
+def test_full_mode_pseudonymizes_the_identifiers(fact: pd.DataFrame) -> None:
+    result = anonymize_fact(fact, "salt", GdprMode.FULL)
 
     for column in PSEUDONYMIZED_COLUMNS:
         # No original value survives
@@ -77,8 +90,8 @@ def test_anonymize_fact_pseudonymizes_the_identifiers(fact: pd.DataFrame) -> Non
         assert result[column].nunique() == fact[column].nunique()
 
 
-def test_anonymize_fact_keeps_the_hand_reconstruction(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt")
+def test_full_mode_keeps_the_hand_reconstruction(fact: pd.DataFrame) -> None:
+    result = anonymize_fact(fact, "salt", GdprMode.FULL)
 
     # Everything that makes the dataset analytically useful is untouched
     preserved = [
@@ -105,8 +118,8 @@ def test_anonymize_fact_keeps_the_hand_reconstruction(fact: pd.DataFrame) -> Non
     assert len(result) == len(fact)
 
 
-def test_anonymize_fact_keeps_rows_of_a_hand_together(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt")
+def test_full_mode_keeps_rows_of_a_hand_together(fact: pd.DataFrame) -> None:
+    result = anonymize_fact(fact, "salt", GdprMode.FULL)
 
     # The pseudonym must be stable inside a hand, otherwise the rows of the
     # same hand would no longer group together
@@ -115,33 +128,75 @@ def test_anonymize_fact_keeps_rows_of_a_hand_together(fact: pd.DataFrame) -> Non
     assert original_sizes == anonymized_sizes
 
 
-def test_anonymize_fact_does_not_mutate_the_input(fact: pd.DataFrame) -> None:
+def test_full_mode_does_not_mutate_the_input(fact: pd.DataFrame) -> None:
     before = fact.copy()
 
-    anonymize_fact(fact, "salt")
+    anonymize_fact(fact, "salt", GdprMode.FULL)
 
     pd.testing.assert_frame_equal(fact, before)
+
+
+# ---------------------------------------------------------------------------
+# anonymize_fact: keep-owner mode
+# ---------------------------------------------------------------------------
+def test_keep_owner_mode_spares_the_owner(fact: pd.DataFrame) -> None:
+    result = anonymize_fact(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
+
+    # The owner keeps their nickname; every third party is pseudonymized
+    players = set(result["Player"])
+    assert OWNER in players
+    assert players - {OWNER} == set(
+        pseudonymize(fact["Player"], "salt", keep={OWNER})
+    ) - {OWNER}
+    assert set(fact["Player"]) - {OWNER} == {"VillainA", "VillainB"}
+    assert players.isdisjoint({"VillainA", "VillainB"})
+
+
+def test_keep_owner_mode_keeps_the_owner_cards(fact: pd.DataFrame) -> None:
+    result = anonymize_fact(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
+
+    for column in OWNER_CARD_COLUMNS:
+        assert column in result.columns
+        pd.testing.assert_series_equal(result[column], fact[column])
+
+
+def test_keep_owner_mode_still_protects_third_parties(fact: pd.DataFrame) -> None:
+    result = anonymize_fact(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
+
+    # Identifiers and timestamps are treated exactly like in full mode
+    for column in DROPPED_COLUMNS:
+        assert column not in result.columns
+    assert set(result["TournID"]).isdisjoint(set(fact["TournID"]))
+    assert set(result["HandID"]).isdisjoint(set(fact["HandID"]))
 
 
 # ---------------------------------------------------------------------------
 # describe
 # ---------------------------------------------------------------------------
 def test_describe_reports_the_transformations() -> None:
-    report = describe(str(AnonymizationMode.RGPD), reused_salt=False)
+    report = describe(str(GdprMode.FULL), reused_salt=False)
 
-    assert "rgpd" in report
-    for column in [*PSEUDONYMIZED_COLUMNS, *DROPPED_COLUMNS]:
+    assert "full" in report
+    for column in [*PSEUDONYMIZED_COLUMNS, *DROPPED_COLUMNS, *OWNER_CARD_COLUMNS]:
         assert str(column) in report
     assert "Residual risks" in report
 
 
+def test_describe_distinguishes_the_modes() -> None:
+    full = describe(str(GdprMode.FULL), reused_salt=False)
+    keep_owner = describe(str(GdprMode.KEEP_OWNER), reused_salt=False)
+
+    assert "the pseudonym that appears in all of them is the owner" in full
+    assert "the owner is identified in this dataset" in keep_owner
+
+
 def test_describe_distinguishes_a_reused_salt() -> None:
-    random_salt = describe(str(AnonymizationMode.RGPD), reused_salt=False)
-    given_salt = describe(str(AnonymizationMode.RGPD), reused_salt=True)
+    random_salt = describe(str(GdprMode.FULL), reused_salt=False)
+    given_salt = describe(str(GdprMode.FULL), reused_salt=True)
 
     assert "irreversible" in random_salt
     assert "reproducible" in given_salt
 
 
-def test_anonymization_mode_lists_the_available_modes() -> None:
-    assert [mode.value for mode in AnonymizationMode] == ["rgpd"]
+def test_gdpr_mode_lists_the_available_modes() -> None:
+    assert [mode.value for mode in GdprMode] == ["full", "keep-owner"]

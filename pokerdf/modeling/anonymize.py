@@ -1,18 +1,29 @@
-"""Anonymization of the modeled data, so a dataset can be shared.
+"""GDPR anonymization of the modeled data, so a dataset can be shared.
 
-A hand history carries personal data of third parties: the nicknames of the
-other players at the table, the identifiers that link a hand back to the
-records of the platform, and the timestamps that allow a hand to be
-correlated with publicly available tournament results.
+A hand history carries personal data of third parties as defined by
+Article 4(1) of the GDPR: the nicknames of the other players at the table
+are online identifiers of natural persons, the tournament and hand
+identifiers link each row back to the records of the platform, and the
+timestamps allow a hand to be correlated with publicly available
+tournament results.
 
-The transformations here are applied to the fact table after it is built,
-so the reconstruction of the hand (order of the actions, amounts, pot and
-stacks) is unaffected: what changes is only what allows a person to be
-identified.
+Two GDPR principles guide what is done here:
+
+- Data minimisation (Article 5(1)(c)): what is not needed for analyzing the
+  game is not produced — the dimension tables are not generated, and the
+  columns that only identify are removed.
+- Pseudonymisation (Article 4(5)): the identifiers that structure the data
+  are replaced by salted digests, which keep the dataset consistent without
+  pointing back to a person.
+
+The transformations are applied to the fact table after it is built, so the
+reconstruction of the hand (order of the actions, amounts, pot and stacks)
+is unaffected: what changes is only what allows a person to be identified.
 """
 
 import hashlib
 import secrets
+from collections.abc import Iterable
 from enum import StrEnum
 
 import pandas as pd
@@ -20,10 +31,15 @@ import pandas as pd
 from pokerdf.utils.columns import Column, ModelColumn
 
 
-class AnonymizationMode(StrEnum):
-    """Anonymization modes accepted by the modeling command."""
+class GdprMode(StrEnum):
+    """GDPR anonymization modes accepted by the modeling command."""
 
-    RGPD = "rgpd"
+    # Everyone is anonymized, including the owner of the logs
+    FULL = "full"
+
+    # Third parties are anonymized; the owner keeps their nickname and their
+    # own hole cards, for datasets where the owner's game is the subject
+    KEEP_OWNER = "keep-owner"
 
 
 # Size of the pseudonym digest. Eight bytes (16 hexadecimal characters) keep
@@ -35,10 +51,14 @@ DIGEST_SIZE = 8
 # to a person or to a hand that can be looked up on the platform
 PSEUDONYMIZED_COLUMNS = [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
 
-# Columns removed entirely. The timestamp allows a hand to be matched against
-# public tournament results, and the cards of the owner of the logs are their
-# own private holding, repeated on every row of the hand
-DROPPED_COLUMNS = [Column.LOCAL_TIME, ModelColumn.OWNER_C1, ModelColumn.OWNER_C2]
+# Removed in every mode: the timestamp allows a hand to be matched against
+# public tournament results, re-identifying the players in it
+DROPPED_COLUMNS = [Column.LOCAL_TIME]
+
+# The private cards of the owner, repeated on every row of the hand: they
+# reveal the owner's holding and mark which player the owner is, so they
+# are removed unless the mode explicitly keeps the owner
+OWNER_CARD_COLUMNS = [ModelColumn.OWNER_C1, ModelColumn.OWNER_C2]
 
 
 def generate_salt() -> str:
@@ -55,18 +75,22 @@ def generate_salt() -> str:
     return secrets.token_hex(16)
 
 
-def pseudonymize(values: pd.Series, salt: str) -> pd.Series:
+def pseudonymize(values: pd.Series, salt: str, keep: Iterable[str] = ()) -> pd.Series:
     """
     Replace each value by a salted digest, keeping equal values equal.
 
     Args:
         values (pd.Series): Values to pseudonymize. Nulls are preserved.
         salt (str): Salt prepended to every value before hashing.
+        keep (Iterable[str]): Values left untouched (for example, the owner
+            of the logs in keep-owner mode).
 
     Returns:
         pd.Series: Series of digests, where the same input always produces
             the same output for a given salt.
     """
+    kept = set(keep)
+
     # Only the distinct values are hashed: a player appears in thousands of
     # rows, and hashing each row would repeat the same work
     mapping = {
@@ -74,32 +98,51 @@ def pseudonymize(values: pd.Series, salt: str) -> pd.Series:
             f"{salt}{value}".encode(), digest_size=DIGEST_SIZE
         ).hexdigest()
         for value in values.dropna().unique()
+        if value not in kept
     }
 
-    return values.map(mapping)
+    # Values without a digest (nulls and the kept ones) stay as they are
+    digests = values.map(mapping)
+    return digests.where(digests.notna(), values)
 
 
-def anonymize_fact(fact: pd.DataFrame, salt: str) -> pd.DataFrame:
+def anonymize_fact(
+    fact: pd.DataFrame,
+    salt: str,
+    mode: GdprMode,
+    owners: Iterable[str] = (),
+) -> pd.DataFrame:
     """
-    Apply the RGPD transformations to the fact table.
+    Apply the GDPR transformations of a mode to the fact table.
 
     Args:
         fact (pd.DataFrame): Fact table built by build_fact_player_actions.
         salt (str): Salt used to derive the pseudonyms.
+        mode (GdprMode): In FULL mode everyone is anonymized and the cards
+            of the owner are removed; in KEEP_OWNER mode the owner keeps
+            their nickname and their hole cards.
+        owners (Iterable[str]): Names of the owners of the logs, as they
+            appear in the Player column. Only used in KEEP_OWNER mode.
 
     Returns:
-        pd.DataFrame: The same table with the identifying columns replaced by
-            pseudonyms and the columns of DROPPED_COLUMNS removed.
+        pd.DataFrame: The same table with the identifying columns replaced
+            by pseudonyms and the identifying-only columns removed.
     """
     anonymized = fact.copy()
+    keep_owner = mode == GdprMode.KEEP_OWNER
 
-    # Replace the identifiers by pseudonyms
+    # Replace the identifiers by pseudonyms, sparing the owner when kept
     for column in PSEUDONYMIZED_COLUMNS:
-        anonymized[column] = pseudonymize(anonymized[column], salt)
+        keep = set(owners) if keep_owner and column == Column.PLAYER else set()
+        anonymized[column] = pseudonymize(anonymized[column], salt, keep=keep)
 
     # Remove what cannot be pseudonymized without losing its meaning
+    dropped: list[StrEnum] = list(DROPPED_COLUMNS)
+    if not keep_owner:
+        dropped += OWNER_CARD_COLUMNS
+
     return anonymized.drop(
-        columns=[column for column in DROPPED_COLUMNS if column in anonymized.columns]
+        columns=[column for column in dropped if column in anonymized.columns]
     )
 
 
@@ -113,45 +156,67 @@ def describe(mode: str, reused_salt: bool) -> str:
     from it.
 
     Args:
-        mode (str): Anonymization mode that was applied.
+        mode (str): GDPR mode that was applied.
         reused_salt (bool): Whether the salt was informed by the user
             instead of randomly generated for this session.
 
     Returns:
         str: Report of the transformations and of the residual risks.
     """
+    keep_owner = mode == GdprMode.KEEP_OWNER
     pseudonymized = ", ".join(str(column) for column in PSEUDONYMIZED_COLUMNS)
     dropped = ", ".join(str(column) for column in DROPPED_COLUMNS)
+    owner_cards = ", ".join(str(column) for column in OWNER_CARD_COLUMNS)
+
+    owner_line = (
+        f"- Kept, by choice of the keep-owner mode: the nickname of the owner\n"
+        f"  of the logs and their hole cards ({owner_cards}). The GDPR restricts\n"
+        f"  what is shared about third parties, not what the owner shares about\n"
+        f"  themselves: the owner is identified in this dataset."
+        if keep_owner
+        else f"- Removed: {owner_cards}, the private cards of the owner, which are\n"
+        f"  repeated on every row of a hand and mark which player the owner is."
+    )
+    owner_risk = (
+        "- The owner of the logs is identified by design, and every hand of\n"
+        "  the archive is a hand the owner played."
+        if keep_owner
+        else "- The owner of the logs plays in every hand of their own archive, so\n"
+        "  the pseudonym that appears in all of them is the owner. Pseudonymizing\n"
+        "  does not hide this, and the same reasoning applies to any player\n"
+        "  whose frequency stands out."
+    )
     salt_line = (
-        "Salt: informed by the user, so the pseudonyms are reproducible across "
-        "sessions.\nAnyone holding the salt can confirm a nickname by hashing "
-        "it, so it must be kept as securely as the original data."
+        "Salt: informed by the user, so the pseudonyms are reproducible across\n"
+        "sessions. Under Recital 26 of the GDPR the result remains pseudonymized\n"
+        "personal data, not anonymous data: anyone holding the salt can confirm\n"
+        "a nickname by hashing it, so the salt must be kept as securely as the\n"
+        "original files."
         if reused_salt
-        else "Salt: randomly generated for this session and not stored, so the "
+        else "Salt: randomly generated for this session and not stored, so the\n"
         "pseudonyms are irreversible and cannot be reproduced in another run."
     )
 
-    return f"""Anonymization report
-====================
+    return f"""GDPR anonymization report
+=========================
 
 Mode: {mode}
 
 Applied
 -------
-- Dimension tables were not generated. They carry the nickname of the owner
-  of the logs, the buy-in paid, the cards revealed at showdown, the final
-  rank and the prizes received.
-- Pseudonymized with a salted BLAKE2b digest: {pseudonymized}.
-- Removed: {dropped}.
+- Dimension tables were not generated (data minimisation, Article 5(1)(c)).
+  They carry the nickname of the owner of the logs, the buy-in paid, the
+  cards revealed at showdown, the final rank and the prizes received.
+- Pseudonymized with a salted BLAKE2b digest (Article 4(5)): {pseudonymized}.
+- Removed: {dropped}, which allows a hand to be matched against publicly
+  available tournament results.
+{owner_line}
 
 {salt_line}
 
 Residual risks
 --------------
-- The owner of the logs plays in every hand of their own archive, so the
-  pseudonym that appears in all of them is the owner. Pseudonymizing does
-  not hide this, and the same reasoning applies to any player whose
-  frequency stands out.
+{owner_risk}
 - A hand is still described by its board and by the exact sequence and size
   of the bets, which is close to unique. Someone holding another copy of the
   same hand can match it and recover the identifiers from there.
