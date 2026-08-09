@@ -1,0 +1,81 @@
+# Enforces Conventional Commit titles in the two places they can enter main.
+#
+# On pull requests, the title is validated on every edit as well: with squash
+# merges, the title of the pull request is exactly the commit that lands on
+# main, and renaming it after the checks passed must re-run the validation.
+#
+# On pushes to main, every commit that just landed is validated again: it is
+# the last line of defense for direct pushes and for anything that slipped
+# past the pull request check. The release pipeline still refuses to infer a
+# level from an unreadable title, so a failure here is a loud warning, not a
+# broken release.
+
+name: Conventional Commits
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history, required to walk the range of a push
+          fetch-depth: 0
+
+      - name: Validate the titles
+        env:
+          # Passed through the environment: a title interpolated into the
+          # script would be a shell injection vector
+          EVENT: ${{ github.event_name }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+        run: |
+          REGEX='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-zA-Z0-9._/-]+\))?!?: .+'
+
+          if [ "$EVENT" = "pull_request" ]; then
+            echo "PR title: $TITLE"
+            if echo "$TITLE" | grep -qE "$REGEX"; then
+              echo "Valid Conventional Commit title."
+              exit 0
+            fi
+            echo "::error::The pull request title must follow Conventional Commits: 'type(scope)?: description', e.g. 'feat: add a --gdpr option' or 'fix(convert): dedupe repeated hands'. Accepted types: build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test. Append '!' to the type for breaking changes."
+            exit 1
+          fi
+
+          # Push to main: validate every commit of the push. The range falls
+          # back to the head commit alone when "before" is unknown (for
+          # example, the very first push of a branch)
+          if git cat-file -e "$BEFORE" 2>/dev/null; then
+            SUBJECTS=$(git log "$BEFORE..$AFTER" --no-merges --pretty="%s")
+          else
+            SUBJECTS=$(git log -1 "$AFTER" --pretty="%s")
+          fi
+
+          # The version bump commits of the release pipeline are the one
+          # sanctioned exception, and the inference filters them too
+          SUBJECTS=$(echo "$SUBJECTS" | grep -v "^bump version to" || true)
+          if [ -z "$SUBJECTS" ]; then
+            echo "Only release bump commits in this push."
+            exit 0
+          fi
+          echo "Commits in this push:"
+          echo "$SUBJECTS"
+
+          INVALID=$(echo "$SUBJECTS" | grep -vE "$REGEX" || true)
+          if [ -n "$INVALID" ]; then
+            echo "::error::Commits landed on main outside Conventional Commits. The release inference will refuse to run until the history is fixed or an explicit level is chosen:"
+            echo "$INVALID"
+            exit 1
+          fi
+          echo "Every commit title is valid."

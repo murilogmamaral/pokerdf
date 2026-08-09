@@ -13,29 +13,9 @@ permissions:
   contents: read
 
 jobs:
-  # The squash commit that lands on main takes the title of the pull request,
-  # and the release pipeline infers the semver bump from those titles
-  # (feat -> minor, type! -> major, anything else -> patch), so the
-  # Conventional Commits format is mandatory
-  pr-title:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check the title against Conventional Commits
-        env:
-          # Passed through the environment: a title interpolated into the
-          # script would be a shell injection vector
-          TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          echo "PR title: $TITLE"
-          if echo "$TITLE" | grep -qE '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-zA-Z0-9._/-]+\))?!?: .+'; then
-            echo "Valid Conventional Commit title."
-          else
-            echo "::error::The pull request title must follow Conventional Commits: 'type(scope)?: description', e.g. 'feat: add a --gdpr option' or 'fix(convert): dedupe repeated hands'. Accepted types: build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test. Append '!' to the type for breaking changes."
-            exit 1
-          fi
-
+  # Conventional Commit titles are enforced by the dedicated workflow in
+  # conventional-commits.yml, on pull requests (including title edits) and
+  # on every push to main
   lint:
     runs-on: ubuntu-latest
 
