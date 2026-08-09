@@ -9,9 +9,9 @@ tournament results.
 
 Two GDPR principles guide what is done here:
 
-- Data minimisation (Article 5(1)(c)): what is not needed for analyzing the
-  game is not produced — the dimension tables are not generated, and the
-  columns that only identify are removed.
+- Data minimisation (Article 5(1)(c)): what identifies without helping the
+  analysis is not produced — the final-rank dimension, which mirrors
+  publicly available tournament results, is not generated.
 - Pseudonymisation (Article 4(5)): the identifiers that structure the data
   are replaced by salted digests, which keep the dataset consistent without
   pointing back to a person.
@@ -53,11 +53,6 @@ DIGEST_SIZE = 8
 # every group by inside the dataset working, while no longer pointing back
 # to a person or to a hand that can be looked up on the platform
 PSEUDONYMIZED_COLUMNS = [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
-
-# Removed in every mode, from the hand dimension where it lives: the
-# timestamp allows a hand to be matched against public tournament results,
-# re-identifying the players in it
-DROPPED_COLUMNS = [Column.LOCAL_TIME]
 
 # The private cards of the owner, repeated on every row of the hand. They
 # are kept in every mode: the decisions in the dataset can only be studied
@@ -136,7 +131,8 @@ def anonymize_table(
 
     Returns:
         pd.DataFrame: The same table with the identifying columns replaced
-            by pseudonyms and the identifying-only columns removed.
+            by pseudonyms. Every attribute survives whole: what changes is
+            only what points back to a person or to the platform records.
     """
     anonymized = table.copy()
     keep_owner = mode == GdprMode.KEEP_OWNER
@@ -161,10 +157,7 @@ def anonymize_table(
             anonymized[Column.OWNER].map(escaped), salt
         )
 
-    # Remove what cannot be pseudonymized without losing its meaning
-    return anonymized.drop(
-        columns=[column for column in DROPPED_COLUMNS if column in anonymized.columns]
-    )
+    return anonymized
 
 
 def describe(mode: GdprMode, reused_salt: bool) -> str:
@@ -186,7 +179,6 @@ def describe(mode: GdprMode, reused_salt: bool) -> str:
     """
     keep_owner = mode == GdprMode.KEEP_OWNER
     pseudonymized = ", ".join(str(column) for column in PSEUDONYMIZED_COLUMNS)
-    dropped = ", ".join(str(column) for column in DROPPED_COLUMNS)
     owner_cards = ", ".join(str(column) for column in OWNER_CARD_COLUMNS)
 
     owner_line = (
@@ -230,15 +222,15 @@ Mode: {mode}
 
 Applied
 -------
-- The tournament and final-rank dimensions were not generated (data
-  minimisation, Article 5(1)(c)): they carry the nickname of the owner of
-  the logs, the start time of each tournament, the buy-in paid, and the
-  nickname, final rank and prize of every player.
-- The hand dimension is generated, since it carries the context the
-  amounts are read against (table size, players dealt in, level, blinds
-  and antes). Its identifiers are pseudonymized with the same salt as the
-  fact's, so the tables keep joining.
-- Pseudonymized with a salted BLAKE2b digest (Article 4(5)): {pseudonymized}.
+- The final-rank dimension was not generated (data minimisation, Article
+  5(1)(c)): the nickname, final rank and prize of every player mirror
+  publicly available tournament results, the easiest re-identification
+  path there is.
+- The fact table, the hand dimension and the tournament dimension leave
+  with every attribute whole, the timestamps included. What changes is
+  only the identifiers, pseudonymized with a salted BLAKE2b digest
+  (Article 4(5)): {pseudonymized}, with the same salt in every table, so
+  the pseudonyms keep joining across them.
 - Kept in every mode: the cards revealed at showdown (RevealedShowDownC1,
   RevealedShowDownC2), the combinations derived from the cards and the
   board (OwnerCombination, RevealedShowDownCombination and their scores)
@@ -246,8 +238,6 @@ Applied
   (RevealedShowDownPokerHand). They were shown at the table, and once the
   player holding them is pseudonymized they describe the game, not a
   person.
-- Removed: {dropped}, which allows a hand to be matched against publicly
-  available tournament results.
 {owner_line}
 
 {salt_line}
@@ -258,6 +248,10 @@ Residual risks
 - A hand is still described by its board and by the exact sequence and size
   of the bets, which is close to unique. Someone holding another copy of the
   same hand can match it and recover the identifiers from there.
+- The timestamps of the hands and the start time, modality and buy-in of
+  each tournament are kept for analytical value. Matched against publicly
+  available tournament schedules and results, they can identify the
+  tournament - and from there whoever appears in its public final table.
 - The values in chips, the levels and the size of the table are preserved,
   as removing them would leave the dataset without analytical value.
 

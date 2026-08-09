@@ -845,10 +845,10 @@ def build_star_schema(
     them and splits the result into one fact table and three dimensions:
     fact_player_action, dim_tournament, dim_hand and dim_final_rank.
 
-    When a GDPR mode is informed, only the fact table and the hand
-    dimension are generated, with the identifying columns pseudonymized
-    and removed as described in the anonymize module, and a report of the
-    transformations is saved next to them.
+    When a GDPR mode is informed, the final-rank dimension is not
+    generated and the other tables leave with their identifiers
+    pseudonymized, as described in the anonymize module, with a report of
+    the transformations saved next to them.
 
     Args:
         source (str): Directory containing the converted .parquet files.
@@ -866,13 +866,13 @@ def build_star_schema(
 
     mode = _parse_gdpr_mode(gdpr)
     if mode:
-        # Only what the analysis needs leaves: the fact and the hand
-        # dimension, which carries the table size, the level, the blinds
-        # and the antes the amounts are read against. Both are anonymized
-        # with the same salt, so their pseudonyms keep joining. The
-        # tournament and final-rank dimensions are not generated: they
-        # exist to describe who the players are, how the tournament went
-        # and what each one received.
+        # Everything the analysis needs leaves - the fact, the hand
+        # dimension whole (timestamps included) and the tournament
+        # dimension - anonymized with the same salt, so the pseudonyms
+        # keep joining across the tables. Only the final-rank dimension is
+        # not generated: the nickname, final rank and prize of every
+        # player mirror publicly available tournament results, the easiest
+        # re-identification path there is.
         # The Player column stores names escaped for regex, so the owners
         # are escaped the same way to match them in keep-owner mode
         session_salt = salt or generate_salt()
@@ -880,6 +880,9 @@ def build_star_schema(
         tables = {
             ModelTable.FACT_PLAYER_ACTION: anonymize_table(
                 build_fact_player_action(df), session_salt, mode=mode, owners=owners
+            ),
+            ModelTable.DIM_TOURNAMENT: anonymize_table(
+                build_dim_tournament(df), session_salt, mode=mode, owners=owners
             ),
             ModelTable.DIM_HAND: anonymize_table(
                 build_dim_hand(df), session_salt, mode=mode, owners=owners

@@ -8,7 +8,6 @@ since an anonymized dataset that cannot be analyzed is useless.
 import pandas as pd
 
 from pokerdf.modeling.anonymize import (
-    DROPPED_COLUMNS,
     OWNER_CARD_COLUMNS,
     PSEUDONYMIZED_COLUMNS,
     GdprMode,
@@ -74,13 +73,6 @@ def test_generate_salt_is_random() -> None:
 # ---------------------------------------------------------------------------
 # anonymize_table: full mode
 # ---------------------------------------------------------------------------
-def test_full_mode_removes_the_identifying_columns(fact: pd.DataFrame) -> None:
-    result = anonymize_table(fact, "salt", GdprMode.FULL)
-
-    for column in DROPPED_COLUMNS:
-        assert column not in result.columns
-
-
 def test_full_mode_keeps_the_owner_cards(fact: pd.DataFrame) -> None:
     result = anonymize_table(fact, "salt", GdprMode.FULL)
 
@@ -137,14 +129,21 @@ def test_full_mode_anonymizes_the_hand_dimension_consistently(
     anonymized_fact = anonymize_table(fact, "salt", GdprMode.FULL)
     anonymized_dim = anonymize_table(dim, "salt", GdprMode.FULL)
 
-    # The timestamp is removed, the identifiers are pseudonymized, and the
-    # same salt keeps the dimension joining with the fact
-    assert "LocalTime" not in anonymized_dim.columns
+    # The identifiers are pseudonymized, and the same salt keeps the
+    # dimension joining with the fact
     assert set(anonymized_dim["TournID"]) == set(anonymized_fact["TournID"])
     assert set(anonymized_dim["HandID"]) == set(anonymized_fact["HandID"])
     assert set(anonymized_dim["Owner"]) == set(anonymized_fact["Owner"])
-    # The context the amounts are read against survives
-    for column in ["TableSize", "Playing", "Level", "Ante", "SmallBlind", "BigBlind"]:
+    # Every attribute survives whole, the timestamp included
+    for column in [
+        "LocalTime",
+        "TableSize",
+        "Playing",
+        "Level",
+        "Ante",
+        "SmallBlind",
+        "BigBlind",
+    ]:
         pd.testing.assert_series_equal(anonymized_dim[column], dim[column])
 
 
@@ -222,9 +221,7 @@ def test_keep_owner_mode_keeps_the_owner_cards(fact: pd.DataFrame) -> None:
 def test_keep_owner_mode_still_protects_third_parties(fact: pd.DataFrame) -> None:
     result = anonymize_table(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
 
-    # Identifiers and timestamps are treated exactly like in full mode
-    for column in DROPPED_COLUMNS:
-        assert column not in result.columns
+    # Identifiers are treated exactly like in full mode
     assert set(result["TournID"]).isdisjoint(set(fact["TournID"]))
     assert set(result["HandID"]).isdisjoint(set(fact["HandID"]))
 
@@ -236,7 +233,7 @@ def test_describe_reports_the_transformations() -> None:
     report = describe(GdprMode.FULL, reused_salt=False)
 
     assert "full" in report
-    for column in [*PSEUDONYMIZED_COLUMNS, *DROPPED_COLUMNS, *OWNER_CARD_COLUMNS]:
+    for column in [*PSEUDONYMIZED_COLUMNS, *OWNER_CARD_COLUMNS]:
         assert str(column) in report
     assert "Residual risks" in report
 

@@ -636,17 +636,22 @@ def test_build_star_schema_saves_the_four_tables(
         assert len(table) > 0
 
 
-def test_build_star_schema_gdpr_saves_the_fact_the_hand_dim_and_a_report(
+def test_build_star_schema_gdpr_saves_everything_but_the_final_rank(
     converted_dir: Path, tmp_path: Path
 ) -> None:
     number_of_rows = build_star_schema(str(converted_dir), str(tmp_path), gdpr="full")
 
-    # Only the fact and the hand dimension are generated (the context the
-    # analysis needs), and the report sits next to the data
-    assert list(number_of_rows.keys()) == ["fact_player_action", "dim_hand"]
+    # Only the final-rank dimension is left out (it mirrors public
+    # tournament results), and the report sits next to the data
+    assert list(number_of_rows.keys()) == [
+        "fact_player_action",
+        "dim_tournament",
+        "dim_hand",
+    ]
     assert sorted(p.name for p in tmp_path.iterdir()) == [
         "anonymization.txt",
         "dim_hand.parquet",
+        "dim_tournament.parquet",
         "fact_player_action.parquet",
     ]
 
@@ -656,13 +661,19 @@ def test_build_star_schema_gdpr_saves_the_fact_the_hand_dim_and_a_report(
     assert "garciamurilo" not in set(table["Player"])
     assert "OwnerC1" in table.columns
 
-    # The hand dimension loses the timestamp and joins the fact through
-    # the pseudonyms, since both were anonymized with the same salt
+    # The hand dimension leaves whole - the timestamp included - and joins
+    # the fact through the pseudonyms, since the salt is shared
     dim = pd.read_parquet(tmp_path / "dim_hand.parquet")
-    assert "LocalTime" not in dim.columns
+    assert "LocalTime" in dim.columns
     assert "garciamurilo" not in set(dim["Owner"])
     assert set(dim["HandID"]) == set(table["HandID"])
     assert set(dim["Owner"]) == set(table["Owner"])
+
+    # The tournament dimension is blurred the same way
+    tourn = pd.read_parquet(tmp_path / "dim_tournament.parquet")
+    assert "garciamurilo" not in set(tourn["Owner"])
+    assert set(tourn["TournID"]) == set(table["TournID"])
+    assert "LocalStartTime" in tourn.columns
 
 
 def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(
@@ -672,12 +683,12 @@ def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(
 
     table = pd.read_parquet(tmp_path / "fact_player_action.parquet")
     # The owner keeps their nickname and their hole cards; every third
-    # party is pseudonymized and the timestamp is still removed
+    # party is pseudonymized
     players = set(table["Player"])
     assert "garciamurilo" in players
     assert players.isdisjoint({"VillainA", "VillainB"})
     assert "OwnerC1" in table.columns
-    assert "LocalTime" not in table.columns
+    assert (table["Owner"] == "garciamurilo").all()
 
 
 def test_build_star_schema_rejects_an_unknown_gdpr_mode(
