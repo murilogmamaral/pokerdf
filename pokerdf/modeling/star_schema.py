@@ -652,15 +652,17 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: Columns TournID, HandID, LocalTime, TableSize, Playing,
             Level, Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
             Stack, PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder,
-            AddedValue, TotalValue, TotalPot, BoardC1 to BoardC5, OwnerC1 and
-            OwnerC2, ShowDownC1 and ShowDownC2 (the cards revealed at
-            showdown by the opponents, on every row of the player in the
-            hand), and the combination each holding makes with the board
-            visible at the moment of the event — OwnerCombination and
-            ShowDownCombination, with their scores from 1 (High Card) to 10
-            (Royal Flush). Rows are sorted by ActionOrder inside each hand.
-            ActionIndex is 0 for posts and restarts at 1 for each
-            player/round of voluntary actions.
+            AddedValue, TotalValue, TotalPot and BoardC1 to BoardC5, plus
+            the card columns, which always describe the player of the row:
+            OwnerC1 and OwnerC2 (the dealt hole cards, on the owner's rows),
+            ShowDownC1 and ShowDownC2 (the cards revealed at showdown, on
+            every row of the opponent that revealed them), and the
+            combination each holding makes with the board visible at the
+            moment of the event — OwnerCombination and ShowDownCombination,
+            with their scores from 1 (High Card) to 10 (Royal Flush). Rows
+            are sorted by ActionOrder inside each hand. ActionIndex is 0 for
+            posts and restarts at 1 for each player/round of voluntary
+            actions.
     """
     # One row per event, sorted as the hand unfolded, with the amounts.
     # The full list of players anchors the order even when the big blind or
@@ -703,18 +705,25 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     fact[Column.LEVEL] = fact[Column.LEVEL].map(_roman_to_int).astype("Int64")
     fact[ModelColumn.SMALL_BLIND] = [_get_element(x, 0) for x in fact[Column.BLINDS]]
     fact[ModelColumn.BIG_BLIND] = [_get_element(x, 1) for x in fact[Column.BLINDS]]
-    fact[ModelColumn.OWNER_C1] = [_get_element(x, 0) for x in fact[Column.OWNERS_HAND]]
-    fact[ModelColumn.OWNER_C2] = [_get_element(x, 1) for x in fact[Column.OWNERS_HAND]]
-
-    # The cards revealed at showdown, broadcast to every row of the player in
-    # the hand: the show happens at the end, but it reveals what was held from
-    # the first action. Only the opponents are described here — the owner's
-    # cards already live in OwnerC1 and OwnerC2 on every row. The Player
-    # column stores names escaped for regex; the owner is stored raw
+    # Every card column describes the player of the row, so the cards known
+    # for a player only appear on that player's own rows. The Player column
+    # stores names escaped for regex; the owner is stored raw
     escaped_owners = {
         owner: re.escape(owner) for owner in fact[Column.OWNER].dropna().unique()
     }
     is_owner = fact[Column.PLAYER] == fact[Column.OWNER].map(escaped_owners)
+
+    # The hole cards dealt to the owner, on the owner's rows
+    dealt = [
+        cards if from_owner else None
+        for from_owner, cards in zip(is_owner, fact[Column.OWNERS_HAND])
+    ]
+    fact[ModelColumn.OWNER_C1] = [_get_element(x, 0) for x in dealt]
+    fact[ModelColumn.OWNER_C2] = [_get_element(x, 1) for x in dealt]
+
+    # The cards revealed by an opponent at showdown, broadcast to every row
+    # of the opponent in the hand: the show happens at the end, but it
+    # reveals what was held from the first action
     shown = [
         None if from_owner else cards
         for from_owner, cards in zip(is_owner, fact[Column.SHOW_DOWN])
@@ -723,10 +732,10 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     fact[ModelColumn.SHOW_DOWN_C2] = [_get_element(x, 1) for x in shown]
 
     # The combination made at the moment of each event, from the cards the
-    # player could use: the hole cards plus the board visible in the round.
-    # On preflop the board is empty, so a pocket pair is already One Pair.
-    # The owner is evaluated on every row; an opponent only on their own
-    # rows, when both revealed cards are known
+    # player of the row could use: the hole cards plus the board visible in
+    # the round. On preflop the board is empty, so a pocket pair is already
+    # One Pair. An opponent is only evaluated when both revealed cards are
+    # known
     boards = [tuple(board) if board is not None else () for board in visible_boards]
     owner_combinations = [
         _combination(c1, c2, board)

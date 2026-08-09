@@ -55,7 +55,7 @@ PSEUDONYMIZED_COLUMNS = [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
 # public tournament results, re-identifying the players in it
 DROPPED_COLUMNS = [Column.LOCAL_TIME]
 
-# The private cards of the owner, repeated on every row of the hand. They
+# The private cards of the owner, on the owner's rows of each hand. They
 # are kept in every mode: the decisions in the dataset can only be studied
 # against the holding they were made with, so removing them would strip the
 # analytical value the dataset exists for. Named here for the report
@@ -182,9 +182,10 @@ def describe(mode: GdprMode, reused_salt: bool) -> str:
         if keep_owner
         else "- The owner of the logs plays in every hand of their own archive, so\n"
         "  the pseudonym that appears in all of them is the owner. Pseudonymizing\n"
-        "  does not hide this - and since the hole cards of the owner are kept\n"
-        "  on every row, that pseudonym is linked to the holdings it played.\n"
-        "  The same frequency reasoning applies to any player who stands out."
+        "  does not hide this - and since the rows of the owner are the ones\n"
+        "  carrying dealt hole cards, that pseudonym is linked to the holdings\n"
+        "  it played. The same frequency reasoning applies to any player who\n"
+        "  stands out."
     )
     salt_line = (
         "Salt: informed by the user, so the pseudonyms are reproducible across\n"

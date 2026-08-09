@@ -136,8 +136,7 @@ def test_fact_explodes_single_action(fact: pd.DataFrame) -> None:
 
 
 def test_fact_carries_hand_context(fact: pd.DataFrame) -> None:
-    # Hand 11111: 3-max at level I (blinds 10/20), 3 players, no ante,
-    # with the owner holding 3s Jh
+    # Hand 11111: 3-max at level I (blinds 10/20), 3 players, no ante
     row = fact[fact["HandID"] == 11111].iloc[0]
     assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:22:15")
     assert row["TableSize"] == 3
@@ -146,8 +145,21 @@ def test_fact_carries_hand_context(fact: pd.DataFrame) -> None:
     assert pd.isna(row["Ante"])
     assert row["SmallBlind"] == 10.0
     assert row["BigBlind"] == 20.0
-    assert row["OwnerC1"] == "3s"
-    assert row["OwnerC2"] == "Jh"
+
+
+def test_fact_owner_cards_only_on_the_owners_rows(fact: pd.DataFrame) -> None:
+    # Hand 11111: the owner was dealt 3s Jh. Every card column describes the
+    # player of the row, so the cards appear on the owner's rows and on
+    # nobody else's
+    rows = fact[fact["HandID"] == 11111]
+    owner = rows[rows["Player"] == "garciamurilo"]
+    others = rows[rows["Player"] != "garciamurilo"]
+    assert (owner["OwnerC1"] == "3s").all()
+    assert (owner["OwnerC2"] == "Jh").all()
+    assert others["OwnerC1"].isna().all()
+    assert others["OwnerC2"].isna().all()
+    assert others["OwnerCombination"].isna().all()
+    assert others["OwnerCombinationScore"].isna().all()
 
 
 def test_fact_carries_seat_and_position(fact: pd.DataFrame) -> None:
@@ -213,20 +225,17 @@ def test_fact_infers_the_owner_combination_at_each_moment(
     fact: pd.DataFrame,
 ) -> None:
     # Hand 219269866589: the owner holds 8h Kh and the board runs
-    # Jh 5s 4s / Jc / 2h — a high card until the turn pairs the jacks.
-    # The combination is hand context, so it fills every row of the round
-    rows = fact[fact["HandID"] == 219269866589]
-    by_round = {
-        round_name: group for round_name, group in rows.groupby("Round", sort=False)
-    }
-    for round_name, expected_name, expected_score in [
-        ("preflop", "High Card", 1),
-        ("flop", "High Card", 1),
-        ("turn", "One Pair", 2),
-        ("river", "One Pair", 2),
-    ]:
-        assert (by_round[round_name]["OwnerCombination"] == expected_name).all()
-        assert (by_round[round_name]["OwnerCombinationScore"] == expected_score).all()
+    # Jh 5s 4s / Jc / 2h — a high card until the turn pairs the jacks
+    owner = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "garciamurilo")]
+    assert owner[
+        ["Round", "OwnerCombination", "OwnerCombinationScore"]
+    ].values.tolist() == [
+        ["preflop", "High Card", 1],  # posts small blind
+        ["preflop", "High Card", 1],  # calls
+        ["flop", "High Card", 1],
+        ["turn", "One Pair", 2],
+        ["river", "One Pair", 2],
+    ]
 
 
 def test_fact_infers_the_combination_of_the_shown_opponent(
