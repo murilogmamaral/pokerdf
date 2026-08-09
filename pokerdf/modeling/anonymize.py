@@ -206,8 +206,11 @@ Applied
 -------
 - Dimension tables were not generated (data minimisation, Article 5(1)(c)).
   They carry the nickname of the owner of the logs, the buy-in paid, the
-  cards revealed at showdown, the final rank and the prizes received.
+  final rank and the prizes received.
 - Pseudonymized with a salted BLAKE2b digest (Article 4(5)): {pseudonymized}.
+- Kept in every mode: the cards revealed at showdown (ShowDownC1,
+  ShowDownC2). They were shown at the table, and once the player holding
+  them is pseudonymized they describe the game, not a person.
 - Removed: {dropped}, which allows a hand to be matched against publicly
   available tournament results.
 {owner_line}

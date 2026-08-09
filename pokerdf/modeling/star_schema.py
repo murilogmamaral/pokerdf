@@ -188,12 +188,11 @@ def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, HandID, Player, Result, Balance,
-            ShowDownC1, ShowDownC2 and PokerHand (the cards revealed by the
-            player at showdown, also for the losers — valuable for range
-            studies). Everything that describes the events of the hand —
-            seat, position, the dynamic Stack, the posts and LocalTime —
-            lives in the fact table.
+        pd.DataFrame: Columns TournID, HandID, Player, Result, Balance and
+            PokerHand (the combination named by the platform at showdown).
+            Everything that describes the events of the hand — seat,
+            position, the dynamic Stack, the posts, LocalTime and the cards
+            revealed at showdown — lives in the fact table.
     """
     # One row per player per hand
     players = df.drop_duplicates(
@@ -207,12 +206,6 @@ def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
             Column.PLAYER: players[Column.PLAYER],
             Column.RESULT: players[Column.RESULT],
             Column.BALANCE: players[Column.BALANCE],
-            ModelColumn.SHOW_DOWN_C1: [
-                _get_element(x, 0) for x in players[Column.SHOW_DOWN]
-            ],
-            ModelColumn.SHOW_DOWN_C2: [
-                _get_element(x, 1) for x in players[Column.SHOW_DOWN]
-            ],
             ModelColumn.POKER_HAND: players[Column.CARD_COMBINATION],
         }
     )
@@ -308,7 +301,9 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
         Column.LEVEL,
         Column.PLAYING,
         Column.ANTE,
+        Column.OWNER,
         Column.OWNERS_HAND,
+        Column.SHOW_DOWN,
         Column.BOARD_FLOP,
         Column.BOARD_TURN,
         Column.BOARD_RIVER,
@@ -630,10 +625,13 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Columns TournID, HandID, LocalTime, TableSize, Playing,
             Level, Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
-            Stack, PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder, AddedValue, TotalValue,
-            TotalPot, BoardC1 to BoardC5, OwnerC1 and OwnerC2, sorted by
-            ActionOrder inside each hand. ActionIndex is 0 for posts and
-            restarts at 1 for each player/round of voluntary actions.
+            Stack, PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder,
+            AddedValue, TotalValue, TotalPot, BoardC1 to BoardC5, OwnerC1 and
+            OwnerC2, and ShowDownC1 and ShowDownC2 (the cards revealed at
+            showdown by the opponents, on every row of the player in the
+            hand), sorted by ActionOrder inside each hand. ActionIndex is 0
+            for posts and restarts at 1 for each player/round of voluntary
+            actions.
     """
     # One row per event, sorted as the hand unfolded, with the amounts.
     # The full list of players anchors the order even when the big blind or
@@ -679,6 +677,22 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     fact[ModelColumn.OWNER_C1] = [_get_element(x, 0) for x in fact[Column.OWNERS_HAND]]
     fact[ModelColumn.OWNER_C2] = [_get_element(x, 1) for x in fact[Column.OWNERS_HAND]]
 
+    # The cards revealed at showdown, broadcast to every row of the player in
+    # the hand: the show happens at the end, but it reveals what was held from
+    # the first action. Only the opponents are described here — the owner's
+    # cards already live in OwnerC1 and OwnerC2 on every row. The Player
+    # column stores names escaped for regex; the owner is stored raw
+    escaped_owners = {
+        owner: re.escape(owner) for owner in fact[Column.OWNER].dropna().unique()
+    }
+    is_owner = fact[Column.PLAYER] == fact[Column.OWNER].map(escaped_owners)
+    shown = [
+        None if from_owner else cards
+        for from_owner, cards in zip(is_owner, fact[Column.SHOW_DOWN])
+    ]
+    fact[ModelColumn.SHOW_DOWN_C1] = [_get_element(x, 0) for x in shown]
+    fact[ModelColumn.SHOW_DOWN_C2] = [_get_element(x, 1) for x in shown]
+
     # Final structure of the fact table
     fact = fact.astype({Column.TOURN_ID: "int64", Column.HAND_ID: "int64"}).loc[
         :,
@@ -712,6 +726,8 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             ModelColumn.BOARD_C5,
             ModelColumn.OWNER_C1,
             ModelColumn.OWNER_C2,
+            ModelColumn.SHOW_DOWN_C1,
+            ModelColumn.SHOW_DOWN_C2,
         ],
     ]
 

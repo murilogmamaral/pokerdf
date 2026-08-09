@@ -102,6 +102,8 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "BoardC5",
         "OwnerC1",
         "OwnerC2",
+        "ShowDownC1",
+        "ShowDownC2",
     ]
     assert set(fact["Round"]) <= {"preflop", "flop", "turn", "river"}
     assert fact["TournID"].dtype == "int64"
@@ -176,6 +178,30 @@ def test_fact_carries_the_posted_amounts_on_every_row(fact: pd.DataFrame) -> Non
     rows = fact[(fact["HandID"] == 11111) & (fact["Player"] == "garciamurilo")]
     assert (rows["PostedBlind"] == 10.0).all()
     assert rows["PostedAnte"].isna().all()
+
+
+def test_fact_broadcasts_the_opponents_showdown_cards(fact: pd.DataFrame) -> None:
+    # Hand 219269866589: VillainB lost and mucked [7h Td]. The muck happens
+    # at the end of the hand, but it reveals what was held from the first
+    # action, so every row of the player carries the cards — the preflop
+    # post included
+    rows = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "VillainB")]
+    assert len(rows) > 1
+    assert (rows["ShowDownC1"] == "7h").all()
+    assert (rows["ShowDownC2"] == "Td").all()
+
+
+def test_fact_showdown_columns_only_describe_the_opponents(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269866589: garciamurilo (the owner) showed [8h Kh], but his
+    # cards already live in OwnerC1 and OwnerC2 — the showdown columns are
+    # reserved for the opponents
+    rows = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "garciamurilo")]
+    assert (rows["OwnerC1"] == "8h").all()
+    assert (rows["OwnerC2"] == "Kh").all()
+    assert rows["ShowDownC1"].isna().all()
+    assert rows["ShowDownC2"].isna().all()
 
 
 def test_fact_stack_is_dynamic(fact: pd.DataFrame) -> None:
@@ -455,33 +481,31 @@ def test_dim_player_summary_values(source_df: pd.DataFrame) -> None:
     dim = build_dim_player_summary(source_df)
     row = dim[(dim["HandID"] == 11111) & (dim["Player"] == "garciamurilo")].iloc[0]
     assert row["Result"] == "folded"
-    # Seat, Position, the dynamic Stack and the posts live in the fact table
-    for column in ["Seat", "Position", "Stack", "PostedAnte", "PostedBlind"]:
+    # Seat, Position, the dynamic Stack, the posts and the showdown cards
+    # live in the fact table
+    for column in [
+        "Seat",
+        "Position",
+        "Stack",
+        "PostedAnte",
+        "PostedBlind",
+        "ShowDownC1",
+        "ShowDownC2",
+    ]:
         assert column not in dim.columns
 
 
-def test_dim_player_summary_flattens_showdown_cards(
+def test_dim_player_summary_keeps_the_platform_combination(
     source_df: pd.DataFrame,
 ) -> None:
+    # Hand 219269866589: the combination named by the platform at showdown
+    # stays in the dimension; the cards themselves live in the fact table
     dim = build_dim_player_summary(source_df)
     row = dim[(dim["HandID"] == 219269866589) & (dim["Player"] == "garciamurilo")].iloc[
         0
     ]
     assert row["Balance"] == 40.0
-    assert row["ShowDownC1"] == "8h"
-    assert row["ShowDownC2"] == "Kh"
     assert row["PokerHand"] == "a pair of Jacks"
-
-
-def test_dim_player_summary_keeps_the_losers_revealed_cards(
-    source_df: pd.DataFrame,
-) -> None:
-    # Hand 219269866589: VillainB lost and mucked [7h Td] — the revealed
-    # cards of the losers matter for range studies
-    dim = build_dim_player_summary(source_df)
-    row = dim[(dim["HandID"] == 219269866589) & (dim["Player"] == "VillainB")].iloc[0]
-    assert row["ShowDownC1"] == "7h"
-    assert row["ShowDownC2"] == "Td"
 
 
 # ---------------------------------------------------------------------------
@@ -604,7 +628,9 @@ def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:
             "Level": ["I"] * 4,
             "Playing": [4] * 4,
             "Ante": [None] * 4,
+            "Owner": ["utg"] * 4,
             "OwnersHand": [["Ah", "Kh"]] * 4,
+            "ShowDown": [[None, None]] * 4,
             "PreflopAction": [
                 [("folds", "")],
                 placeholder[0],
