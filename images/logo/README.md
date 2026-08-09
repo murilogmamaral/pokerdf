@@ -11,8 +11,8 @@ edited directly: change the SVG, then re-export.
 
 | Source | Export | Use |
 | --- | --- | --- |
-| `pokerdf-logo-light.svg` | `pokerdf-logo-light.png` (1080×411) | Horizontal lockup, light backgrounds |
-| `pokerdf-logo-dark.svg` | `pokerdf-logo-dark.png` (1080×411) | Horizontal lockup, dark backgrounds |
+| `pokerdf-logo-light.svg` | `pokerdf-logo-light.png` (942×330) | Horizontal lockup, light backgrounds |
+| `pokerdf-logo-dark.svg` | `pokerdf-logo-dark.png` (942×330) | Horizontal lockup, dark backgrounds |
 | `pokerdf-icon-light.svg` | `pokerdf-icon-light.png` (512×512) | Icon alone, light backgrounds |
 | `pokerdf-icon-dark.svg` | `pokerdf-icon-dark.png` (512×512) | Icon alone, dark backgrounds |
 
@@ -20,22 +20,28 @@ Every file has a transparent background, and the inner face of the diamond is
 punched out with an even-odd fill rather than painted, so the mark takes the
 colour of the page instead of stamping a white rectangle onto it.
 
-The lockup artboard is 360 units wide and the icon artboard 128, exported at 3×
-and 4× to 1080×411 and to the 512×512 that favicons and social preview cards
+The lockup artboard is 314 units wide and the icon artboard 128, exported at 3×
+and 4× to 942×330 and to the 512×512 that favicons and social preview cards
 ask for.
+
+Inside the lockup the two halves keep their original coordinates and are placed
+by a `transform` on the group that wraps each: the mark is scaled to three
+quarters and the gap between it and the wordmark is 24 units. Composing it this
+way means the proportion can be retuned by editing two numbers, without
+redrawing a single path.
 
 **The two lockup sources carry no `width` or `height`, only a `viewBox`, and
 that is deliberate.** An `<img>` pointing at an SVG with no intrinsic size but a
 known ratio is laid out at the full width of its container, so the lockup fills
 the column it is dropped into instead of sitting at a fixed size in the middle
 of it. Adding the two attributes back would silently shrink the README banner to
-360 pixels. The icons keep theirs, since they are placed at a chosen size rather
+314 pixels. The icons keep theirs, since they are placed at a chosen size rather
 than stretched to fit.
 
 To re-export after a change, at any size:
 
 ```sh
-rsvg-convert -w 1080 pokerdf-logo-light.svg -o pokerdf-logo-light.png
+rsvg-convert -w 942 pokerdf-logo-light.svg -o pokerdf-logo-light.png
 oxipng -o max --strip safe --alpha pokerdf-logo-light.png
 ```
 
@@ -65,7 +71,7 @@ variants ship together and the browser picks one:
 ```html
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset=".../pokerdf-logo-dark.svg">
-  <img src=".../pokerdf-logo-light.svg" alt="PokerDF">
+  <img src=".../pokerdf-logo-light.svg" alt="pokerdf">
 </picture>
 ```
 
