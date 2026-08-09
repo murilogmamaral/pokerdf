@@ -30,7 +30,9 @@ SOURCE_SCHEMA = pa.schema(
         (Column.TOURN_ID, pa.string()),
         (Column.TABLE_ID, pa.string()),
         (Column.HAND_ID, pa.string()),
-        (Column.LOCAL_TIME, pa.timestamp("ns")),
+        (Column.HAND_START_TIME_CET, pa.timestamp("ns")),
+        (Column.HAND_START_TIME_LOCAL, pa.timestamp("ns")),
+        (Column.HAND_TIMEZONE, pa.string()),
         (Column.LEVEL, pa.string()),
         (Column.ANTE, pa.float64()),
         (Column.BLINDS, pa.list_(pa.float64())),
@@ -184,23 +186,43 @@ def build_dim_tournament(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns Owner, TournID, LocalStartTime, Modality and
-            BuyIn. The key is Owner plus TournID: the dimension describes
-            the tournament as observed by an owner's archive, and each
-            owner can start it at a different time — the start time is the
-            time of the first hand the owner's client logged.
+        pd.DataFrame: Columns Owner, TournID, TournFirstHandTimeCET,
+            TournFirstHandTimeLocal, TournTimezone, Modality and BuyIn. The key
+            is Owner plus TournID: the dimension describes the tournament
+            as observed by an owner's archive.
+
+            The moments are those of the first hand the owner's client
+            logged, which is not necessarily when the tournament started:
+            a player who registers late enters an event already running,
+            and the hand histories carry no other signal of the real start
+            (the platform writes it in the tournament summary files, which
+            this package does not read). The columns are named after what
+            they hold, so nothing has to be assumed about how the owner
+            plays.
     """
+    # Sorting first makes "first" mean the earliest hand instead of whatever
+    # row happens to come first, which matters for the time zone: it can
+    # change during a tournament that runs across a daylight saving switch
     dim = (
-        df.groupby([Column.OWNER, Column.TOURN_ID], as_index=False)
+        df.sort_values(Column.HAND_START_TIME_CET)
+        .groupby([Column.OWNER, Column.TOURN_ID], as_index=False)
         .agg(
             **{
-                ModelColumn.LOCAL_START_TIME: (Column.LOCAL_TIME, "min"),
+                ModelColumn.TOURN_FIRST_HAND_TIME_CET: (
+                    Column.HAND_START_TIME_CET,
+                    "min",
+                ),
+                ModelColumn.TOURN_FIRST_HAND_TIME_LOCAL: (
+                    Column.HAND_START_TIME_LOCAL,
+                    "min",
+                ),
+                ModelColumn.TOURN_TIMEZONE: (Column.HAND_TIMEZONE, "first"),
                 Column.MODALITY: (Column.MODALITY, "first"),
                 Column.BUY_IN: (Column.BUY_IN, "first"),
             }
         )
         .astype({Column.TOURN_ID: "int64"})
-        .sort_values(ModelColumn.LOCAL_START_TIME, ignore_index=True)
+        .sort_values(ModelColumn.TOURN_FIRST_HAND_TIME_CET, ignore_index=True)
     )
 
     return dim
@@ -214,7 +236,7 @@ def build_dim_hand(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns Owner, TournID, HandID, LocalTime, TableSize,
+        pd.DataFrame: Columns Owner, TournID, HandID, HandStartTimeCET, TableSize,
             Playing, Level, Ante, SmallBlind and BigBlind — the context
             that is constant across the events of a hand, keeping the fact
             table lean. Owner is part of the key: two archives can log the
@@ -229,7 +251,9 @@ def build_dim_hand(df: pd.DataFrame) -> pd.DataFrame:
             Column.OWNER: hands[Column.OWNER],
             Column.TOURN_ID: hands[Column.TOURN_ID].astype("int64"),
             Column.HAND_ID: hands[Column.HAND_ID].astype("int64"),
-            Column.LOCAL_TIME: hands[Column.LOCAL_TIME],
+            Column.HAND_START_TIME_CET: hands[Column.HAND_START_TIME_CET],
+            Column.HAND_START_TIME_LOCAL: hands[Column.HAND_START_TIME_LOCAL],
+            Column.HAND_TIMEZONE: hands[Column.HAND_TIMEZONE],
             Column.TABLE_SIZE: hands[Column.TABLE_SIZE],
             Column.PLAYING: hands[Column.PLAYING],
             Column.LEVEL: hands[Column.LEVEL].map(_roman_to_int).astype("Int64"),

@@ -73,7 +73,9 @@ def compose_dataframe() -> pd.DataFrame:
         Column.TOURN_ID: "object",
         Column.TABLE_ID: "object",
         Column.HAND_ID: "object",
-        Column.LOCAL_TIME: "datetime64[ns]",
+        Column.HAND_START_TIME_CET: "datetime64[ns]",
+        Column.HAND_START_TIME_LOCAL: "datetime64[ns]",
+        Column.HAND_TIMEZONE: "object",
         Column.LEVEL: "object",
         Column.ANTE: "float64",
         Column.BLINDS: "object",
@@ -261,8 +263,9 @@ class DataProcessing:
             # Convert text to pd.DataFrame
             df = convert_txt_to_tabular_data(self.path).reset_index(drop=True)
 
-            # Compose name of the .parquet file (the Tournament ID + the Local Time)
-            clean_datetime = str(df[Column.LOCAL_TIME][0]).replace("-", "")[:8]
+            # Compose name of the .parquet file: the date of the first hand
+            # in CET, followed by the Tournament ID
+            clean_datetime = str(df[Column.HAND_START_TIME_CET][0]).replace("-", "")[:8]
             file_name = (
                 clean_datetime + "-T" + str(df[Column.TOURN_ID][0]) + PARQUET_EXTENSION
             )

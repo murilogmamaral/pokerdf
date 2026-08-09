@@ -22,7 +22,9 @@ class Column(StrEnum):
     TOURN_ID = "TournID"
     TABLE_ID = "TableID"
     HAND_ID = "HandID"
-    LOCAL_TIME = "LocalTime"
+    HAND_START_TIME_CET = "HandStartTimeCET"
+    HAND_START_TIME_LOCAL = "HandStartTimeLocal"
+    HAND_TIMEZONE = "HandTimezone"
     LEVEL = "Level"
     ANTE = "Ante"
     BLINDS = "Blinds"
@@ -69,7 +71,9 @@ class ModelColumn(StrEnum):
     columns (blinds, cards, boards) and exploding the player actions.
     """
 
-    LOCAL_START_TIME = "LocalStartTime"
+    TOURN_FIRST_HAND_TIME_CET = "TournFirstHandTimeCET"
+    TOURN_FIRST_HAND_TIME_LOCAL = "TournFirstHandTimeLocal"
+    TOURN_TIMEZONE = "TournTimezone"
     SMALL_BLIND = "SmallBlind"
     BIG_BLIND = "BigBlind"
     OWNER_C1 = "OwnerC1"

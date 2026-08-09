@@ -137,14 +137,14 @@ def test_full_mode_anonymizes_the_hand_dimension_consistently(
     assert set(anonymized_dim["HandID"]) == set(anonymized_fact["HandID"])
     assert set(anonymized_dim["Owner"]) == set(anonymized_fact["Owner"])
     # The timestamp is removed; every other attribute survives whole
-    assert "LocalTime" not in anonymized_dim.columns
+    assert "HandStartTimeCET" not in anonymized_dim.columns
     for column in ["TableSize", "Playing", "Level", "Ante", "SmallBlind", "BigBlind"]:
         pd.testing.assert_series_equal(anonymized_dim[column], dim[column])
 
 
 def test_time_columns_are_removed_from_every_table(source_df: pd.DataFrame) -> None:
     # Any column of time identifies the tournament when matched against
-    # public schedules: LocalTime leaves dim_hand, LocalStartTime leaves
+    # public schedules: HandStartTimeCET leaves dim_hand, TournFirstHandTimeCET leaves
     # dim_tournament
     hand = anonymize_table(build_dim_hand(source_df), "salt", GdprMode.FULL)
     tournament = anonymize_table(build_dim_tournament(source_df), "salt", GdprMode.FULL)

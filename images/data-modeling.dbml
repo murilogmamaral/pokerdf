@@ -5,7 +5,9 @@
 Table dim_tournament {
   Owner varchar [pk]
   TournID integer [pk]
-  LocalStartTime timestamp
+  TournFirstHandTimeCET timestamp
+  TournFirstHandTimeLocal timestamp
+  TournTimezone varchar
   Modality varchar
   BuyIn varchar
 }
@@ -14,7 +16,9 @@ Table dim_hand {
   Owner varchar [pk]
   TournID integer [pk]
   HandID integer [pk]
-  LocalTime timestamp
+  HandStartTimeCET timestamp
+  HandStartTimeLocal timestamp
+  HandTimezone varchar
   TableSize integer
   Playing integer
   Level integer
