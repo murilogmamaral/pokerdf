@@ -20,10 +20,17 @@ Every file has a transparent background, and the inner face of the diamond is
 punched out with an even-odd fill rather than painted, so the mark takes the
 colour of the page instead of stamping a white rectangle onto it.
 
-The lockup artboard is 360 units wide, which is the width the README renders it
-at, so the export is exactly 3× and stays crisp on high-DPI displays. The icon
-artboard is 128, exported at 4× to the 512×512 that favicons and social preview
-cards ask for.
+The lockup artboard is 360 units wide and the icon artboard 128, exported at 3×
+and 4× to 1080×411 and to the 512×512 that favicons and social preview cards
+ask for.
+
+**The two lockup sources carry no `width` or `height`, only a `viewBox`, and
+that is deliberate.** An `<img>` pointing at an SVG with no intrinsic size but a
+known ratio is laid out at the full width of its container, so the lockup fills
+the column it is dropped into instead of sitting at a fixed size in the middle
+of it. Adding the two attributes back would silently shrink the README banner to
+360 pixels. The icons keep theirs, since they are placed at a chosen size rather
+than stretched to fit.
 
 To re-export after a change, at any size:
 
@@ -57,8 +64,8 @@ variants ship together and the browser picks one:
 
 ```html
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".../pokerdf-logo-dark.png">
-  <img src=".../pokerdf-logo-light.png" alt="PokerDF" width="360">
+  <source media="(prefers-color-scheme: dark)" srcset=".../pokerdf-logo-dark.svg">
+  <img src=".../pokerdf-logo-light.svg" alt="PokerDF">
 </picture>
 ```
 
@@ -66,3 +73,9 @@ Renderers that do not implement `<picture>` — PyPI among them, and it renders
 the top-level README on every release — drop the `<source>` and keep the
 `<img>`, which is why the light variant is the fallback and why the URLs are
 absolute rather than relative to the repository.
+
+The README points at the SVGs rather than the PNGs: a banner that spans the full
+column would need an export of some 2500 pixels to stay sharp on a high-DPI
+display, where the vector is 5 KB and sharp at every size.
+The PNGs remain for the places that will not take a vector, social preview cards
+among them.
