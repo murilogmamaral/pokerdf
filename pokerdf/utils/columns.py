@@ -24,7 +24,7 @@ class Column(StrEnum):
     HAND_ID = "HandID"
     HAND_START_TIME_CET = "HandStartTimeCET"
     HAND_START_TIME_LOCAL = "HandStartTimeLocal"
-    HAND_TIMEZONE = "HandTimezone"
+    TIMEZONE = "Timezone"
     LEVEL = "Level"
     ANTE = "Ante"
     BLINDS = "Blinds"

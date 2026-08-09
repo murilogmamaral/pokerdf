@@ -60,7 +60,7 @@ PSEUDONYMIZED_COLUMNS = [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
 DROPPED_COLUMNS: list[StrEnum] = [
     Column.HAND_START_TIME_CET,
     Column.HAND_START_TIME_LOCAL,
-    Column.HAND_TIMEZONE,
+    Column.TIMEZONE,
     ModelColumn.TOURN_FIRST_HAND_TIME_CET,
     ModelColumn.TOURN_FIRST_HAND_TIME_LOCAL,
 ]
@@ -143,8 +143,8 @@ def anonymize_table(
 
     Returns:
         pd.DataFrame: The same table with the identifying columns replaced
-            by pseudonyms and the time columns removed. Every other
-            attribute survives whole.
+            by pseudonyms, and the moments and the time zone removed.
+            Every other attribute survives whole.
     """
     anonymized = table.copy()
     keep_owner = mode == GdprMode.KEEP_OWNER
@@ -163,8 +163,9 @@ def anonymize_table(
     if not keep_owner and Column.OWNER in anonymized.columns:
         anonymized[Column.OWNER] = pseudonymize(anonymized[Column.OWNER], salt)
 
-    # Remove every time column: it cannot be pseudonymized without losing
-    # its meaning, and kept it would identify the tournament
+    # Remove the moments and the time zone: neither can be pseudonymized
+    # without losing its meaning, and kept they point at the tournament and
+    # at where the owner lives
     return anonymized.drop(
         columns=[column for column in DROPPED_COLUMNS if column in anonymized.columns]
     )

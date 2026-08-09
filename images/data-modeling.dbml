@@ -17,7 +17,7 @@ Table dim_hand {
   HandID integer [pk]
   HandStartTimeCET timestamp
   HandStartTimeLocal timestamp
-  HandTimezone varchar
+  Timezone varchar
   TableSize integer
   Playing integer
   Level integer

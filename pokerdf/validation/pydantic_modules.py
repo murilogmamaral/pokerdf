@@ -11,7 +11,7 @@ class ValidateInput(BaseModel):
     HandID: list[str]
     HandStartTimeCET: list[datetime]
     HandStartTimeLocal: list[datetime | None]
-    HandTimezone: list[str | None]
+    Timezone: list[str | None]
     Level: list[str]
     Ante: list[float | None]
     Blinds: list[tuple[float, float]]

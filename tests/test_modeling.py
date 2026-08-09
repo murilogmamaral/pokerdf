@@ -580,7 +580,7 @@ def test_dim_hand_carries_the_hand_context(source_df: pd.DataFrame) -> None:
         "HandID",
         "HandStartTimeCET",
         "HandStartTimeLocal",
-        "HandTimezone",
+        "Timezone",
         "TableSize",
         "Playing",
         "Level",
