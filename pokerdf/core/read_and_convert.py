@@ -263,7 +263,8 @@ class DataProcessing:
             # Convert text to pd.DataFrame
             df = convert_txt_to_tabular_data(self.path).reset_index(drop=True)
 
-            # Compose name of the .parquet file (the Tournament ID + the Local Time)
+            # Compose name of the .parquet file: the date of the first hand
+            # in CET, followed by the Tournament ID
             clean_datetime = str(df[Column.HAND_START_TIME_CET][0]).replace("-", "")[:8]
             file_name = (
                 clean_datetime + "-T" + str(df[Column.TOURN_ID][0]) + PARQUET_EXTENSION

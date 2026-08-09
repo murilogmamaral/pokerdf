@@ -16,11 +16,11 @@ Two GDPR principles guide what is done here:
   are replaced by salted digests, which keep the dataset consistent without
   pointing back to a person.
 
-The transformations are applied to the fact table and to the hand dimension
-after they are built, with the same salt, so the reconstruction of the hand
-(order of the actions, amounts, pot, stacks and the context they are read
-against) is unaffected and the tables keep joining: what changes is only
-what allows a person to be identified.
+The transformations are applied to each generated table after it is built,
+with the same salt, so the reconstruction of the hand (order of the
+actions, amounts, pot, stacks and the context they are read against) is
+unaffected and the tables keep joining: what changes is only what allows a
+person to be identified.
 """
 
 import hashlib
@@ -53,9 +53,10 @@ DIGEST_SIZE = 8
 # to a person or to a hand that can be looked up on the platform
 PSEUDONYMIZED_COLUMNS = [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
 
-# Removed in every mode, from whichever table carries them: a timestamp
+# Removed in every mode, from whichever table carries them. A timestamp
 # matched against publicly available tournament schedules and results
-# identifies the tournament, re-identifying the players in it
+# identifies the tournament, re-identifying the players in it; the time
+# zone of the player is a rough statement of where they live
 DROPPED_COLUMNS: list[StrEnum] = [
     Column.HAND_START_TIME_CET,
     Column.HAND_START_TIME_LOCAL,
@@ -125,12 +126,13 @@ def anonymize_table(
     """
     Apply the GDPR transformations of a mode to a table of the star schema.
 
-    The same function anonymizes the fact table and the hand dimension:
-    each transformation applies to the columns the table has, and the same
-    salt gives the same pseudonyms in both, so the tables keep joining.
+    The same function anonymizes every table that leaves: each
+    transformation applies to the columns the table happens to have, and
+    the same salt gives the same pseudonyms in all of them, so they keep
+    joining.
 
     Args:
-        table (pd.DataFrame): Fact table or hand dimension.
+        table (pd.DataFrame): Any table of the star schema.
         salt (str): Salt used to derive the pseudonyms.
         mode (GdprMode): In FULL mode the nickname of the owner is
             pseudonymized like everyone else's, in the Player and Owner
@@ -187,8 +189,10 @@ def describe(mode: GdprMode, reused_salt: bool) -> str:
     """
     keep_owner = mode == GdprMode.KEEP_OWNER
     pseudonymized = ", ".join(str(column) for column in PSEUDONYMIZED_COLUMNS)
-    dropped = ", ".join(str(column) for column in DROPPED_COLUMNS)
     owner_cards = ", ".join(str(column) for column in OWNER_CARD_COLUMNS)
+
+    # One column per line: the report is plain text and the names are long
+    dropped = "\n".join(f"    {column}" for column in DROPPED_COLUMNS)
 
     owner_line = (
         f"- Kept in every mode: the hole cards of the owner ({owner_cards}),\n"
@@ -237,11 +241,15 @@ Applied
   path there is.
 - The fact table, the hand dimension and the tournament dimension leave
   with their identifiers pseudonymized with a salted BLAKE2b digest
-  (Article 4(5)): {pseudonymized}, with the same salt in every table, so
-  the pseudonyms keep joining across them.
-- Removed from every table that carries them: the time columns ({dropped}).
+  (Article 4(5)): {pseudonymized}. The same salt is used in every
+  table, so the pseudonyms keep joining across them.
+- Removed from every table that carries them:
+
+{dropped}
+
   A timestamp matched against publicly available tournament schedules and
-  results identifies the tournament. Every other attribute leaves whole.
+  results identifies the tournament, and the time zone of the player says
+  roughly where they live. Every other attribute leaves whole.
 - Kept in every mode: the cards revealed at showdown (RevealedShowDownC1,
   RevealedShowDownC2), the combinations derived from the cards and the
   board (OwnerCombination, RevealedShowDownCombination and their scores)
