@@ -545,15 +545,15 @@ def test_dim_tournament(source_df: pd.DataFrame) -> None:
     assert list(dim.columns) == [
         "Owner",
         "TournID",
-        "TournStartTimeCET",
-        "TournStartTimeLocal",
+        "TournFirstHandTimeCET",
+        "TournFirstHandTimeLocal",
         "Modality",
         "BuyIn",
     ]
     row = dim.iloc[0]
     assert row["TournID"] == 99999
     assert row["Owner"] == "garciamurilo"
-    assert row["TournStartTimeCET"] == pd.Timestamp("2020-10-11 07:22:15")
+    assert row["TournFirstHandTimeCET"] == pd.Timestamp("2020-10-11 07:22:15")
     assert row["Modality"] == "USD Hold'em No Limit"
     assert row["BuyIn"] == "$1.84+$0.16"
     # TableSize belongs to the fact table
@@ -677,7 +677,7 @@ def test_build_star_schema_gdpr_saves_everything_but_the_final_rank(
     tourn = pd.read_parquet(tmp_path / "dim_tournament.parquet")
     assert "garciamurilo" not in set(tourn["Owner"])
     assert set(tourn["TournID"]) == set(table["TournID"])
-    assert "TournStartTimeCET" not in tourn.columns
+    assert "TournFirstHandTimeCET" not in tourn.columns
 
 
 def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(

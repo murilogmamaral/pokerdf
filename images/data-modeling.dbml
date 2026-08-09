@@ -5,8 +5,8 @@
 Table dim_tournament {
   Owner varchar [pk]
   TournID integer [pk]
-  TournStartTimeCET timestamp
-  TournStartTimeLocal timestamp
+  TournFirstHandTimeCET timestamp
+  TournFirstHandTimeLocal timestamp
   Modality varchar
   BuyIn varchar
 }

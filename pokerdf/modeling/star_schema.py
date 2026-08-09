@@ -186,18 +186,29 @@ def build_dim_tournament(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns Owner, TournID, TournStartTimeCET, Modality and
-            BuyIn. The key is Owner plus TournID: the dimension describes
-            the tournament as observed by an owner's archive, and each
-            owner can start it at a different time — the start time is the
-            time of the first hand the owner's client logged.
+        pd.DataFrame: Columns Owner, TournID, TournFirstHandTimeCET,
+            TournFirstHandTimeLocal, Modality and BuyIn. The key is Owner
+            plus TournID: the dimension describes the tournament as
+            observed by an owner's archive.
+
+            The moments are those of the first hand the owner's client
+            logged, which is not necessarily when the tournament started:
+            a player who registers late enters an event already running,
+            and the hand histories carry no other signal of the real start
+            (the platform writes it in the tournament summary files, which
+            this package does not read). The columns are named after what
+            they hold, so nothing has to be assumed about how the owner
+            plays.
     """
     dim = (
         df.groupby([Column.OWNER, Column.TOURN_ID], as_index=False)
         .agg(
             **{
-                ModelColumn.TOURN_START_TIME_CET: (Column.HAND_START_TIME_CET, "min"),
-                ModelColumn.TOURN_START_TIME_LOCAL: (
+                ModelColumn.TOURN_FIRST_HAND_TIME_CET: (
+                    Column.HAND_START_TIME_CET,
+                    "min",
+                ),
+                ModelColumn.TOURN_FIRST_HAND_TIME_LOCAL: (
                     Column.HAND_START_TIME_LOCAL,
                     "min",
                 ),
@@ -206,7 +217,7 @@ def build_dim_tournament(df: pd.DataFrame) -> pd.DataFrame:
             }
         )
         .astype({Column.TOURN_ID: "int64"})
-        .sort_values(ModelColumn.TOURN_START_TIME_CET, ignore_index=True)
+        .sort_values(ModelColumn.TOURN_FIRST_HAND_TIME_CET, ignore_index=True)
     )
 
     return dim

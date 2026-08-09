@@ -182,7 +182,7 @@ pokerdf modeling /path/to/parquet/files --gdpr full
 ```
 Two GDPR principles guide what the command does:
 
-- **Data minimisation (Article 5(1)(c))** — what identifies without helping the analysis is not produced. The final-rank dimension is left out entirely: the nickname, final rank and prize of every player mirror publicly available tournament results, the easiest re-identification path there is. The fact, `dim_tournament` and `dim_hand` are generated with every time column removed (`HandStartTimeCET`, `TournStartTimeCET`): a timestamp matched against publicly available tournament schedules identifies the tournament. Every other attribute leaves whole.
+- **Data minimisation (Article 5(1)(c))** — what identifies without helping the analysis is not produced. The final-rank dimension is left out entirely: the nickname, final rank and prize of every player mirror publicly available tournament results, the easiest re-identification path there is. The fact, `dim_tournament` and `dim_hand` are generated with every time column removed (`HandStartTimeCET`, `HandStartTimeLocal`, `TournFirstHandTimeCET`, `TournFirstHandTimeLocal`), and the `HandTimezone` with them, since a time zone narrows down where the owner lives: a timestamp matched against publicly available tournament schedules identifies the tournament. Every other attribute leaves whole.
 - **Pseudonymisation (Article 4(5))** — `TournID`, `HandID`, `Player` and `Owner` are replaced by salted BLAKE2b digests in every generated table, with the same salt, so the tables keep joining (and the owner receives the same pseudonym in `Owner` and in `Player`). The same nickname always maps to the same pseudonym, so grouping keeps working, but nothing points back to a person or to a hand that can be looked up on the platform.
 
 Everything that makes the data worth analyzing is preserved: the order of the actions, the amounts, the pot, the stacks, the board, the positions — and the cards. Your own hole cards (`OwnerC1`, `OwnerC2`), the cards revealed at showdown (`RevealedShowDownC1`, `RevealedShowDownC2`) and the combinations derived from them are kept in every mode, since the decisions in the dataset can only be studied against the holdings they were made with, and cards shown at the table describe the game, not a person.
@@ -237,14 +237,16 @@ One row per event of a player: the ante and blind posts open each hand as rows (
 
 #### dim_tournament
 
-One row per tournament per owner — the key is `Owner` plus `TournID`: the dimension describes the tournament as observed by an owner's archive, and each owner can start it at a different time.
+One row per tournament per owner — the key is `Owner` plus `TournID`: the dimension describes the tournament as observed by an owner's archive.
+
+The moments are those of the **first hand the owner's client logged**, which is not necessarily when the tournament started: a player who registers late enters an event already running. The hand histories carry no other signal of the real start — the platform writes it in the tournament summary files, which this package does not read — so the columns are named after what they actually hold.
 
 | Column         | Description                          | Example              |
 |----------------|--------------------------------------|----------------------|
 | Owner          | Owner of the archive that observed the tournament | ownername |
 | TournID        | Unique identifier of the tournament  | 2928882649           |
-| TournStartTimeCET | Moment of the first hand logged by the owner's client, in CET | 2020-06-07 12:44:35 |
-| TournStartTimeLocal | Same moment on the clock of the owner (null when the client wrote none) | 2020-06-07 08:44:35 |
+| TournFirstHandTimeCET | Moment of the first hand the owner's client logged, in CET | 2020-06-07 12:44:35 |
+| TournFirstHandTimeLocal | Same moment on the clock of the owner (null when the client wrote no local time) | 2020-06-07 08:44:35 |
 | Modality       | The type of game being played        | USD Hold'em No Limit |
 | BuyIn          | The buy-in of the tournament         | $4.60+$0.40          |
 

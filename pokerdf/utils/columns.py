@@ -71,8 +71,8 @@ class ModelColumn(StrEnum):
     columns (blinds, cards, boards) and exploding the player actions.
     """
 
-    TOURN_START_TIME_CET = "TournStartTimeCET"
-    TOURN_START_TIME_LOCAL = "TournStartTimeLocal"
+    TOURN_FIRST_HAND_TIME_CET = "TournFirstHandTimeCET"
+    TOURN_FIRST_HAND_TIME_LOCAL = "TournFirstHandTimeLocal"
     SMALL_BLIND = "SmallBlind"
     BIG_BLIND = "BigBlind"
     OWNER_C1 = "OwnerC1"

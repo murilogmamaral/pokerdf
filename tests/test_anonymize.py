@@ -144,7 +144,7 @@ def test_full_mode_anonymizes_the_hand_dimension_consistently(
 
 def test_time_columns_are_removed_from_every_table(source_df: pd.DataFrame) -> None:
     # Any column of time identifies the tournament when matched against
-    # public schedules: HandStartTimeCET leaves dim_hand, TournStartTimeCET leaves
+    # public schedules: HandStartTimeCET leaves dim_hand, TournFirstHandTimeCET leaves
     # dim_tournament
     hand = anonymize_table(build_dim_hand(source_df), "salt", GdprMode.FULL)
     tournament = anonymize_table(build_dim_tournament(source_df), "salt", GdprMode.FULL)
