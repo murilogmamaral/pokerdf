@@ -1024,11 +1024,11 @@ class RegexPatterns:
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the prize as captured from the text, without
-                the currency symbol (for example, ['6.00']), or [None] if no
-                prize was awarded to the player in the hand. Satellite tickets
-                are captured through the face value in the ticket name
-                (for example, "wins a 'Fast Track $1' ticket" -> ['1']).
+            list: List containing the prize as a float, without the currency
+                symbol (for example, [6.0]), or [None] if no prize was awarded
+                to the player in the hand. Satellite tickets are captured
+                through the face value in the ticket name
+                (for example, "wins a 'Fast Track $1' ticket" -> [1.0]).
         """
         # The prize can be awarded at any stage, so search the whole hand
         target = "\n".join(hand)
@@ -1047,8 +1047,8 @@ class RegexPatterns:
             regex_ticket = rf"{player} wins a '[^']*\$(\d+(?:\.\d+)?)[^']*' ticket"
             final_result = re.findall(regex_ticket, target)[:1]
 
-        # Normalize output
+        # Normalize output as float, matching the declared output schema
         if final_result == []:
             return [None]
 
-        return final_result
+        return [float(x) for x in final_result]
