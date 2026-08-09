@@ -8,6 +8,7 @@ does, so the whole pipeline convert -> parquet -> star schema is exercised.
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from pokerdf.modeling.star_schema import (
     _roman_to_int,
@@ -551,6 +552,15 @@ def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(
     assert players.isdisjoint({"VillainA", "VillainB"})
     assert "OwnerC1" in table.columns
     assert "LocalTime" not in table.columns
+
+
+def test_build_star_schema_rejects_an_unknown_gdpr_mode(
+    converted_dir: Path, tmp_path: Path
+) -> None:
+    # Library callers skip the argparse validation, so the mode is checked
+    # before any work is done, with the accepted values in the message
+    with pytest.raises(ValueError, match="expected one of full, keep-owner"):
+        build_star_schema(str(converted_dir), str(tmp_path), gdpr="rgpd")
 
 
 def test_build_star_schema_gdpr_honors_a_given_salt(

@@ -414,13 +414,12 @@ def test_get_final_rank_and_prize_of_a_win_without_a_showdown() -> None:
     ]
     assert r.get_final_rank("garciamurilo", hand) == [1]
     assert r.get_final_rank("VillainA", hand) == [2]
-    expected: list[Any] = ["0.50"]
+    expected: list[Any] = [0.5]
     assert r.get_prize("garciamurilo", hand) == expected
 
 
 def test_get_prize_of_tournament_winner(final_hand: list[str]) -> None:
-    # The value is captured as text; pydantic coerces it to float downstream
-    expected: list[Any] = ["6.00"]
+    expected: list[Any] = [6.0]
     assert r.get_prize("garciamurilo", final_hand) == expected
 
 
@@ -432,7 +431,7 @@ def test_get_prize_returns_none_when_no_prize_is_awarded(
 
 def test_get_prize_satellite_ticket(satellite_final_hand: list[str]) -> None:
     # The prize of a satellite is a ticket: its face value is captured
-    expected: list[Any] = ["1"]
+    expected: list[Any] = [1.0]
     assert r.get_prize("garciamurilo", satellite_final_hand) == expected
 
 

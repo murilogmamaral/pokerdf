@@ -718,10 +718,35 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     return fact
 
 
+def _parse_gdpr_mode(gdpr: GdprMode | str | None) -> GdprMode | None:
+    """
+    Validate the GDPR mode before any work is done.
+
+    Args:
+        gdpr (GdprMode | str | None): Mode as received from the caller.
+
+    Returns:
+        GdprMode | None: The parsed mode, or None when no mode was informed.
+
+    Raises:
+        ValueError: If the mode is not one of the supported values, with the
+            accepted ones listed in the message.
+    """
+    if gdpr is None:
+        return None
+    try:
+        return GdprMode(gdpr)
+    except ValueError:
+        accepted = ", ".join(mode.value for mode in GdprMode)
+        raise ValueError(
+            f"invalid GDPR mode {gdpr!r}: expected one of {accepted}"
+        ) from None
+
+
 def build_star_schema(
     source: str,
     destination: str,
-    gdpr: str | None = None,
+    gdpr: GdprMode | str | None = None,
     salt: str | None = None,
 ) -> dict[str, int]:
     """
@@ -740,8 +765,8 @@ def build_star_schema(
     Args:
         source (str): Directory containing the converted .parquet files.
         destination (str): Directory where the tables will be saved.
-        gdpr (str | None): GDPR anonymization mode ("full" or "keep-owner"),
-            or None to build the complete star schema.
+        gdpr (GdprMode | str | None): GDPR anonymization mode ("full" or
+            "keep-owner"), or None to build the complete star schema.
         salt (str | None): Salt of the pseudonyms. When omitted, a random one
             is generated for this session and not stored.
 
@@ -751,7 +776,8 @@ def build_star_schema(
     # Load all converted files as a single DataFrame
     df = load_converted_data(source)
 
-    if gdpr:
+    mode = _parse_gdpr_mode(gdpr)
+    if mode:
         # The dimensions are not generated: they exist to describe who the
         # players are, how the tournament went and what each one received.
         # The Player column stores names escaped for regex, so the owners
@@ -760,15 +786,10 @@ def build_star_schema(
         fact = anonymize_fact(
             build_fact_player_actions(df),
             salt or generate_salt(),
-            mode=GdprMode(gdpr),
+            mode=mode,
             owners=owners,
         )
         tables = {ModelTable.FACT_PLAYER_ACTIONS: fact}
-
-        # Save the report of what was applied, next to the data
-        report_path = os.path.join(destination, ANONYMIZATION_REPORT)
-        with open(report_path, "w") as file:
-            file.write(describe(gdpr, reused_salt=salt is not None))
     else:
         # Build the four tables of the star schema
         tables = {
@@ -785,5 +806,12 @@ def build_star_schema(
             os.path.join(destination, f"{name}{PARQUET_EXTENSION}"), index=False
         )
         number_of_rows[str(name)] = len(table)
+
+    # Save the report of what was applied next to the data, only after the
+    # data itself exists: a failed save must not leave an orphan report
+    if mode:
+        report_path = os.path.join(destination, ANONYMIZATION_REPORT)
+        with open(report_path, "w") as file:
+            file.write(describe(mode, reused_salt=salt is not None))
 
     return number_of_rows

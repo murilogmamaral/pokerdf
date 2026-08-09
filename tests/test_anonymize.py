@@ -184,7 +184,7 @@ def test_keep_owner_mode_still_protects_third_parties(fact: pd.DataFrame) -> Non
 # describe
 # ---------------------------------------------------------------------------
 def test_describe_reports_the_transformations() -> None:
-    report = describe(str(GdprMode.FULL), reused_salt=False)
+    report = describe(GdprMode.FULL, reused_salt=False)
 
     assert "full" in report
     for column in [*PSEUDONYMIZED_COLUMNS, *DROPPED_COLUMNS, *OWNER_CARD_COLUMNS]:
@@ -193,16 +193,16 @@ def test_describe_reports_the_transformations() -> None:
 
 
 def test_describe_distinguishes_the_modes() -> None:
-    full = describe(str(GdprMode.FULL), reused_salt=False)
-    keep_owner = describe(str(GdprMode.KEEP_OWNER), reused_salt=False)
+    full = describe(GdprMode.FULL, reused_salt=False)
+    keep_owner = describe(GdprMode.KEEP_OWNER, reused_salt=False)
 
     assert "the pseudonym that appears in all of them is the owner" in full
     assert "the owner is identified in this dataset" in keep_owner
 
 
 def test_describe_distinguishes_a_reused_salt() -> None:
-    random_salt = describe(str(GdprMode.FULL), reused_salt=False)
-    given_salt = describe(str(GdprMode.FULL), reused_salt=True)
+    random_salt = describe(GdprMode.FULL, reused_salt=False)
+    given_salt = describe(GdprMode.FULL, reused_salt=True)
 
     assert "irreversible" in random_salt
     assert "reproducible" in given_salt

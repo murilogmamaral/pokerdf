@@ -78,6 +78,21 @@ packages = ["pokerdf"]
 # fixtures (hand histories) and images out of the PyPI source distribution
 include = ["pokerdf", "README.md", "LICENSE", "pyproject.toml"]
 
+[tool.pytest.ini_options]
+# A warning is a regression that has not happened yet: the suite fails on
+# any of them, so new ones cannot pile up unnoticed. Ignores must be
+# targeted at a specific message and justified
+filterwarnings = [
+    "error",
+    # Raised inside pandas 2.x internals by numpy 2.x (Python 3.12+ resolves
+    # a newer numpy): not actionable from this codebase
+    "ignore:The 'generic' unit for NumPy timedelta:DeprecationWarning",
+    # Raised inside joblib 1.3.2 on Python 3.12+ (ast.Num and its .n
+    # attribute). Both disappear in Python 3.14, so supporting 3.14 will
+    # require raising the joblib pin
+    "ignore:(ast.Num is|Attribute n is) deprecated:DeprecationWarning",
+]
+
 [tool.flake8]
 max-line-length = 120
 extend-ignore = ["E203", "W503"]

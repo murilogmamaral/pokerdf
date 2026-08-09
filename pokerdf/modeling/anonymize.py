@@ -143,7 +143,7 @@ def anonymize_fact(
     )
 
 
-def describe(mode: str, reused_salt: bool) -> str:
+def describe(mode: GdprMode, reused_salt: bool) -> str:
     """
     Describe the applied transformations, to be saved next to the data.
 
@@ -153,7 +153,7 @@ def describe(mode: str, reused_salt: bool) -> str:
     from it.
 
     Args:
-        mode (str): GDPR mode that was applied.
+        mode (GdprMode): GDPR mode that was applied.
         reused_salt (bool): Whether the salt was informed by the user
             instead of randomly generated for this session.
 

@@ -189,8 +189,8 @@ def test_apply_regex_captures_satellite_finishes(
     df = apply_regex(satellite_tournament_text)
     final = df[df["HandID"] == "33333"].set_index("Player")
     assert final.loc["garciamurilo", "FinalRank"] == 1
-    # The ticket face value is the prize (as text; coerced downstream)
-    assert final.loc["garciamurilo", "Prize"] == "1"
+    # The ticket face value is the prize
+    assert final.loc["garciamurilo", "Prize"] == 1.0
     assert final.loc["VillainB", "FinalRank"] == 2
     # VillainC finished without a reported place
     assert final.loc["VillainC", "FinalRank"] == 0

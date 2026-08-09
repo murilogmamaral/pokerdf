@@ -1,5 +1,5 @@
 import os
-import warnings
+from typing import Any
 
 import pandas as pd
 from joblib import Parallel, delayed
@@ -20,8 +20,6 @@ from pokerdf.utils.strings import (
     SUCCESS_LOG,
 )
 from pokerdf.validation.pydantic_modules import ValidateInput
-
-warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 def get_files_paths(path: str) -> list[str]:
@@ -136,9 +134,6 @@ def apply_regex(txt: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame containing the parsed data from the hand history.
     """
-    # Generate dataframe
-    df = compose_dataframe()
-
     # Splitting tournament's hands in a list
     list_of_hands_as_text = txt.split(f"{PLATFORM} ")
 
@@ -154,6 +149,10 @@ def apply_regex(txt: str) -> pd.DataFrame:
 
     # Hands already converted, to skip duplicates
     processed_hands: set[str] = set()
+
+    # Rows are accumulated as plain dictionaries and turned into a DataFrame
+    # once at the end: concatenating row by row grows quadratically
+    rows: list[dict[str, Any]] = []
 
     for hand in list_of_hands_as_text:
 
@@ -185,13 +184,15 @@ def apply_regex(txt: str) -> pd.DataFrame:
             # Validate
             ValidateInput(**collected_data)
 
-            # Convert to dataframe
-            result = pd.DataFrame(collected_data)
+            # Every captured value is a single-element list: unwrap it
+            rows.append({key: value[0] for key, value in collected_data.items()})
 
-            # Concat to the final results
-            df = pd.concat([df, result])
+    # Keep the canonical column order and the typed empty frame for the
+    # degenerate case of a file without any convertible hand
+    if not rows:
+        return compose_dataframe()
 
-    return df
+    return pd.DataFrame(rows, columns=list(compose_dataframe().columns))
 
 
 def convert_txt_to_tabular_data(path: str) -> pd.DataFrame:
@@ -291,9 +292,10 @@ class DataProcessing:
 
         except Exception as e:
 
-            # Log / print FAIL status
+            # Log / print FAIL status, with the exception type so the log
+            # is enough to tell a parsing problem from an IO problem
             msg = "   FAIL: " + os.path.basename(self.path)
-            msg += " (" + str(e) + ")"
+            msg += f" ({type(e).__name__}: {e})"
             _save_log(msg, self.destination, FAIL_LOG)
             print(msg)
 
