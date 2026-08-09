@@ -66,11 +66,13 @@ Table dim_final_rank {
   Prize float
 }
 
-Ref: fact_player_action.TournID > dim_tournament.TournID
 Ref: fact_player_action.Owner > dim_tournament.Owner
+Ref: fact_player_action.TournID > dim_tournament.TournID
+
+Ref: fact_player_action.Owner > dim_hand.Owner
 Ref: fact_player_action.TournID > dim_hand.TournID
 Ref: fact_player_action.HandID > dim_hand.HandID
-Ref: fact_player_action.Owner > dim_hand.Owner
+
 Ref: fact_player_action.Owner > dim_final_rank.Owner
 Ref: fact_player_action.TournID > dim_final_rank.TournID
 Ref: fact_player_action.Player > dim_final_rank.Player
