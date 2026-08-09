@@ -192,7 +192,21 @@ jobs:
       sha: ${{ steps.push.outputs.sha }}
 
     steps:
+      # The bump push must act as the repository admin to pass the branch
+      # ruleset of main, so the checkout authenticates with the fine-grained
+      # RELEASE_TOKEN instead of the workflow token. Failing early with a
+      # clear message beats an authentication error at push time (the token
+      # expires yearly; an expired one fails the checkout itself)
+      - name: Require the release token
+        run: |
+          if [ -z "${{ secrets.RELEASE_TOKEN }}" ]; then
+            echo "::error::The RELEASE_TOKEN secret is missing. Create a fine-grained token with Contents read-write on this repository and save it as the RELEASE_TOKEN Actions secret."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
