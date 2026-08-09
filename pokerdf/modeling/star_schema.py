@@ -624,7 +624,7 @@ def _compute_total_pot(fact: pd.DataFrame) -> pd.DataFrame:
     return fact
 
 
-def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
+def build_fact_player_action(df: pd.DataFrame) -> pd.DataFrame:
     """
     Build the fact table, with one row per event of a player in a hand.
 
@@ -838,7 +838,7 @@ def build_star_schema(
 
     Reads all .parquet files produced by the convert command, concatenates
     them and splits the result into one fact table and three dimensions:
-    fact_player_actions, dim_tournament, dim_hand and dim_final_rank.
+    fact_player_action, dim_tournament, dim_hand and dim_final_rank.
 
     When a GDPR mode is informed, only the fact table and the hand
     dimension are generated, with the identifying columns pseudonymized
@@ -873,8 +873,8 @@ def build_star_schema(
         session_salt = salt or generate_salt()
         owners = {re.escape(owner) for owner in df[Column.OWNER].dropna().unique()}
         tables = {
-            ModelTable.FACT_PLAYER_ACTIONS: anonymize_table(
-                build_fact_player_actions(df), session_salt, mode=mode, owners=owners
+            ModelTable.FACT_PLAYER_ACTION: anonymize_table(
+                build_fact_player_action(df), session_salt, mode=mode, owners=owners
             ),
             ModelTable.DIM_HAND: anonymize_table(
                 build_dim_hand(df), session_salt, mode=mode, owners=owners
@@ -883,7 +883,7 @@ def build_star_schema(
     else:
         # Build the four tables of the star schema
         tables = {
-            ModelTable.FACT_PLAYER_ACTIONS: build_fact_player_actions(df),
+            ModelTable.FACT_PLAYER_ACTION: build_fact_player_action(df),
             ModelTable.DIM_TOURNAMENT: build_dim_tournament(df),
             ModelTable.DIM_HAND: build_dim_hand(df),
             ModelTable.DIM_FINAL_RANK: build_dim_final_rank(df),

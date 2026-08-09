@@ -147,7 +147,7 @@ You may want to build a pipeline to incrementally feed your table with new hand 
 | Prize             | Prize won by the player, if any (satellite tickets: face value) | 30000.00                       | float           |
 
 ## Data Modeling
-For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of dimensional model (star schema) split into four tables that may be useful for most cases: `fact_player_actions` works as the fact table, holding one row per event of a player in a hand, while `dim_tournament`, `dim_hand` and `dim_final_rank` work as dimension tables.
+For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of dimensional model (star schema) split into four tables that may be useful for most cases: `fact_player_action` works as the fact table, holding one row per event of a player in a hand, while `dim_tournament`, `dim_hand` and `dim_final_rank` work as dimension tables.
 
 The reasoning behind this design:
 
@@ -195,7 +195,7 @@ With a kept salt the result remains *pseudonymized* personal data in the sense o
 
 Each session writes an `anonymization.txt` report next to the data, describing what was applied and which risks remain — the most relevant being that the owner plays in every hand of their own archive, so even in `full` mode the pseudonym present in all rows is the owner, linked to the holdings it played; and that a hand remains described by its board and its exact bet sequence, which is close to unique for anyone holding another copy of it. None of this replaces assessing, for your own case, whether sharing the data is lawful.
 
-#### fact_player_actions
+#### fact_player_action
 
 One row per event of a player: the ante and blind posts open each hand as rows (with the real — possibly partial — amounts that left each stack), followed by every action, sorted exactly as the hand unfolded: rounds in chronological order, starting from the first seat to act (the seat after the big blind on preflop, the seat after the button postflop). The amounts are reconstructed by replaying each round with the betting rules of the game, so they reflect the chips that actually moved.
 

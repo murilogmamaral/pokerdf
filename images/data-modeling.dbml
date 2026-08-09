@@ -23,7 +23,7 @@ Table dim_hand {
   BigBlind float
 }
 
-Table fact_player_actions {
+Table fact_player_action {
   TournID integer [not null]
   HandID integer [not null]
   Owner varchar [not null]
@@ -65,10 +65,10 @@ Table dim_final_rank {
   Prize float
 }
 
-Ref: fact_player_actions.TournID > dim_tournament.TournID
-Ref: fact_player_actions.Owner > dim_tournament.Owner
-Ref: fact_player_actions.TournID > dim_hand.TournID
-Ref: fact_player_actions.HandID > dim_hand.HandID
-Ref: fact_player_actions.Owner > dim_hand.Owner
-Ref: fact_player_actions.TournID > dim_final_rank.TournID
-Ref: fact_player_actions.Player > dim_final_rank.Player
+Ref: fact_player_action.TournID > dim_tournament.TournID
+Ref: fact_player_action.Owner > dim_tournament.Owner
+Ref: fact_player_action.TournID > dim_hand.TournID
+Ref: fact_player_action.HandID > dim_hand.HandID
+Ref: fact_player_action.Owner > dim_hand.Owner
+Ref: fact_player_action.TournID > dim_final_rank.TournID
+Ref: fact_player_action.Player > dim_final_rank.Player

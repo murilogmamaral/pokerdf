@@ -16,7 +16,7 @@ from pokerdf.modeling.star_schema import (
     build_dim_final_rank,
     build_dim_hand,
     build_dim_tournament,
-    build_fact_player_actions,
+    build_fact_player_action,
     build_star_schema,
 )
 
@@ -70,7 +70,7 @@ def test_load_converted_data_casts_prize_to_float(source_df: pd.DataFrame) -> No
 
 
 # ---------------------------------------------------------------------------
-# fact_player_actions
+# fact_player_action
 # ---------------------------------------------------------------------------
 def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
     assert list(fact.columns) == [
@@ -600,7 +600,7 @@ def test_build_star_schema_saves_the_four_tables(
     number_of_rows = build_star_schema(str(converted_dir), str(tmp_path))
 
     expected_tables = [
-        "fact_player_actions",
+        "fact_player_action",
         "dim_tournament",
         "dim_hand",
         "dim_final_rank",
@@ -619,15 +619,15 @@ def test_build_star_schema_gdpr_saves_the_fact_the_hand_dim_and_a_report(
 
     # Only the fact and the hand dimension are generated (the context the
     # analysis needs), and the report sits next to the data
-    assert list(number_of_rows.keys()) == ["fact_player_actions", "dim_hand"]
+    assert list(number_of_rows.keys()) == ["fact_player_action", "dim_hand"]
     assert sorted(p.name for p in tmp_path.iterdir()) == [
         "anonymization.txt",
         "dim_hand.parquet",
-        "fact_player_actions.parquet",
+        "fact_player_action.parquet",
     ]
 
-    table = pd.read_parquet(tmp_path / "fact_player_actions.parquet")
-    assert len(table) == number_of_rows["fact_player_actions"]
+    table = pd.read_parquet(tmp_path / "fact_player_action.parquet")
+    assert len(table) == number_of_rows["fact_player_action"]
     # The owner's nickname must not survive, but their cards always do
     assert "garciamurilo" not in set(table["Player"])
     assert "OwnerC1" in table.columns
@@ -646,7 +646,7 @@ def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(
 ) -> None:
     build_star_schema(str(converted_dir), str(tmp_path), gdpr="keep-owner")
 
-    table = pd.read_parquet(tmp_path / "fact_player_actions.parquet")
+    table = pd.read_parquet(tmp_path / "fact_player_action.parquet")
     # The owner keeps their nickname and their hole cards; every third
     # party is pseudonymized and the timestamp is still removed
     players = set(table["Player"])
@@ -677,7 +677,7 @@ def test_build_star_schema_gdpr_honors_a_given_salt(
     build_star_schema(str(converted_dir), str(third), gdpr="full")
 
     players = [
-        pd.read_parquet(folder / "fact_player_actions.parquet")["Player"]
+        pd.read_parquet(folder / "fact_player_action.parquet")["Player"]
         for folder in (first, second, third)
     ]
     # The same salt gives the same pseudonyms, so sessions can be appended
@@ -727,7 +727,7 @@ def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:
         }
     )
 
-    fact = build_fact_player_actions(synthetic)
+    fact = build_fact_player_action(synthetic)
 
     # The posts open the hand; then utg (seat 4, right after the big blind)
     # acts first, followed by the button (seat 9) and the small blind (seat
