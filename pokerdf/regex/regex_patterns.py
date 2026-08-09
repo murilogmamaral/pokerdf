@@ -5,7 +5,14 @@ import pandas as pd
 
 class RegexPatterns:
     """
-    Contains all functions with regex patterns to extract data from the text files
+    Contains all functions with regex patterns to extract data from the text files.
+
+    The player-specific methods take the nickname exactly as it appears in the
+    hand history and escape it themselves before interpolating it into their
+    pattern: a nickname is arbitrary text, and characters like ".", "-", "(" or
+    a space would otherwise be read as regex syntax. Escaping at the point of
+    use keeps the nicknames the methods return - and the ones that reach the
+    converted data - identical to the originals.
     """
 
     def __init__(self) -> None:
@@ -119,9 +126,9 @@ class RegexPatterns:
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List with the names of the active players. Names are escaped
-                with re.escape, so they can be safely interpolated into the
-                regex patterns of the player-specific methods.
+            list: List with the names of the active players, exactly as they
+                appear in the hand history. The player-specific methods escape
+                them before building their patterns.
         """
         # Pattern to extract
         regex = r"\nSeat \d{1}: (.*) \(\S+ in chips"
@@ -131,9 +138,6 @@ class RegexPatterns:
 
         # Apply regex
         players = re.findall(regex, target)
-
-        # Normalize output
-        players = [re.escape(x) for x in players]
 
         return players
 
@@ -383,8 +387,9 @@ class RegexPatterns:
             list: List with the stack of the player (for example, [500.0]),
                 or [None] if the stack cannot be captured.
         """
+        escaped = re.escape(player)
         # Pattern to extract
-        regex = rf"Seat \d+: {player} \((\d+) in chips"
+        regex = rf"Seat \d+: {escaped} \((\d+) in chips"
 
         # Get the first content of a played hand
         target = hand[0]
@@ -414,8 +419,9 @@ class RegexPatterns:
             list: List with the bounty on the player's head (for example,
                 [0.46]), or [None] if the tournament has no bounties.
         """
+        escaped = re.escape(player)
         # Pattern to extract
-        regex = rf"Seat \d+: {player} \(\d+ in chips, [$€£]?(\d+(?:\.\d+)?) bounty\)"
+        regex = rf"Seat \d+: {escaped} \(\d+ in chips, [$€£]?(\d+(?:\.\d+)?) bounty\)"
 
         # Get the first content of a played hand
         target = hand[0]
@@ -441,8 +447,9 @@ class RegexPatterns:
             list: List with the blind posted by the player (for example, [30.0]),
                 or [None] if the player did not post a blind.
         """
+        escaped = re.escape(player)
         # Pattern to extract
-        regex = rf"{player}: posts \w+ blind (\d+)"
+        regex = rf"{escaped}: posts \w+ blind (\d+)"
 
         # Get the first content of a played hand
         target = hand[0]
@@ -468,8 +475,9 @@ class RegexPatterns:
             list: List with the ante posted by the player (for example, [10.0]),
                 or [None] if the player did not post an ante.
         """
+        escaped = re.escape(player)
         # Pattern to extract
-        regex = rf"{player}: posts the ante (\d+)"
+        regex = rf"{escaped}: posts the ante (\d+)"
 
         # Get the first content of a played hand
         target = hand[0]
@@ -501,6 +509,7 @@ class RegexPatterns:
                 string when the action has no associated value. If the stage is
                 not present or the player did not act, returns [[('', '')]].
         """
+        escaped = re.escape(player)
         # Default value when the player has no action in the stage
         fill_empty = [[("", "")]]
 
@@ -513,7 +522,7 @@ class RegexPatterns:
         target = hand[0]
 
         # Pattern to extract
-        regex = rf"{player}: (\w+) (\d+)?"
+        regex = rf"{escaped}: (\w+) (\d+)?"
 
         # Apply regex
         result = re.findall(regex, target)
@@ -537,6 +546,7 @@ class RegexPatterns:
         Returns:
             list: List containing True or False, like [True].
         """
+        escaped = re.escape(player)
         # Filter relevant data of a specific stage
         hand = [x for x in hand if stage in x]
 
@@ -545,7 +555,7 @@ class RegexPatterns:
             return [False]
 
         # Pattern to extract
-        regex = rf"{player}: .* (all-in)"
+        regex = rf"{escaped}: .* (all-in)"
 
         # Get the first content of a played hand for a specific stage
         target = hand[0]
@@ -578,8 +588,9 @@ class RegexPatterns:
                 or [('Ah', None)], or [[None, None]] if the player did not
                 reveal any card.
         """
+        escaped = re.escape(player)
         # Pattern to extract from the summary (the second card is optional)
-        regex = rf"{player} .*(?:mucked|showed) \[(\S+)(?: (\S+))?\]"
+        regex = rf"{escaped} .*(?:mucked|showed) \[(\S+)(?: (\S+))?\]"
 
         # Default value for empty results
         fill_empty: list[list[None]] = [[None, None]]
@@ -596,7 +607,7 @@ class RegexPatterns:
             return cards
 
         # Fallback: single-card shows only appear in the body of the hand
-        body_regex = rf"{player}: shows \[(\S+)\]"
+        body_regex = rf"{escaped}: shows \[(\S+)\]"
         body_result = re.findall(body_regex, "\n".join(hand))
         if body_result != []:
             cards = [(body_result[0], None)]
@@ -616,8 +627,9 @@ class RegexPatterns:
             list: List containing the card combination, like ['a pair of Kings'],
                 or [None] if the player did not show a combination.
         """
+        escaped = re.escape(player)
         # Pattern to extract
-        regex = rf"{player}.*showed.*with (.*)"
+        regex = rf"{escaped}.*showed.*with (.*)"
 
         # Get the last content of a played hand
         target = hand[-1]
@@ -642,8 +654,9 @@ class RegexPatterns:
             list: List containing the result, like ['won']. When the player
                 collected the pot without a showdown, returns ['non-sd win'].
         """
+        escaped = re.escape(player)
         # Pattern to extract
-        regex = rf"Seat \d+: {player} .*(\bfolded\b|\bwon\b|\blost\b|\bmucked\b).*"
+        regex = rf"Seat \d+: {escaped} .*(\bfolded\b|\bwon\b|\blost\b|\bmucked\b).*"
 
         # Get the last content of a played hand
         target = hand[-1]
@@ -668,8 +681,9 @@ class RegexPatterns:
             list: List containing the balance, like [320.0], or [None]
                 if the player did not collect anything.
         """
+        escaped = re.escape(player)
         # Pattern to extract
-        regex = rf"Seat \d: {player}.*(?:collected|won) \((\d+)\)"
+        regex = rf"Seat \d: {escaped}.*(?:collected|won) \((\d+)\)"
 
         # Get the last content of a played hand
         target = hand[-1]
@@ -703,9 +717,10 @@ class RegexPatterns:
             list: List with the total amount returned to the player
                 (for example, [320.0]), or [None] if nothing was returned.
         """
+        escaped = re.escape(player)
         # Pattern to extract. The end-of-line anchor prevents a player name
         # from matching a longer name that starts with it
-        regex = rf"Uncalled bet \((\d+(?:\.\d+)?)\) returned to {player}\s*$"
+        regex = rf"Uncalled bet \((\d+(?:\.\d+)?)\) returned to {escaped}\s*$"
 
         # The return can happen at any stage, so search the whole hand
         target = "\n".join(hand)
@@ -742,12 +757,13 @@ class RegexPatterns:
             list: List with the total bounty won by the player (for example,
                 [0.46]), or [None] if no bounty was won in the hand.
         """
+        escaped = re.escape(player)
         # Patterns to extract, one per knockout format
         regex_regular = (
-            rf"{player} wins the [$€£]?(\d+(?:\.\d+)?) bounty for eliminating"
+            rf"{escaped} wins the [$€£]?(\d+(?:\.\d+)?) bounty for eliminating"
         )
         regex_progressive = (
-            rf"{player} wins [$€£]?(\d+(?:\.\d+)?) "
+            rf"{escaped} wins [$€£]?(\d+(?:\.\d+)?) "
             rf"for (?:eliminating|splitting the elimination of) "
             rf".* and their own bounty increases"
         )
@@ -920,8 +936,9 @@ class RegexPatterns:
         Returns:
             list: List containing the number of the seat, like [1].
         """
+        escaped = re.escape(player)
         # Pattern to extract
-        regex = rf"\nSeat (\d+): {player}.*"
+        regex = rf"\nSeat (\d+): {escaped}.*"
 
         # Get the first content of a played hand for a specific stage
         target = hand[0]
@@ -946,8 +963,9 @@ class RegexPatterns:
             list: List containing the position of the player, like ['small blind'],
                 or [None] if the player had no special position.
         """
+        escaped = re.escape(player)
         # Pattern to extract
-        regex = rf"Seat \d+\: {player} \((button|small blind|big blind)\) "
+        regex = rf"Seat \d+\: {escaped} \((button|small blind|big blind)\) "
 
         # Get the last content of a played hand
         target = hand[-1]
@@ -979,11 +997,12 @@ class RegexPatterns:
                 place (for example, club knockout tournaments), and [-1] when the
                 rank is not defined in the hand.
         """
+        escaped = re.escape(player)
         # The finish can be reported at any stage, so search the whole hand
         target = "\n".join(hand)
 
         # Pattern to extract
-        regex = rf"{player} finished the tournament in (\d+).*"
+        regex = rf"{escaped} finished the tournament in (\d+).*"
 
         # Apply regex
         list_of_results = re.findall(regex, target)
@@ -998,14 +1017,14 @@ class RegexPatterns:
             return [max(list_of_int)]
 
         # Try another pattern: position 1, if wins
-        regex = rf"{player} wins the tournament"
+        regex = rf"{escaped} wins the tournament"
         if re.findall(regex, target) != []:
             return [1]
 
         # Some logs report the finish without a place (for example, club
         # knockout tournaments): 0 marks "finished, place not reported",
         # keeping -1 for "not defined in the hand"
-        regex = rf"{player} finished the tournament\s*$"
+        regex = rf"{escaped} finished the tournament\s*$"
         if re.findall(regex, target, flags=re.MULTILINE) != []:
             return [0]
 
@@ -1030,12 +1049,13 @@ class RegexPatterns:
                 through the face value in the ticket name
                 (for example, "wins a 'Fast Track $1' ticket" -> [1.0]).
         """
+        escaped = re.escape(player)
         # The prize can be awarded at any stage, so search the whole hand
         target = "\n".join(hand)
 
         # Pattern to extract
         regex = (
-            rf"{player} .* (?:and receives|and received) (?:[$€£]?)\s*(\d+(?:\.\d+)?)"
+            rf"{escaped} .* (?:and receives|and received) (?:[$€£]?)\s*(\d+(?:\.\d+)?)"
         )
 
         # Apply regex
@@ -1044,7 +1064,7 @@ class RegexPatterns:
         # Satellite tickets are not cash prizes: the face value in the
         # ticket name is captured instead
         if final_result == []:
-            regex_ticket = rf"{player} wins a '[^']*\$(\d+(?:\.\d+)?)[^']*' ticket"
+            regex_ticket = rf"{escaped} wins a '[^']*\$(\d+(?:\.\d+)?)[^']*' ticket"
             final_result = re.findall(regex_ticket, target)[:1]
 
         # Normalize output as float, matching the declared output schema
