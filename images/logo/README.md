@@ -1,29 +1,54 @@
 # Visual identity
 
 The mark is a card pip turned into a table: a diamond split into four
-quadrants, one of them filled with the brand red — the single hand that
-stands out of the range.
+quadrants, one of them filled with the accent — the single hand that stands out
+of the range.
 
-| File | Use |
-| --- | --- |
-| `pokerdf-logo-light.png` | Horizontal lockup, for light backgrounds |
-| `pokerdf-logo-dark.png` | Horizontal lockup, for dark backgrounds |
-| `pokerdf-icon-light.png` | Icon alone, for light backgrounds |
-| `pokerdf-icon-dark.png` | Icon alone, for dark backgrounds |
+## Files
 
-Every file has a transparent background, so the counters of the mark take the
-colour of the page instead of punching a white rectangle into it.
+The **SVG is the source**. The PNGs are exports of it and should never be
+edited directly: change the SVG, then re-export.
+
+| Source | Export | Use |
+| --- | --- | --- |
+| `pokerdf-logo-light.svg` | `pokerdf-logo-light.png` (1080×411) | Horizontal lockup, light backgrounds |
+| `pokerdf-logo-dark.svg` | `pokerdf-logo-dark.png` (1080×411) | Horizontal lockup, dark backgrounds |
+| `pokerdf-icon-light.svg` | `pokerdf-icon-light.png` (512×512) | Icon alone, light backgrounds |
+| `pokerdf-icon-dark.svg` | `pokerdf-icon-dark.png` (512×512) | Icon alone, dark backgrounds |
+
+Every file has a transparent background, and the inner face of the diamond is
+punched out with an even-odd fill rather than painted, so the mark takes the
+colour of the page instead of stamping a white rectangle onto it.
+
+The lockup artboard is 360 units wide, which is the width the README renders it
+at, so the export is exactly 3× and stays crisp on high-DPI displays. The icon
+artboard is 128, exported at 4× to the 512×512 that favicons and social preview
+cards ask for.
+
+To re-export after a change, at any size:
+
+```sh
+rsvg-convert -w 1080 pokerdf-logo-light.svg -o pokerdf-logo-light.png
+oxipng -o max --strip safe --alpha pokerdf-logo-light.png
+```
 
 ## Colours
 
 | Role | Light | Dark |
 | --- | --- | --- |
 | Ink | `#111113` | `#F0F0F2` |
-| Accent | `#D33C30` | `#E4574A` |
+| Accent | `#E0392B` | `#EC6153` |
 
 The ink flips between the two themes, and the accent is lifted on dark
-backgrounds: the light-theme red sits at a 4.0:1 contrast ratio against the
-GitHub dark canvas, and the lifted one at 5.2:1.
+backgrounds: against the GitHub dark canvas the light-theme red sits at a 4.3:1
+contrast ratio and the lifted one at 5.8:1.
+
+## Typography
+
+The wordmark is set in [Barlow Condensed](https://fonts.google.com/specimen/Barlow+Condensed)
+Bold by Jeremy Tribby, licensed under the SIL Open Font License 1.1, and is
+stored as outlines. Nothing renders the text as text, so the files need no font
+installed and cannot fall back to a different face.
 
 ## Pairing the two variants
 
