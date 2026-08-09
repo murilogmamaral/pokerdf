@@ -2,17 +2,17 @@
 // Paste into dbdiagram.io and export as data-modeling-vX.Y.svg
 // (see README.md in this folder for the versioning rules)
 
-Table dim_tourn_summary {
+Table dim_tournament {
   TournID integer [pk]
   LocalStartTime timestamp
   Modality varchar
   BuyIn varchar
-  Owner varchar
 }
 
 Table fact_player_actions {
   TournID integer [not null]
   HandID integer [not null]
+  Owner varchar
   LocalTime timestamp
   TableSize integer
   Playing integer
@@ -58,6 +58,6 @@ Table dim_final_rank {
   Prize float
 }
 
-Ref: fact_player_actions.TournID > dim_tourn_summary.TournID
+Ref: fact_player_actions.TournID > dim_tournament.TournID
 Ref: fact_player_actions.TournID > dim_final_rank.TournID
 Ref: fact_player_actions.Player > dim_final_rank.Player

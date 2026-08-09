@@ -14,7 +14,7 @@ from pokerdf.modeling.star_schema import (
     _combination,
     _roman_to_int,
     build_dim_final_rank,
-    build_dim_tourn_summary,
+    build_dim_tournament,
     build_fact_player_actions,
     build_star_schema,
 )
@@ -548,10 +548,10 @@ def test_fact_board_shows_five_cards_on_river_actions(fact: pd.DataFrame) -> Non
 
 
 # ---------------------------------------------------------------------------
-# dim_tourn_summary
+# dim_tournament
 # ---------------------------------------------------------------------------
-def test_dim_tourn_summary(source_df: pd.DataFrame) -> None:
-    dim = build_dim_tourn_summary(source_df)
+def test_dim_tournament(source_df: pd.DataFrame) -> None:
+    dim = build_dim_tournament(source_df)
     assert len(dim) == 1
     row = dim.iloc[0]
     assert row["TournID"] == 99999
@@ -588,7 +588,7 @@ def test_build_star_schema_saves_the_three_tables(
 
     expected_tables = [
         "fact_player_actions",
-        "dim_tourn_summary",
+        "dim_tournament",
         "dim_final_rank",
     ]
     assert list(number_of_rows.keys()) == expected_tables

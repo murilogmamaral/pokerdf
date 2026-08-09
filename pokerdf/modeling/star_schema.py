@@ -177,7 +177,7 @@ def load_converted_data(path: str) -> pd.DataFrame:
     return df
 
 
-def build_dim_tourn_summary(df: pd.DataFrame) -> pd.DataFrame:
+def build_dim_tournament(df: pd.DataFrame) -> pd.DataFrame:
     """
     Build the tournament dimension, with one row per tournament.
 
@@ -816,7 +816,7 @@ def build_star_schema(
 
     Reads all .parquet files produced by the convert command, concatenates
     them and splits the result into one fact table and two dimensions:
-    fact_player_actions, dim_tourn_summary and dim_final_rank.
+    fact_player_actions, dim_tournament and dim_final_rank.
 
     When a GDPR mode is informed, only the fact table is generated, with the
     identifying columns pseudonymized and removed as described in the
@@ -855,7 +855,7 @@ def build_star_schema(
         # Build the three tables of the star schema
         tables = {
             ModelTable.FACT_PLAYER_ACTIONS: build_fact_player_actions(df),
-            ModelTable.DIM_TOURN_SUMMARY: build_dim_tourn_summary(df),
+            ModelTable.DIM_TOURNAMENT: build_dim_tournament(df),
             ModelTable.DIM_FINAL_RANK: build_dim_final_rank(df),
         }
 

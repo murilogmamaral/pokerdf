@@ -109,5 +109,5 @@ class ModelTable(StrEnum):
     """Tables of the star schema produced by the modeling command."""
 
     FACT_PLAYER_ACTIONS = "fact_player_actions"
-    DIM_TOURN_SUMMARY = "dim_tourn_summary"
+    DIM_TOURNAMENT = "dim_tournament"
     DIM_FINAL_RANK = "dim_final_rank"
