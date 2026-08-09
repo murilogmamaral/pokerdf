@@ -292,9 +292,10 @@ class DataProcessing:
 
         except Exception as e:
 
-            # Log / print FAIL status
+            # Log / print FAIL status, with the exception type so the log
+            # is enough to tell a parsing problem from an IO problem
             msg = "   FAIL: " + os.path.basename(self.path)
-            msg += " (" + str(e) + ")"
+            msg += f" ({type(e).__name__}: {e})"
             _save_log(msg, self.destination, FAIL_LOG)
             print(msg)
 
