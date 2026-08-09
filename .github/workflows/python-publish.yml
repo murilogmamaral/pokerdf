@@ -94,14 +94,18 @@ jobs:
       - name: Determine the semver level
         id: level
         run: |
+          # The range is exported even when the level is chosen manually,
+          # so the release notes preview of the summary always shows what
+          # is about to be shipped
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then RANGE="$LAST_TAG..HEAD"; else RANGE="HEAD"; fi
+          echo "range=$RANGE" >> "$GITHUB_OUTPUT"
+
           if [ "${{ inputs.bump }}" != "auto" ]; then
             echo "Level chosen manually: ${{ inputs.bump }}"
             echo "level=${{ inputs.bump }}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -n "$LAST_TAG" ]; then RANGE="$LAST_TAG..HEAD"; else RANGE="HEAD"; fi
 
           # One subject per commit since the last release, without the bump
           # commits of previous deploys
@@ -152,6 +156,12 @@ jobs:
             echo "| Current | Level | Next |"
             echo "|---------|-------|------|"
             echo "| $CURRENT | ${{ steps.level.outputs.level }} | **$NEXT** |"
+            echo ""
+            echo "### Release notes"
+            echo ""
+            # Must mirror the notes generation of the github-release job,
+            # so what is approved here is what gets published there
+            git log "${{ steps.level.outputs.range }}" --no-merges --pretty="- %s (%h)" | grep -v "^- bump version to" || true
           } >> "$GITHUB_STEP_SUMMARY"
 
   approve:
