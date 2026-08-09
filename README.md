@@ -176,14 +176,14 @@ Two GDPR principles guide what the command does:
 - **Data minimisation (Article 5(1)(c))** — what is not needed to analyze the game is not produced. The dimension tables are not generated at all, since they exist to describe who the players are: the nickname of the owner of the logs, the buy-in paid, the cards revealed at showdown, the final rank and the prizes received. `LocalTime` is removed from the fact table.
 - **Pseudonymisation (Article 4(5))** — `TournID`, `HandID` and `Player` are replaced by salted BLAKE2b digests. The same nickname always maps to the same pseudonym, so grouping and joining keep working, but nothing points back to a person or to a hand that can be looked up on the platform.
 
-Everything that makes the data worth analyzing is preserved: the order of the actions, the amounts, the pot, the stacks, the board and the positions.
+Everything that makes the data worth analyzing is preserved: the order of the actions, the amounts, the pot, the stacks, the board, the positions — and your own hole cards (`OwnerC1`, `OwnerC2`), kept in every mode, since the decisions in the dataset can only be studied against the holding they were made with.
 
 Two modes are available:
 
 | Mode | What it does |
 |------|--------------|
-| `--gdpr full` | Anonymizes everyone, including you: your hole cards (`OwnerC1`, `OwnerC2`) are also removed, since they are repeated on every row of a hand and mark which player is the owner of the logs. |
-| `--gdpr keep-owner` | Protects the other players exactly the same way, but keeps your nickname and your hole cards. The GDPR restricts what you share about *others*, not about yourself: this is the mode for sharing your game with a coach or a study group. |
+| `--gdpr full` | Pseudonymizes everyone, including your own nickname. |
+| `--gdpr keep-owner` | Protects the other players exactly the same way, but keeps your nickname. The GDPR restricts what you share about *others*, not about yourself: this is the mode for sharing your game with a coach or a study group. |
 
 By default the salt is random and never stored. Recital 26 draws the line between anonymous and personal data at whether re-identification is reasonably likely — and without the salt, a nickname cannot be confirmed by hashing a guess, so the pseudonyms are irreversible. To append new sessions to an existing dataset, the pseudonyms must be stable across runs, so inform your own salt:
 ```
@@ -191,7 +191,7 @@ pokerdf modeling /path/to/parquet/files --gdpr full --salt your-secret
 ```
 With a kept salt the result remains *pseudonymized* personal data in the sense of the GDPR, not anonymous data: protect the salt as carefully as the original files, since whoever holds it can confirm a nickname by hashing it.
 
-Each session writes an `anonymization.txt` report next to the data, describing what was applied and which risks remain — the most relevant being that the owner plays in every hand of their own archive, so even in `full` mode the pseudonym present in all rows is the owner; and that a hand remains described by its board and its exact bet sequence, which is close to unique for anyone holding another copy of it. None of this replaces assessing, for your own case, whether sharing the data is lawful.
+Each session writes an `anonymization.txt` report next to the data, describing what was applied and which risks remain — the most relevant being that the owner plays in every hand of their own archive, so even in `full` mode the pseudonym present in all rows is the owner, linked to the holdings it played; and that a hand remains described by its board and its exact bet sequence, which is close to unique for anyone holding another copy of it. None of this replaces assessing, for your own case, whether sharing the data is lawful.
 
 #### fact_player_actions
 

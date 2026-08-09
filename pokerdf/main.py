@@ -124,9 +124,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "anonymize the output so it can be shared: both modes build the "
             "fact table alone, pseudonymize the tournament, hand and player "
-            "identifiers and remove the timestamp; 'full' also removes the "
-            "cards of the owner of the logs, while 'keep-owner' keeps the "
-            "owner's nickname and cards"
+            "identifiers and remove the timestamp, always keeping the hole "
+            "cards of the owner; 'full' pseudonymizes the owner's nickname "
+            "as well, while 'keep-owner' keeps it"
         ),
     )
     modeling.add_argument(

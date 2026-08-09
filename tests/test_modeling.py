@@ -532,9 +532,10 @@ def test_build_star_schema_gdpr_saves_only_the_fact_and_a_report(
 
     table = pd.read_parquet(tmp_path / "fact_player_actions.parquet")
     assert len(table) == number_of_rows["fact_player_actions"]
-    # The owner of the fixture must not survive anywhere in the table
+    # The owner's nickname must not survive, but their cards always do
     assert "garciamurilo" not in set(table["Player"])
     assert "LocalTime" not in table.columns
+    assert "OwnerC1" in table.columns
 
 
 def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(

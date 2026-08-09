@@ -76,8 +76,18 @@ def test_generate_salt_is_random() -> None:
 def test_full_mode_removes_the_identifying_columns(fact: pd.DataFrame) -> None:
     result = anonymize_fact(fact, "salt", GdprMode.FULL)
 
-    for column in [*DROPPED_COLUMNS, *OWNER_CARD_COLUMNS]:
+    for column in DROPPED_COLUMNS:
         assert column not in result.columns
+
+
+def test_full_mode_keeps_the_owner_cards(fact: pd.DataFrame) -> None:
+    result = anonymize_fact(fact, "salt", GdprMode.FULL)
+
+    # The hole cards of the owner carry the analytical value of the dataset,
+    # so they survive every mode
+    for column in OWNER_CARD_COLUMNS:
+        assert column in result.columns
+        pd.testing.assert_series_equal(result[column], fact[column])
 
 
 def test_full_mode_pseudonymizes_the_identifiers(fact: pd.DataFrame) -> None:

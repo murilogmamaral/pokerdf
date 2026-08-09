@@ -55,9 +55,10 @@ PSEUDONYMIZED_COLUMNS = [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
 # public tournament results, re-identifying the players in it
 DROPPED_COLUMNS = [Column.LOCAL_TIME]
 
-# The private cards of the owner, repeated on every row of the hand: they
-# reveal the owner's holding and mark which player the owner is, so they
-# are removed unless the mode explicitly keeps the owner
+# The private cards of the owner, repeated on every row of the hand. They
+# are kept in every mode: the decisions in the dataset can only be studied
+# against the holding they were made with, so removing them would strip the
+# analytical value the dataset exists for. Named here for the report
 OWNER_CARD_COLUMNS = [ModelColumn.OWNER_C1, ModelColumn.OWNER_C2]
 
 
@@ -118,9 +119,9 @@ def anonymize_fact(
     Args:
         fact (pd.DataFrame): Fact table built by build_fact_player_actions.
         salt (str): Salt used to derive the pseudonyms.
-        mode (GdprMode): In FULL mode everyone is anonymized and the cards
-            of the owner are removed; in KEEP_OWNER mode the owner keeps
-            their nickname and their hole cards.
+        mode (GdprMode): In FULL mode the nickname of the owner is
+            pseudonymized like everyone else's; in KEEP_OWNER mode the owner
+            keeps it. The hole cards of the owner are kept in every mode.
         owners (Iterable[str]): Names of the owners of the logs, as they
             appear in the Player column. Only used in KEEP_OWNER mode.
 
@@ -137,12 +138,8 @@ def anonymize_fact(
         anonymized[column] = pseudonymize(anonymized[column], salt, keep=keep)
 
     # Remove what cannot be pseudonymized without losing its meaning
-    dropped: list[StrEnum] = list(DROPPED_COLUMNS)
-    if not keep_owner:
-        dropped += OWNER_CARD_COLUMNS
-
     return anonymized.drop(
-        columns=[column for column in dropped if column in anonymized.columns]
+        columns=[column for column in DROPPED_COLUMNS if column in anonymized.columns]
     )
 
 
@@ -169,13 +166,15 @@ def describe(mode: str, reused_salt: bool) -> str:
     owner_cards = ", ".join(str(column) for column in OWNER_CARD_COLUMNS)
 
     owner_line = (
-        f"- Kept, by choice of the keep-owner mode: the nickname of the owner\n"
-        f"  of the logs and their hole cards ({owner_cards}). The GDPR restricts\n"
+        f"- Kept in every mode: the hole cards of the owner ({owner_cards}),\n"
+        f"  which carry the analytical value of the dataset. Kept by choice of\n"
+        f"  the keep-owner mode: the nickname of the owner. The GDPR restricts\n"
         f"  what is shared about third parties, not what the owner shares about\n"
         f"  themselves: the owner is identified in this dataset."
         if keep_owner
-        else f"- Removed: {owner_cards}, the private cards of the owner, which are\n"
-        f"  repeated on every row of a hand and mark which player the owner is."
+        else f"- Kept in every mode: the hole cards of the owner ({owner_cards}),\n"
+        f"  which carry the analytical value of the dataset. The nickname of\n"
+        f"  the owner is pseudonymized like everyone else's."
     )
     owner_risk = (
         "- The owner of the logs is identified by design, and every hand of\n"
@@ -183,8 +182,9 @@ def describe(mode: str, reused_salt: bool) -> str:
         if keep_owner
         else "- The owner of the logs plays in every hand of their own archive, so\n"
         "  the pseudonym that appears in all of them is the owner. Pseudonymizing\n"
-        "  does not hide this, and the same reasoning applies to any player\n"
-        "  whose frequency stands out."
+        "  does not hide this - and since the hole cards of the owner are kept\n"
+        "  on every row, that pseudonym is linked to the holdings it played.\n"
+        "  The same frequency reasoning applies to any player who stands out."
     )
     salt_line = (
         "Salt: informed by the user, so the pseudonyms are reproducible across\n"
