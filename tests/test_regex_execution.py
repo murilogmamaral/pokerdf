@@ -31,6 +31,8 @@ def test_capture_general_data_of_the_hand(first_hand: list[str]) -> None:
         "HandID": ["11111"],
         "TableID": ["1"],
         "HandStartTimeCET": [pd.Timestamp("2020-10-11 07:22:15")],
+        "HandStartTimeLocal": [pd.Timestamp("2020-10-11 03:22:15")],
+        "HandTimezone": ["BRT"],
         "Level": ["I"],
         "Ante": [None],
         "Blinds": [[10.0, 20.0]],

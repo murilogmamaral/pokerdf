@@ -31,6 +31,8 @@ SOURCE_SCHEMA = pa.schema(
         (Column.TABLE_ID, pa.string()),
         (Column.HAND_ID, pa.string()),
         (Column.HAND_START_TIME_CET, pa.timestamp("ns")),
+        (Column.HAND_START_TIME_LOCAL, pa.timestamp("ns")),
+        (Column.HAND_TIMEZONE, pa.string()),
         (Column.LEVEL, pa.string()),
         (Column.ANTE, pa.float64()),
         (Column.BLINDS, pa.list_(pa.float64())),
@@ -195,6 +197,10 @@ def build_dim_tournament(df: pd.DataFrame) -> pd.DataFrame:
         .agg(
             **{
                 ModelColumn.TOURN_START_TIME_CET: (Column.HAND_START_TIME_CET, "min"),
+                ModelColumn.TOURN_START_TIME_LOCAL: (
+                    Column.HAND_START_TIME_LOCAL,
+                    "min",
+                ),
                 Column.MODALITY: (Column.MODALITY, "first"),
                 Column.BUY_IN: (Column.BUY_IN, "first"),
             }
@@ -230,6 +236,8 @@ def build_dim_hand(df: pd.DataFrame) -> pd.DataFrame:
             Column.TOURN_ID: hands[Column.TOURN_ID].astype("int64"),
             Column.HAND_ID: hands[Column.HAND_ID].astype("int64"),
             Column.HAND_START_TIME_CET: hands[Column.HAND_START_TIME_CET],
+            Column.HAND_START_TIME_LOCAL: hands[Column.HAND_START_TIME_LOCAL],
+            Column.HAND_TIMEZONE: hands[Column.HAND_TIMEZONE],
             Column.TABLE_SIZE: hands[Column.TABLE_SIZE],
             Column.PLAYING: hands[Column.PLAYING],
             Column.LEVEL: hands[Column.LEVEL].map(_roman_to_int).astype("Int64"),

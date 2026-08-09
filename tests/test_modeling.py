@@ -546,6 +546,7 @@ def test_dim_tournament(source_df: pd.DataFrame) -> None:
         "Owner",
         "TournID",
         "TournStartTimeCET",
+        "TournStartTimeLocal",
         "Modality",
         "BuyIn",
     ]
@@ -578,6 +579,8 @@ def test_dim_hand_carries_the_hand_context(source_df: pd.DataFrame) -> None:
         "TournID",
         "HandID",
         "HandStartTimeCET",
+        "HandStartTimeLocal",
+        "HandTimezone",
         "TableSize",
         "Playing",
         "Level",

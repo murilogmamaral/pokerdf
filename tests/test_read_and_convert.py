@@ -29,6 +29,8 @@ EXPECTED_COLUMNS = [
     "TableID",
     "HandID",
     "HandStartTimeCET",
+    "HandStartTimeLocal",
+    "HandTimezone",
     "Level",
     "Ante",
     "Blinds",

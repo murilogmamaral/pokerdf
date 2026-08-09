@@ -8,6 +8,15 @@ import pandas as pd
 # difference between two moments is always the time that really elapsed
 CET = timezone(timedelta(hours=1))
 
+# The header of a hand closes with the moment it was dealt, in one of two
+# shapes: the clock of the player followed by the time of the platform in
+# brackets ("2020/10/14 10:33:59 BRT [2020/10/14 9:33:59 ET]"), or the time
+# of the platform alone, when the client wrote no local time
+# ("2021/02/22 17:51:13 ET"). One pattern reads both: the local moment and
+# its time zone are optional, the Eastern Time moment is always there
+_MOMENT = r"\d{4}/\d{2}/\d{2} \d{1,2}:\d{1,2}:\d{1,2}"
+HEADER_MOMENTS = re.compile(rf" - (?:({_MOMENT}) ([A-Z]+) \[)?({_MOMENT}) ET\]?")
+
 
 class RegexPatterns:
     """
@@ -291,17 +300,35 @@ class RegexPatterns:
 
         return eastern.tz_convert(CET).tz_localize(None)
 
+    def _get_header_moments(self, hand: list[str]) -> tuple[str | None, ...]:
+        """
+        Read the moments written in the header of the hand.
+
+        Args:
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            tuple: (local moment, time zone of the player, Eastern Time
+                moment), each as written. The first two are None when the
+                client wrote no local time.
+        """
+        # Get the first content of a played hand
+        target = hand[0]
+
+        # Apply regex
+        found = HEADER_MOMENTS.search(target)
+
+        return found.groups() if found else (None, None, None)
+
     def get_time(self, hand: list[str]) -> list[pd.Timestamp]:
         """
         Get the moment the hand was dealt, in CET.
 
-        The header always carries the time of the platform in Eastern Time,
-        either in brackets next to the local time of the player
-        ("2020/10/14 10:33:59 BRT [2020/10/14 9:33:59 ET]") or alone, when
-        the client wrote no local time ("2021/02/22 17:51:13 ET"). Eastern
-        Time is therefore the one anchor present in every hand, and the
-        local time is not: reading whichever timestamp comes first would
-        mix time zones in the same column.
+        The time of the platform, in Eastern Time, is the one moment present
+        in every hand: the local time of the player is only written when the
+        client knows a time zone of its own. Reading whichever moment comes
+        first would mix time zones in the same column, so Eastern Time is
+        the anchor and CET is derived from it.
 
         Args:
             hand (list): List of texts from a specific hand.
@@ -310,25 +337,62 @@ class RegexPatterns:
             list: List with the moment of the hand in CET as pd.Timestamp
                 (for example, [Timestamp('2020-11-06 16:02:19')]).
         """
-        # Pattern to extract: the timestamp written in Eastern Time, in
-        # brackets when the local time of the player precedes it
-        timestamp = r"(\d{4}/\d{2}/\d{2} \d{1,2}:\d{1,2}:\d{1,2})"
-
-        # Get the first content of a played hand
-        target = hand[0]
-
-        # Apply regex
-        result = re.findall(rf"\[{timestamp} ET\]", target) or re.findall(
-            rf"{timestamp} ET", target
-        )
+        _, _, eastern = self._get_header_moments(hand)
 
         # Normalize string and bring the moment to CET
-        result = [self._eastern_to_cet(pd.to_datetime(x)) for x in result]
+        result = [self._eastern_to_cet(pd.to_datetime(eastern))] if eastern else []
 
         # Normalize output
         result = self._guarantee_unicity(result)
 
         return result
+
+    def get_local_time(self, hand: list[str]) -> list[pd.Timestamp | None]:
+        """
+        Get the moment the hand was dealt, on the clock of the player.
+
+        This is the wall clock the player was looking at, which is what the
+        analysis of fatigue and of playing habits needs. The platform only
+        writes it when the client has a time zone of its own to report, so
+        it can be absent - and then it is simply not known, as nothing else
+        in the file reveals where the player was.
+
+        Args:
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the local moment as pd.Timestamp, or [None] when
+                the client wrote no local time.
+        """
+        local, _, _ = self._get_header_moments(hand)
+
+        # Normalize output
+        result = [pd.to_datetime(local)] if local else [None]
+
+        return result
+
+    def get_timezone(self, hand: list[str]) -> list[str | None]:
+        """
+        Get the time zone of the player, as the platform abbreviated it.
+
+        The abbreviation is what the client wrote ("BRT", "CET", "MSK") and
+        is kept as provenance, to be read by a person. It must not be used
+        to compute an offset: the same abbreviation means different things
+        in different countries ("CST" is UTC-6 in the United States and
+        UTC+8 in China). The offset of the player is the difference between
+        the local moment and the one in CET, which is unambiguous.
+
+        Args:
+            hand (list): List of texts from a specific hand.
+
+        Returns:
+            list: List with the abbreviation of the time zone, or [None]
+                when the client wrote no local time.
+        """
+        _, zone, _ = self._get_header_moments(hand)
+
+        # Normalize output
+        return [zone] if zone else [None]
 
     def get_table_size(self, hand: list[str]) -> list[int]:
         """

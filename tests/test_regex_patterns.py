@@ -557,3 +557,41 @@ def test_get_time_resolves_the_hour_that_happens_twice() -> None:
     # the first of the two is taken, so the conversion never fails
     hand = _header("2020/11/01 3:30:00 BRT [2020/11/01 1:30:00 ET]")
     assert r.get_time(hand) == [pd.Timestamp("2020-11-01 06:30:00")]
+
+
+def test_get_local_time_and_timezone_read_the_clock_of_the_player() -> None:
+    hand = _header("2020/07/15 10:00:00 BRT [2020/07/15 9:00:00 ET]")
+    assert r.get_local_time(hand) == [pd.Timestamp("2020-07-15 10:00:00")]
+    assert r.get_timezone(hand) == ["BRT"]
+
+
+def test_the_clock_of_the_player_works_for_any_country() -> None:
+    # Nothing here is specific to one time zone: the platform writes the
+    # abbreviation of whoever is playing
+    hand = _header("2021/06/01 3:05:00 CEST [2021/05/31 21:05:00 ET]")
+    assert r.get_local_time(hand) == [pd.Timestamp("2021-06-01 03:05:00")]
+    assert r.get_timezone(hand) == ["CEST"]
+    # And the moment in CET is still derived from Eastern Time. In summer a
+    # European clock is one hour ahead of the fixed UTC+1 of the output,
+    # which is precisely why the two columns are not the same thing
+    assert r.get_time(hand) == [pd.Timestamp("2021-06-01 02:05:00")]
+
+
+def test_the_clock_of_the_player_is_unknown_without_a_local_time() -> None:
+    # The client wrote no local time, and nothing else in the file reveals
+    # where the player was: the honest value is nothing
+    hand = _header("2021/02/22 17:51:13 ET")
+    assert r.get_local_time(hand) == [None]
+    assert r.get_timezone(hand) == [None]
+    # The moment of the platform is still read
+    assert r.get_time(hand) == [pd.Timestamp("2021-02-22 23:51:13")]
+
+
+def test_the_offset_of_the_player_comes_from_the_two_moments() -> None:
+    # The abbreviation is ambiguous between countries, so the offset is read
+    # from the distance between the two moments instead: BRT is UTC-3, four
+    # hours behind the fixed UTC+1 of the output
+    hand = _header("2020/07/15 10:00:00 BRT [2020/07/15 9:00:00 ET]")
+    local = r.get_local_time(hand)[0]
+    cet = r.get_time(hand)[0]
+    assert cet - local == pd.Timedelta(hours=4)

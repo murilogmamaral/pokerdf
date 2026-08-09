@@ -23,6 +23,8 @@ class Column(StrEnum):
     TABLE_ID = "TableID"
     HAND_ID = "HandID"
     HAND_START_TIME_CET = "HandStartTimeCET"
+    HAND_START_TIME_LOCAL = "HandStartTimeLocal"
+    HAND_TIMEZONE = "HandTimezone"
     LEVEL = "Level"
     ANTE = "Ante"
     BLINDS = "Blinds"
@@ -70,6 +72,7 @@ class ModelColumn(StrEnum):
     """
 
     TOURN_START_TIME_CET = "TournStartTimeCET"
+    TOURN_START_TIME_LOCAL = "TournStartTimeLocal"
     SMALL_BLIND = "SmallBlind"
     BIG_BLIND = "BigBlind"
     OWNER_C1 = "OwnerC1"
