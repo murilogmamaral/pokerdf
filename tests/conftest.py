@@ -13,7 +13,7 @@ import pandas as pd
 import pytest
 
 from pokerdf.core.read_and_convert import convert_txt_to_tabular_data
-from pokerdf.modeling.star_schema import build_fact_player_actions, load_converted_data
+from pokerdf.modeling.star_schema import build_fact_player_action, load_converted_data
 from pokerdf.utils.strings import PLATFORM
 
 FIXTURE_PATH = (
@@ -101,7 +101,7 @@ def source_df(converted_dir: Path) -> pd.DataFrame:
 @pytest.fixture(scope="session")
 def fact(source_df: pd.DataFrame) -> pd.DataFrame:
     """Fact table built from the converted fixture."""
-    return build_fact_player_actions(source_df)
+    return build_fact_player_action(source_df)
 
 
 KO_FIXTURE_PATH = (

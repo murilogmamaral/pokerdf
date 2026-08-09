@@ -149,8 +149,9 @@ def main() -> None:
       saving them in ./output/{SESSION_ID}.
     - 'modeling': reads converted .parquet files and splits them into a star
       schema (one fact table and three dimensions), saving the four tables
-      in ./modeling/{SESSION_ID}. With --gdpr, only the fact table is
-      generated, without the columns that identify a person.
+      in ./modeling/{SESSION_ID}. With --gdpr, the final-rank dimension is
+      not generated and the other tables leave with their identifiers
+      pseudonymized and their time columns removed.
 
     Raises:
         SystemExit: If the arguments are invalid.

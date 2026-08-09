@@ -35,8 +35,8 @@ def test_round_is_in_chronological_order() -> None:
 
 def test_model_table_lists_the_four_tables_of_the_star_schema() -> None:
     assert [table.value for table in ModelTable] == [
-        "fact_player_actions",
-        "dim_tourn_summary",
-        "dim_player_summary",
+        "fact_player_action",
+        "dim_tournament",
+        "dim_hand",
         "dim_final_rank",
     ]

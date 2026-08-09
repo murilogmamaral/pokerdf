@@ -12,11 +12,12 @@ from pokerdf.modeling.anonymize import (
     OWNER_CARD_COLUMNS,
     PSEUDONYMIZED_COLUMNS,
     GdprMode,
-    anonymize_fact,
+    anonymize_table,
     describe,
     generate_salt,
     pseudonymize,
 )
+from pokerdf.modeling.star_schema import build_dim_hand, build_dim_tournament
 
 # The owner of the fixture, as written in the Player column of the fact
 OWNER = "garciamurilo"
@@ -71,17 +72,10 @@ def test_generate_salt_is_random() -> None:
 
 
 # ---------------------------------------------------------------------------
-# anonymize_fact: full mode
+# anonymize_table: full mode
 # ---------------------------------------------------------------------------
-def test_full_mode_removes_the_identifying_columns(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt", GdprMode.FULL)
-
-    for column in DROPPED_COLUMNS:
-        assert column not in result.columns
-
-
 def test_full_mode_keeps_the_owner_cards(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt", GdprMode.FULL)
+    result = anonymize_table(fact, "salt", GdprMode.FULL)
 
     # The hole cards of the owner carry the analytical value of the dataset,
     # so they survive every mode
@@ -91,7 +85,7 @@ def test_full_mode_keeps_the_owner_cards(fact: pd.DataFrame) -> None:
 
 
 def test_full_mode_pseudonymizes_the_identifiers(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt", GdprMode.FULL)
+    result = anonymize_table(fact, "salt", GdprMode.FULL)
 
     for column in PSEUDONYMIZED_COLUMNS:
         # No original value survives
@@ -100,17 +94,70 @@ def test_full_mode_pseudonymizes_the_identifiers(fact: pd.DataFrame) -> None:
         assert result[column].nunique() == fact[column].nunique()
 
 
+def test_full_mode_pseudonymizes_the_owner_column(fact: pd.DataFrame) -> None:
+    result = anonymize_table(fact, "salt", GdprMode.FULL)
+
+    # The Owner column no longer carries the nickname, and the owner
+    # receives the same pseudonym there and in the Player column
+    assert OWNER not in set(result["Owner"])
+    owner_rows = fact["Player"] == OWNER
+    assert (result.loc[owner_rows, "Player"] == result.loc[owner_rows, "Owner"]).all()
+
+
+def test_full_mode_gives_the_owner_matching_pseudonyms_for_escaped_names() -> None:
+    # The Player column stores names escaped for regex; the Owner column
+    # stores them raw. The same person must receive the same pseudonym in
+    # both, also when the name contains regex characters
+    fact = pd.DataFrame(
+        {
+            "TournID": ["1"],
+            "HandID": ["2"],
+            "Player": ["pepek\\.99"],
+            "Owner": ["pepek.99"],
+        }
+    )
+
+    result = anonymize_table(fact, "salt", GdprMode.FULL)
+
+    assert result["Player"][0] == result["Owner"][0]
+
+
+def test_full_mode_anonymizes_the_hand_dimension_consistently(
+    fact: pd.DataFrame, source_df: pd.DataFrame
+) -> None:
+    dim = build_dim_hand(source_df)
+
+    anonymized_fact = anonymize_table(fact, "salt", GdprMode.FULL)
+    anonymized_dim = anonymize_table(dim, "salt", GdprMode.FULL)
+
+    # The identifiers are pseudonymized, and the same salt keeps the
+    # dimension joining with the fact
+    assert set(anonymized_dim["TournID"]) == set(anonymized_fact["TournID"])
+    assert set(anonymized_dim["HandID"]) == set(anonymized_fact["HandID"])
+    assert set(anonymized_dim["Owner"]) == set(anonymized_fact["Owner"])
+    # The timestamp is removed; every other attribute survives whole
+    assert "LocalTime" not in anonymized_dim.columns
+    for column in ["TableSize", "Playing", "Level", "Ante", "SmallBlind", "BigBlind"]:
+        pd.testing.assert_series_equal(anonymized_dim[column], dim[column])
+
+
+def test_time_columns_are_removed_from_every_table(source_df: pd.DataFrame) -> None:
+    # Any column of time identifies the tournament when matched against
+    # public schedules: LocalTime leaves dim_hand, LocalStartTime leaves
+    # dim_tournament
+    hand = anonymize_table(build_dim_hand(source_df), "salt", GdprMode.FULL)
+    tournament = anonymize_table(build_dim_tournament(source_df), "salt", GdprMode.FULL)
+
+    for column in DROPPED_COLUMNS:
+        assert column not in hand.columns
+        assert column not in tournament.columns
+
+
 def test_full_mode_keeps_the_hand_reconstruction(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt", GdprMode.FULL)
+    result = anonymize_table(fact, "salt", GdprMode.FULL)
 
     # Everything that makes the dataset analytically useful is untouched
     preserved = [
-        "TableSize",
-        "Playing",
-        "Level",
-        "Ante",
-        "SmallBlind",
-        "BigBlind",
         "Round",
         "Seat",
         "Position",
@@ -129,7 +176,7 @@ def test_full_mode_keeps_the_hand_reconstruction(fact: pd.DataFrame) -> None:
 
 
 def test_full_mode_keeps_rows_of_a_hand_together(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt", GdprMode.FULL)
+    result = anonymize_table(fact, "salt", GdprMode.FULL)
 
     # The pseudonym must be stable inside a hand, otherwise the rows of the
     # same hand would no longer group together
@@ -141,16 +188,16 @@ def test_full_mode_keeps_rows_of_a_hand_together(fact: pd.DataFrame) -> None:
 def test_full_mode_does_not_mutate_the_input(fact: pd.DataFrame) -> None:
     before = fact.copy()
 
-    anonymize_fact(fact, "salt", GdprMode.FULL)
+    anonymize_table(fact, "salt", GdprMode.FULL)
 
     pd.testing.assert_frame_equal(fact, before)
 
 
 # ---------------------------------------------------------------------------
-# anonymize_fact: keep-owner mode
+# anonymize_table: keep-owner mode
 # ---------------------------------------------------------------------------
 def test_keep_owner_mode_spares_the_owner(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
+    result = anonymize_table(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
 
     # The owner keeps their nickname; every third party is pseudonymized
     players = set(result["Player"])
@@ -162,8 +209,15 @@ def test_keep_owner_mode_spares_the_owner(fact: pd.DataFrame) -> None:
     assert players.isdisjoint({"VillainA", "VillainB"})
 
 
+def test_keep_owner_mode_keeps_the_owner_column(fact: pd.DataFrame) -> None:
+    result = anonymize_table(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
+
+    # The owner is identified by choice of the mode, in both columns
+    assert (result["Owner"] == OWNER).all()
+
+
 def test_keep_owner_mode_keeps_the_owner_cards(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
+    result = anonymize_table(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
 
     for column in OWNER_CARD_COLUMNS:
         assert column in result.columns
@@ -171,11 +225,9 @@ def test_keep_owner_mode_keeps_the_owner_cards(fact: pd.DataFrame) -> None:
 
 
 def test_keep_owner_mode_still_protects_third_parties(fact: pd.DataFrame) -> None:
-    result = anonymize_fact(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
+    result = anonymize_table(fact, "salt", GdprMode.KEEP_OWNER, owners={OWNER})
 
-    # Identifiers and timestamps are treated exactly like in full mode
-    for column in DROPPED_COLUMNS:
-        assert column not in result.columns
+    # Identifiers are treated exactly like in full mode
     assert set(result["TournID"]).isdisjoint(set(fact["TournID"]))
     assert set(result["HandID"]).isdisjoint(set(fact["HandID"]))
 

@@ -11,11 +11,12 @@ import pandas as pd
 import pytest
 
 from pokerdf.modeling.star_schema import (
+    _combination,
     _roman_to_int,
     build_dim_final_rank,
-    build_dim_player_summary,
-    build_dim_tourn_summary,
-    build_fact_player_actions,
+    build_dim_hand,
+    build_dim_tournament,
+    build_fact_player_action,
     build_star_schema,
 )
 
@@ -69,19 +70,13 @@ def test_load_converted_data_casts_prize_to_float(source_df: pd.DataFrame) -> No
 
 
 # ---------------------------------------------------------------------------
-# fact_player_actions
+# fact_player_action
 # ---------------------------------------------------------------------------
 def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
     assert list(fact.columns) == [
+        "Owner",
         "TournID",
         "HandID",
-        "LocalTime",
-        "TableSize",
-        "Playing",
-        "Level",
-        "Ante",
-        "SmallBlind",
-        "BigBlind",
         "Round",
         "Player",
         "Seat",
@@ -102,6 +97,15 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "BoardC5",
         "OwnerC1",
         "OwnerC2",
+        "OwnerCombination",
+        "OwnerCombinationScore",
+        "RevealedShowDownC1",
+        "RevealedShowDownC2",
+        "RevealedShowDownCombination",
+        "RevealedShowDownCombinationScore",
+        "RevealedShowDownPokerHand",
+        "Result",
+        "Balance",
     ]
     assert set(fact["Round"]) <= {"preflop", "flop", "turn", "river"}
     assert fact["TournID"].dtype == "int64"
@@ -128,19 +132,22 @@ def test_fact_explodes_single_action(fact: pd.DataFrame) -> None:
     ]
 
 
-def test_fact_carries_hand_context(fact: pd.DataFrame) -> None:
-    # Hand 11111: 3-max at level I (blinds 10/20), 3 players, no ante,
-    # with the owner holding 3s Jh
-    row = fact[fact["HandID"] == 11111].iloc[0]
-    assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:22:15")
-    assert row["TableSize"] == 3
-    assert row["Level"] == 1
-    assert row["Playing"] == 3
-    assert pd.isna(row["Ante"])
-    assert row["SmallBlind"] == 10.0
-    assert row["BigBlind"] == 20.0
-    assert row["OwnerC1"] == "3s"
-    assert row["OwnerC2"] == "Jh"
+def test_fact_carries_the_owner_on_every_row(fact: pd.DataFrame) -> None:
+    # Owner completes the key of dim_hand (TournID, HandID, Owner), where
+    # the constant context of the hand lives
+    rows = fact[fact["HandID"] == 11111]
+    assert (rows["Owner"] == "garciamurilo").all()
+
+
+def test_fact_owner_cards_and_combination_on_every_row(fact: pd.DataFrame) -> None:
+    # Hand 11111: the owner was dealt 3s Jh. The owner's holding is hand
+    # context, like the board: it fills every row of the hand — also the
+    # opponents' — so any behavior can be analyzed against it without joins
+    rows = fact[fact["HandID"] == 11111]
+    assert (rows["OwnerC1"] == "3s").all()
+    assert (rows["OwnerC2"] == "Jh").all()
+    assert (rows["OwnerCombination"] == "High Card").all()
+    assert (rows["OwnerCombinationScore"] == 1).all()
 
 
 def test_fact_carries_seat_and_position(fact: pd.DataFrame) -> None:
@@ -176,6 +183,109 @@ def test_fact_carries_the_posted_amounts_on_every_row(fact: pd.DataFrame) -> Non
     rows = fact[(fact["HandID"] == 11111) & (fact["Player"] == "garciamurilo")]
     assert (rows["PostedBlind"] == 10.0).all()
     assert rows["PostedAnte"].isna().all()
+
+
+def test_fact_broadcasts_the_opponents_showdown_cards(fact: pd.DataFrame) -> None:
+    # Hand 219269866589: VillainB lost and mucked [7h Td]. The muck happens
+    # at the end of the hand, but it reveals what was held from the first
+    # action, so every row of the player carries the cards — the preflop
+    # post included
+    rows = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "VillainB")]
+    assert len(rows) > 1
+    assert (rows["RevealedShowDownC1"] == "7h").all()
+    assert (rows["RevealedShowDownC2"] == "Td").all()
+
+
+def test_fact_showdown_columns_include_the_owner(fact: pd.DataFrame) -> None:
+    # Hand 219269866589: garciamurilo (the owner) showed [8h Kh]. OwnerC1
+    # and OwnerC2 describe what was dealt; the showdown columns describe
+    # what was revealed at the table, whoever the player is — so on the
+    # owner's rows the two families coincide, and the revealed combination
+    # matches the dealt one
+    rows = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "garciamurilo")]
+    assert (rows["OwnerC1"] == "8h").all()
+    assert (rows["OwnerC2"] == "Kh").all()
+    assert (rows["RevealedShowDownC1"] == "8h").all()
+    assert (rows["RevealedShowDownC2"] == "Kh").all()
+    assert (rows["RevealedShowDownCombination"] == rows["OwnerCombination"]).all()
+    assert (
+        rows["RevealedShowDownCombinationScore"] == rows["OwnerCombinationScore"]
+    ).all()
+
+
+def test_fact_showdown_columns_are_null_without_a_show(fact: pd.DataFrame) -> None:
+    # Hand 11111: everyone folded to the big blind, so nobody revealed cards
+    rows = fact[fact["HandID"] == 11111]
+    assert rows["RevealedShowDownC1"].isna().all()
+    assert rows["RevealedShowDownC2"].isna().all()
+    assert rows["RevealedShowDownCombination"].isna().all()
+
+
+def test_fact_infers_the_owner_combination_at_each_moment(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269866589: the owner holds 8h Kh and the board runs
+    # Jh 5s 4s / Jc / 2h — a high card until the turn pairs the jacks.
+    # The combination follows the round, on every row of the round
+    rows = fact[fact["HandID"] == 219269866589]
+    by_round = {
+        round_name: group for round_name, group in rows.groupby("Round", sort=False)
+    }
+    for round_name, expected_name, expected_score in [
+        ("preflop", "High Card", 1),
+        ("flop", "High Card", 1),
+        ("turn", "One Pair", 2),
+        ("river", "One Pair", 2),
+    ]:
+        assert (by_round[round_name]["OwnerCombination"] == expected_name).all()
+        assert (by_round[round_name]["OwnerCombinationScore"] == expected_score).all()
+
+
+def test_fact_infers_the_combination_of_the_shown_opponent(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269866589: VillainB mucked 7h Td, so his combination at each
+    # moment is known — on his own rows
+    villain = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "VillainB")]
+    assert villain[
+        ["Round", "RevealedShowDownCombination", "RevealedShowDownCombinationScore"]
+    ].values.tolist() == [
+        ["preflop", "High Card", 1],  # posts big blind
+        ["preflop", "High Card", 1],  # checks
+        ["flop", "High Card", 1],
+        ["turn", "One Pair", 2],
+        ["river", "One Pair", 2],
+    ]
+    # And his rows also carry the owner's holding, which is hand context
+    assert (villain["OwnerC1"] == "8h").all()
+    assert villain["OwnerCombination"].notna().all()
+
+
+def test_combination_requires_both_hole_cards() -> None:
+    # A single revealed card cannot say what the hand was: the cards are
+    # kept, but no combination is inferred
+    assert _combination("Ah", None, ("Jh", "5s", "4s")) == (None, None)
+    assert _combination(None, None, ()) == (None, None)
+    assert _combination("Ah", "Ad", ()) == ("One Pair", 2)
+
+
+def test_fact_registers_the_outcome_on_every_row_of_the_player(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269866589: the outcome of each player — result, amount
+    # collected and the combination the platform named at showdown — is a
+    # future event of the hand, registered on every row of the player.
+    # garciamurilo won 40 showing a pair of Jacks; VillainB mucked and
+    # collected nothing
+    rows = fact[fact["HandID"] == 219269866589]
+    owner = rows[rows["Player"] == "garciamurilo"]
+    assert (owner["Result"] == "won").all()
+    assert (owner["Balance"] == 40.0).all()
+    assert (owner["RevealedShowDownPokerHand"] == "a pair of Jacks").all()
+    villain = rows[rows["Player"] == "VillainB"]
+    assert (villain["Result"] == "mucked").all()
+    assert villain["Balance"].isna().all()
+    assert villain["RevealedShowDownPokerHand"].isna().all()
 
 
 def test_fact_stack_is_dynamic(fact: pd.DataFrame) -> None:
@@ -425,71 +535,78 @@ def test_fact_board_shows_five_cards_on_river_actions(fact: pd.DataFrame) -> Non
 
 
 # ---------------------------------------------------------------------------
-# dim_tourn_summary
+# dim_tournament
 # ---------------------------------------------------------------------------
-def test_dim_tourn_summary(source_df: pd.DataFrame) -> None:
-    dim = build_dim_tourn_summary(source_df)
+def test_dim_tournament(source_df: pd.DataFrame) -> None:
+    # One row per tournament per owner: each owner can start the tournament
+    # at a different time, so Owner is part of the key
+    dim = build_dim_tournament(source_df)
     assert len(dim) == 1
+    assert list(dim.columns) == [
+        "Owner",
+        "TournID",
+        "LocalStartTime",
+        "Modality",
+        "BuyIn",
+    ]
     row = dim.iloc[0]
     assert row["TournID"] == 99999
+    assert row["Owner"] == "garciamurilo"
     assert row["LocalStartTime"] == pd.Timestamp("2020-10-11 03:22:15")
     assert row["Modality"] == "USD Hold'em No Limit"
     assert row["BuyIn"] == "$1.84+$0.16"
-    assert row["Owner"] == "garciamurilo"
-    # TableSize belongs to the fact table now
+    # TableSize belongs to the fact table
     assert "TableSize" not in dim.columns
 
 
 # ---------------------------------------------------------------------------
-# dim_player_summary
+# dim_hand
 # ---------------------------------------------------------------------------
-def test_dim_player_summary_has_one_row_per_player_per_hand(
-    source_df: pd.DataFrame,
-) -> None:
-    dim = build_dim_player_summary(source_df)
-    assert len(dim) == len(source_df)
-    assert not dim.duplicated(subset=["TournID", "HandID", "Player"]).any()
+def test_dim_hand_has_one_row_per_hand_per_owner(source_df: pd.DataFrame) -> None:
+    dim = build_dim_hand(source_df)
+    hands = source_df.drop_duplicates(subset=["TournID", "HandID", "Owner"])
+    assert len(dim) == len(hands)
+    assert not dim.duplicated(subset=["TournID", "HandID", "Owner"]).any()
 
 
-def test_dim_player_summary_values(source_df: pd.DataFrame) -> None:
-    dim = build_dim_player_summary(source_df)
-    row = dim[(dim["HandID"] == 11111) & (dim["Player"] == "garciamurilo")].iloc[0]
-    assert row["Result"] == "folded"
-    # Seat, Position, the dynamic Stack and the posts live in the fact table
-    for column in ["Seat", "Position", "Stack", "PostedAnte", "PostedBlind"]:
-        assert column not in dim.columns
-
-
-def test_dim_player_summary_flattens_showdown_cards(
-    source_df: pd.DataFrame,
-) -> None:
-    dim = build_dim_player_summary(source_df)
-    row = dim[(dim["HandID"] == 219269866589) & (dim["Player"] == "garciamurilo")].iloc[
-        0
+def test_dim_hand_carries_the_hand_context(source_df: pd.DataFrame) -> None:
+    # Hand 11111: 3-max at level I (blinds 10/20), 3 players, no ante,
+    # logged by the archive of garciamurilo
+    dim = build_dim_hand(source_df)
+    assert list(dim.columns) == [
+        "Owner",
+        "TournID",
+        "HandID",
+        "LocalTime",
+        "TableSize",
+        "Playing",
+        "Level",
+        "Ante",
+        "SmallBlind",
+        "BigBlind",
     ]
-    assert row["Balance"] == 40.0
-    assert row["ShowDownC1"] == "8h"
-    assert row["ShowDownC2"] == "Kh"
-    assert row["PokerHand"] == "a pair of Jacks"
-
-
-def test_dim_player_summary_keeps_the_losers_revealed_cards(
-    source_df: pd.DataFrame,
-) -> None:
-    # Hand 219269866589: VillainB lost and mucked [7h Td] — the revealed
-    # cards of the losers matter for range studies
-    dim = build_dim_player_summary(source_df)
-    row = dim[(dim["HandID"] == 219269866589) & (dim["Player"] == "VillainB")].iloc[0]
-    assert row["ShowDownC1"] == "7h"
-    assert row["ShowDownC2"] == "Td"
+    row = dim[dim["HandID"] == 11111].iloc[0]
+    assert row["Owner"] == "garciamurilo"
+    assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:22:15")
+    assert row["TableSize"] == 3
+    assert row["Playing"] == 3
+    assert row["Level"] == 1
+    assert pd.isna(row["Ante"])
+    assert row["SmallBlind"] == 10.0
+    assert row["BigBlind"] == 20.0
 
 
 # ---------------------------------------------------------------------------
 # dim_final_rank
 # ---------------------------------------------------------------------------
 def test_dim_final_rank(source_df: pd.DataFrame) -> None:
+    # One row per player per tournament per owner: the ranks are as
+    # observed by the owner's archive, and an owner eliminated early does
+    # not see the final rank of everyone
     dim = build_dim_final_rank(source_df)
     assert len(dim) == 3
+    assert list(dim.columns) == ["Owner", "TournID", "Player", "FinalRank", "Prize"]
+    assert (dim["Owner"] == "garciamurilo").all()
     ranks = dim.set_index("Player")
     assert ranks.loc["garciamurilo", "FinalRank"] == 1
     assert ranks.loc["garciamurilo", "Prize"] == 6.0
@@ -507,9 +624,9 @@ def test_build_star_schema_saves_the_four_tables(
     number_of_rows = build_star_schema(str(converted_dir), str(tmp_path))
 
     expected_tables = [
-        "fact_player_actions",
-        "dim_tourn_summary",
-        "dim_player_summary",
+        "fact_player_action",
+        "dim_tournament",
+        "dim_hand",
         "dim_final_rank",
     ]
     assert list(number_of_rows.keys()) == expected_tables
@@ -519,24 +636,45 @@ def test_build_star_schema_saves_the_four_tables(
         assert len(table) > 0
 
 
-def test_build_star_schema_gdpr_saves_only_the_fact_and_a_report(
+def test_build_star_schema_gdpr_saves_everything_but_the_final_rank(
     converted_dir: Path, tmp_path: Path
 ) -> None:
     number_of_rows = build_star_schema(str(converted_dir), str(tmp_path), gdpr="full")
 
-    # No dimension is generated, and the report sits next to the data
-    assert list(number_of_rows.keys()) == ["fact_player_actions"]
+    # Only the final-rank dimension is left out (it mirrors public
+    # tournament results), and the report sits next to the data
+    assert list(number_of_rows.keys()) == [
+        "fact_player_action",
+        "dim_tournament",
+        "dim_hand",
+    ]
     assert sorted(p.name for p in tmp_path.iterdir()) == [
         "anonymization.txt",
-        "fact_player_actions.parquet",
+        "dim_hand.parquet",
+        "dim_tournament.parquet",
+        "fact_player_action.parquet",
     ]
 
-    table = pd.read_parquet(tmp_path / "fact_player_actions.parquet")
-    assert len(table) == number_of_rows["fact_player_actions"]
+    table = pd.read_parquet(tmp_path / "fact_player_action.parquet")
+    assert len(table) == number_of_rows["fact_player_action"]
     # The owner's nickname must not survive, but their cards always do
     assert "garciamurilo" not in set(table["Player"])
-    assert "LocalTime" not in table.columns
     assert "OwnerC1" in table.columns
+
+    # The hand dimension loses its timestamp and joins the fact through
+    # the pseudonyms, since the salt is shared
+    dim = pd.read_parquet(tmp_path / "dim_hand.parquet")
+    assert "LocalTime" not in dim.columns
+    assert "garciamurilo" not in set(dim["Owner"])
+    assert set(dim["HandID"]) == set(table["HandID"])
+    assert set(dim["Owner"]) == set(table["Owner"])
+
+    # The tournament dimension is blurred the same way, without its
+    # start time
+    tourn = pd.read_parquet(tmp_path / "dim_tournament.parquet")
+    assert "garciamurilo" not in set(tourn["Owner"])
+    assert set(tourn["TournID"]) == set(table["TournID"])
+    assert "LocalStartTime" not in tourn.columns
 
 
 def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(
@@ -544,14 +682,14 @@ def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(
 ) -> None:
     build_star_schema(str(converted_dir), str(tmp_path), gdpr="keep-owner")
 
-    table = pd.read_parquet(tmp_path / "fact_player_actions.parquet")
+    table = pd.read_parquet(tmp_path / "fact_player_action.parquet")
     # The owner keeps their nickname and their hole cards; every third
-    # party is pseudonymized and the timestamp is still removed
+    # party is pseudonymized
     players = set(table["Player"])
     assert "garciamurilo" in players
     assert players.isdisjoint({"VillainA", "VillainB"})
     assert "OwnerC1" in table.columns
-    assert "LocalTime" not in table.columns
+    assert (table["Owner"] == "garciamurilo").all()
 
 
 def test_build_star_schema_rejects_an_unknown_gdpr_mode(
@@ -575,7 +713,7 @@ def test_build_star_schema_gdpr_honors_a_given_salt(
     build_star_schema(str(converted_dir), str(third), gdpr="full")
 
     players = [
-        pd.read_parquet(folder / "fact_player_actions.parquet")["Player"]
+        pd.read_parquet(folder / "fact_player_action.parquet")["Player"]
         for folder in (first, second, third)
     ]
     # The same salt gives the same pseudonyms, so sessions can be appended
@@ -604,7 +742,12 @@ def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:
             "Level": ["I"] * 4,
             "Playing": [4] * 4,
             "Ante": [None] * 4,
+            "Owner": ["utg"] * 4,
             "OwnersHand": [["Ah", "Kh"]] * 4,
+            "ShowDown": [[None, None]] * 4,
+            "CardCombination": [None] * 4,
+            "Result": ["folded", "folded", "won", "folded"],
+            "Balance": [None, None, 50.0, None],
             "PreflopAction": [
                 [("folds", "")],
                 placeholder[0],
@@ -620,7 +763,7 @@ def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:
         }
     )
 
-    fact = build_fact_player_actions(synthetic)
+    fact = build_fact_player_action(synthetic)
 
     # The posts open the hand; then utg (seat 4, right after the big blind)
     # acts first, followed by the button (seat 9) and the small blind (seat

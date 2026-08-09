@@ -147,17 +147,19 @@ You may want to build a pipeline to incrementally feed your table with new hand 
 | Prize             | Prize won by the player, if any (satellite tickets: face value) | 30000.00                       | float           |
 
 ## Data Modeling
-For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of dimensional model (star schema) split into four tables that may be useful for most cases: `fact_player_actions` works as the fact table, holding one row per event of a player in a hand, while `dim_tourn_summary`, `dim_player_summary`, and `dim_final_rank` work as dimension tables.
+For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of dimensional model (star schema) split into four tables that may be useful for most cases: `fact_player_action` works as the fact table, holding one row per event of a player in a hand, while `dim_tournament`, `dim_hand` and `dim_final_rank` work as dimension tables.
 
 The reasoning behind this design:
 
-- **The fact is deliberately wide and analysis-ready.** Everything that describes an event — who, where, when, with which stack, facing which board — lives on the row itself, so feature engineering needs no joins. The repetition of hand-level context (level, blinds, table size) is intentional: columnar formats like parquet compress constant-per-hand values to almost nothing, so the storage cost is negligible while every query gets simpler.
+- **The fact holds the events; `dim_hand` holds their constant frame.** Every row of the fact describes one event — who acted, from which seat and position, with which stack, facing which board, holding which cards and with which outcome ahead. The context that never changes inside a hand (timestamp, table size, players dealt in, level, blinds and ante) lives in `dim_hand`, keyed by `Owner` + `TournID` + `HandID`, keeping the fact lean.
 - **Posts are events, not metadata.** The ante and blind posts are rows like any action, carrying the real (possibly partial, when all-in) amounts. This makes the pot a pure running sum, gives a row to players that never acted voluntarily (a big blind winning a walk, an all-in on the post), and lets the dynamic `Stack` be reconstructed uniformly.
-- **Each dimension answers one question at one grain.** `dim_tourn_summary` describes the tournament (context for slicing); `dim_player_summary` holds the outcome of each player in each hand (result, amount collected, revealed cards); `dim_final_rank` holds the outcome of each player in the tournament. There is no hand dimension on purpose: after moving the hand context into the fact, it would keep a single attribute, and a dimension that thin is better dissolved (`HandID` works as a degenerate dimension, and `LocalTime` lives in the fact).
+- **Each dimension answers one question at one grain.** `dim_tournament` describes the tournament as observed by an owner (`Owner` + `TournID`, since each owner can start it at a different time); `dim_hand` holds the constant context of each hand (`Owner` + `TournID` + `HandID`, since two archives can log the same hand, each with its own local timestamp); `dim_final_rank` holds the outcome of each player in the tournament. There is no player-hand dimension on purpose: the outcome of a player in a hand and the cards revealed at showdown are future events of the hand, and they belong on the rows of the fact.
+- **The outcome of the hand is registered on every row of its player.** `Result` (folded, lost, mucked, non-sd win, won), `Balance` (the amount collected from the pot) and `RevealedShowDownPokerHand` (the combination the platform itself named at showdown) are future events recorded early, exactly like the revealed cards: knowing how the hand ended is what makes the behavior that led there analyzable.
 - **The reconstructed amounts follow the platform's own arithmetic** (bet levels, short all-in blinds, calls above a short post) and were validated against the raw logs: the final `TotalPot` matches the reported "Total pot" in 100% of 135k+ real hands.  
+- **The known holdings are inferred on every row, at the moment of the row.** `OwnerC1..C2` and `OwnerCombination` are hand context like the board: they fill every row of the hand, so any behavior can be analyzed against the owner's holding without joins. `RevealedShowDownC1..C2` and `RevealedShowDownCombination` register, on every row of a player that revealed cards at showdown — the owner included — what the show at the end proved the player was holding: a future event recorded early, which is what makes the behavior that led to it analyzable. The combinations name the best hand each holding makes with the board visible at that moment, each with an integer score from 1 (High Card) to 10 (Royal Flush), ready for aggregation. The evaluator was validated against the platform's own showdown labels: 100% agreement over 70k+ real showdowns.  
 
 
-![data-modeling](https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/data-modeling.svg)
+![data-modeling](https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/data-modeling-v1.6.svg)
 
 You can generate these four tables automatically with the `modeling` command, pointing to a folder of _.parquet_ files produced by the `convert` command:
 ```
@@ -173,10 +175,10 @@ pokerdf modeling /path/to/parquet/files --gdpr full
 ```
 Two GDPR principles guide what the command does:
 
-- **Data minimisation (Article 5(1)(c))** — what is not needed to analyze the game is not produced. The dimension tables are not generated at all, since they exist to describe who the players are: the nickname of the owner of the logs, the buy-in paid, the cards revealed at showdown, the final rank and the prizes received. `LocalTime` is removed from the fact table.
-- **Pseudonymisation (Article 4(5))** — `TournID`, `HandID` and `Player` are replaced by salted BLAKE2b digests. The same nickname always maps to the same pseudonym, so grouping and joining keep working, but nothing points back to a person or to a hand that can be looked up on the platform.
+- **Data minimisation (Article 5(1)(c))** — what identifies without helping the analysis is not produced. The final-rank dimension is left out entirely: the nickname, final rank and prize of every player mirror publicly available tournament results, the easiest re-identification path there is. The fact, `dim_tournament` and `dim_hand` are generated with every time column removed (`LocalTime`, `LocalStartTime`): a timestamp matched against publicly available tournament schedules identifies the tournament. Every other attribute leaves whole.
+- **Pseudonymisation (Article 4(5))** — `TournID`, `HandID`, `Player` and `Owner` are replaced by salted BLAKE2b digests in every generated table, with the same salt, so the tables keep joining (and the owner receives the same pseudonym in `Owner` and in `Player`). The same nickname always maps to the same pseudonym, so grouping keeps working, but nothing points back to a person or to a hand that can be looked up on the platform.
 
-Everything that makes the data worth analyzing is preserved: the order of the actions, the amounts, the pot, the stacks, the board, the positions — and your own hole cards (`OwnerC1`, `OwnerC2`), kept in every mode, since the decisions in the dataset can only be studied against the holding they were made with.
+Everything that makes the data worth analyzing is preserved: the order of the actions, the amounts, the pot, the stacks, the board, the positions — and the cards. Your own hole cards (`OwnerC1`, `OwnerC2`), the cards revealed at showdown (`RevealedShowDownC1`, `RevealedShowDownC2`) and the combinations derived from them are kept in every mode, since the decisions in the dataset can only be studied against the holdings they were made with, and cards shown at the table describe the game, not a person.
 
 Two modes are available:
 
@@ -193,21 +195,15 @@ With a kept salt the result remains *pseudonymized* personal data in the sense o
 
 Each session writes an `anonymization.txt` report next to the data, describing what was applied and which risks remain — the most relevant being that the owner plays in every hand of their own archive, so even in `full` mode the pseudonym present in all rows is the owner, linked to the holdings it played; and that a hand remains described by its board and its exact bet sequence, which is close to unique for anyone holding another copy of it. None of this replaces assessing, for your own case, whether sharing the data is lawful.
 
-#### fact_player_actions
+#### fact_player_action
 
 One row per event of a player: the ante and blind posts open each hand as rows (with the real — possibly partial — amounts that left each stack), followed by every action, sorted exactly as the hand unfolded: rounds in chronological order, starting from the first seat to act (the seat after the big blind on preflop, the seat after the button postflop). The amounts are reconstructed by replaying each round with the betting rules of the game, so they reflect the chips that actually moved.
 
 | Column      | Description                                                                                           | Example     |
 |-------------|-------------------------------------------------------------------------------------------------------|-------------|
+| Owner       | Owner of the hand history file the hand came from (archives of more than one owner can be modeled together) | ownername |
 | TournID     | Tournament in which the action happened                                                               | 2928882649  |
 | HandID      | Hand in which the action happened                                                                     | 215024616736|
-| LocalTime   | Time when the hand was played                                                                         | 2020-06-07 07:52:12 |
-| TableSize   | Maximum number of players at the table                                                                | 9           |
-| Playing     | Number of players active in the hand                                                                  | 6           |
-| Level       | Level of the tournament, as an integer                                                                | 15          |
-| Ante        | Ante of the hand                                                                                      | 4.0         |
-| SmallBlind  | Nominal small blind of the hand                                                                       | 15.0        |
-| BigBlind    | Nominal big blind of the hand                                                                         | 30.0        |
 | Round       | Round of the action (preflop, flop, turn, river)                                                      | preflop     |
 | Player      | Player who acted                                                                                      | playername  |
 | Seat        | Seat number of the player                                                                             | 4           |
@@ -222,43 +218,55 @@ One row per event of a player: the ante and blind posts open each hand as rows (
 | TotalValue  | Total put in by the player in the round after the action (on preflop includes the posted ante/blind)  | 64.0        |
 | TotalPot    | Total pot right after the action (uncalled bets returned at the end are not discounted)               | 156.0       |
 | BoardC1..C5 | Board visible at the moment of the action (empty on preflop, 3 cards on flop, 4 on turn, 5 on river)  | 4d, Tc, 7s  |
-| OwnerC1..C2 | Hole cards of the owner of the logs                                                                   | Ah, Qd      |
+| OwnerC1..C2 | Hole cards of the owner of the logs, on every row of the hand                                         | Ah, Qd      |
+| OwnerCombination | Best combination the owner's cards make with the visible board (on preflop, a pocket pair is already One Pair) | Two Pair |
+| OwnerCombinationScore | The same combination as an integer, from 1 (High Card) to 10 (Royal Flush)                  | 3           |
+| RevealedShowDownC1..C2 | Cards the player of the row revealed at showdown — the owner included — registered on every row of that player in the hand | 7h, Td |
+| RevealedShowDownCombination | Best combination the revealed cards make with the visible board (null when only one card was shown) | One Pair |
+| RevealedShowDownCombinationScore | The same combination as an integer, from 1 to 10                                 | 2           |
+| RevealedShowDownPokerHand | Combination the platform itself named at showdown, when the player showed             | a pair of Aces |
+| Result      | Result of the hand for the player of the row (folded, lost, mucked, non-sd win, won), on every row of the player | won |
+| Balance     | Amount the player of the row collected from the pot in the hand (null when nothing was collected; the winners' amounts sum to the pot) | 840.0 |
 
-#### dim_tourn_summary
+#### dim_tournament
 
-One row per tournament.
+One row per tournament per owner — the key is `Owner` plus `TournID`: the dimension describes the tournament as observed by an owner's archive, and each owner can start it at a different time.
 
 | Column         | Description                          | Example              |
 |----------------|--------------------------------------|----------------------|
+| Owner          | Owner of the archive that observed the tournament | ownername |
 | TournID        | Unique identifier of the tournament  | 2928882649           |
-| LocalStartTime | Time of the first hand               | 2020-06-07 07:44:35  |
+| LocalStartTime | Time of the first hand logged by the owner's client | 2020-06-07 07:44:35 |
 | Modality       | The type of game being played        | USD Hold'em No Limit |
 | BuyIn          | The buy-in of the tournament         | $4.60+$0.40          |
-| Owner          | Owner of the hand history files      | ownername            |
 
-#### dim_player_summary
+#### dim_hand
 
-One row per player in each hand, holding the outcome: the result, the amount collected and the cards revealed at showdown (also for the losers, useful for range studies — null when the player did not reveal them).
+One row per hand of each owner's archive, holding the context that is constant across the events of the hand — the key is `Owner` + `TournID` + `HandID`, since two archives can log the same hand, each with its own local timestamp.
 
-| Column         | Description                                                | Example    |
-|----------------|-------------------------------------------------------------|------------|
-| TournID        | Tournament of the hand                                     | 2928882649 |
-| HandID         | Hand in which the player participated                      | 215024616736 |
-| Player         | Name of the player                                         | playername |
-| Result         | Result of the hand (folded, lost, mucked, non-sd win, won) | won        |
-| Balance        | Amount collected from the pot by the player in the hand (null when nothing was collected; the winners' amounts sum to the pot) | 840.0      |
-| ShowDownC1..C2 | Cards revealed by the player at showdown                   | Ah, Ac     |
-| PokerHand      | Card combination shown by the player                       | a pair of Aces |
+| Column     | Description                                                        | Example             |
+|------------|--------------------------------------------------------------------|---------------------|
+| Owner      | Owner of the archive that logged the hand                          | ownername           |
+| TournID    | Tournament of the hand                                             | 2928882649          |
+| HandID     | Unique identifier of the hand                                      | 215024616736        |
+| LocalTime  | Time when the hand was played, by the owner's clock                | 2020-06-07 07:52:12 |
+| TableSize  | Maximum number of players at the table                             | 9                   |
+| Playing    | Number of players active in the hand                               | 6                   |
+| Level      | Level of the tournament, as an integer                             | 15                  |
+| Ante       | Ante of the hand                                                   | 4.0                 |
+| SmallBlind | Nominal small blind of the hand                                    | 15.0                |
+| BigBlind   | Nominal big blind of the hand                                      | 30.0                |
 
 #### dim_final_rank
 
-One row per player in each tournament.
+One row per player in each tournament of each owner's archive — the key is `Owner` + `TournID` + `Player`: the ranks are as observed by the owner, and an owner eliminated early does not see everyone's final rank.
 
 | Column    | Description                                                             | Example    |
 |-----------|--------------------------------------------------------------------------|------------|
+| Owner     | Owner of the archive that observed the rank                             | ownername  |
 | TournID   | Tournament played                                                       | 2928882649 |
 | Player    | Name of the player                                                      | playername |
-| FinalRank | Final rank in the tournament (0 when finished without a reported place, -1 when not registered in the logs) | 27         |
+| FinalRank | Final rank in the tournament (0 when finished without a reported place, -1 when not registered in the owner's logs) | 27         |
 | Prize     | Prize received, when any                                                | 0.24       |
 
 ## License

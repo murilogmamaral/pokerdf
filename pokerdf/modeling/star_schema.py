@@ -9,10 +9,11 @@ import pyarrow.dataset
 
 from pokerdf.modeling.anonymize import (
     GdprMode,
-    anonymize_fact,
+    anonymize_table,
     describe,
     generate_salt,
 )
+from pokerdf.modeling.evaluation import COMBINATION_SCORES, evaluate_hand
 from pokerdf.utils.columns import Column, ModelColumn, ModelTable, Round
 from pokerdf.utils.strings import ANONYMIZATION_REPORT, PARQUET_EXTENSION
 
@@ -131,6 +132,31 @@ def _get_element(sequence: Any, index: int) -> Any:
     return sequence[index]
 
 
+def _combination(
+    card1: str | None, card2: str | None, board: tuple[str, ...]
+) -> tuple[str | None, int | None]:
+    """
+    Name and score the combination made by two hole cards and a board.
+
+    Args:
+        card1 (str | None): First hole card.
+        card2 (str | None): Second hole card.
+        board (tuple[str, ...]): Community cards visible at the moment,
+            empty on preflop.
+
+    Returns:
+        tuple[str | None, int | None]: Name and score of the combination
+            (1 High Card to 10 Royal Flush), or (None, None) when the two
+            hole cards are not both known — a single revealed card cannot
+            say what the hand was.
+    """
+    if card1 is None or card2 is None:
+        return None, None
+
+    combination = evaluate_hand((card1, card2, *board))
+    return str(combination), COMBINATION_SCORES[combination]
+
+
 def load_converted_data(path: str) -> pd.DataFrame:
     """
     Load and concatenate all .parquet files produced by the convert command.
@@ -151,26 +177,27 @@ def load_converted_data(path: str) -> pd.DataFrame:
     return df
 
 
-def build_dim_tourn_summary(df: pd.DataFrame) -> pd.DataFrame:
+def build_dim_tournament(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Build the tournament dimension, with one row per tournament.
+    Build the tournament dimension, with one row per tournament per owner.
 
     Args:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, LocalStartTime, Modality, BuyIn and
-            Owner. TableSize belongs to the fact table.
+        pd.DataFrame: Columns Owner, TournID, LocalStartTime, Modality and
+            BuyIn. The key is Owner plus TournID: the dimension describes
+            the tournament as observed by an owner's archive, and each
+            owner can start it at a different time — the start time is the
+            time of the first hand the owner's client logged.
     """
-    # One row per tournament: the start time is the time of its first hand
     dim = (
-        df.groupby(Column.TOURN_ID, as_index=False)
+        df.groupby([Column.OWNER, Column.TOURN_ID], as_index=False)
         .agg(
             **{
                 ModelColumn.LOCAL_START_TIME: (Column.LOCAL_TIME, "min"),
                 Column.MODALITY: (Column.MODALITY, "first"),
                 Column.BUY_IN: (Column.BUY_IN, "first"),
-                Column.OWNER: (Column.OWNER, "first"),
             }
         )
         .astype({Column.TOURN_ID: "int64"})
@@ -180,64 +207,63 @@ def build_dim_tourn_summary(df: pd.DataFrame) -> pd.DataFrame:
     return dim
 
 
-def build_dim_player_summary(df: pd.DataFrame) -> pd.DataFrame:
+def build_dim_hand(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Build the player dimension, with one row per player in each hand.
+    Build the hand dimension, with one row per hand of each owner's archive.
 
     Args:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, HandID, Player, Result, Balance,
-            ShowDownC1, ShowDownC2 and PokerHand (the cards revealed by the
-            player at showdown, also for the losers — valuable for range
-            studies). Everything that describes the events of the hand —
-            seat, position, the dynamic Stack, the posts and LocalTime —
-            lives in the fact table.
+        pd.DataFrame: Columns Owner, TournID, HandID, LocalTime, TableSize,
+            Playing, Level, Ante, SmallBlind and BigBlind — the context
+            that is constant across the events of a hand, keeping the fact
+            table lean. Owner is part of the key: two archives can log the
+            same hand, each with its own local timestamp.
     """
-    # One row per player per hand
-    players = df.drop_duplicates(
-        subset=[Column.TOURN_ID, Column.HAND_ID, Column.PLAYER], ignore_index=True
-    )
+    # One row per hand per owner, from any row of the hand: the context is
+    # the same on all of them
+    hands = df.drop_duplicates(subset=[Column.TOURN_ID, Column.HAND_ID, Column.OWNER])
 
     dim = pd.DataFrame(
         {
-            Column.TOURN_ID: players[Column.TOURN_ID].astype("int64"),
-            Column.HAND_ID: players[Column.HAND_ID].astype("int64"),
-            Column.PLAYER: players[Column.PLAYER],
-            Column.RESULT: players[Column.RESULT],
-            Column.BALANCE: players[Column.BALANCE],
-            ModelColumn.SHOW_DOWN_C1: [
-                _get_element(x, 0) for x in players[Column.SHOW_DOWN]
-            ],
-            ModelColumn.SHOW_DOWN_C2: [
-                _get_element(x, 1) for x in players[Column.SHOW_DOWN]
-            ],
-            ModelColumn.POKER_HAND: players[Column.CARD_COMBINATION],
+            Column.OWNER: hands[Column.OWNER],
+            Column.TOURN_ID: hands[Column.TOURN_ID].astype("int64"),
+            Column.HAND_ID: hands[Column.HAND_ID].astype("int64"),
+            Column.LOCAL_TIME: hands[Column.LOCAL_TIME],
+            Column.TABLE_SIZE: hands[Column.TABLE_SIZE],
+            Column.PLAYING: hands[Column.PLAYING],
+            Column.LEVEL: hands[Column.LEVEL].map(_roman_to_int).astype("Int64"),
+            Column.ANTE: hands[Column.ANTE].astype("float64"),
+            ModelColumn.SMALL_BLIND: [_get_element(x, 0) for x in hands[Column.BLINDS]],
+            ModelColumn.BIG_BLIND: [_get_element(x, 1) for x in hands[Column.BLINDS]],
         }
     )
 
     return dim.sort_values(
-        [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER], ignore_index=True
+        [Column.OWNER, Column.TOURN_ID, Column.HAND_ID], ignore_index=True
     )
 
 
 def build_dim_final_rank(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Build the final rank dimension, with one row per player in each tournament.
+    Build the final rank dimension, with one row per player in each
+    tournament of each owner's archive.
 
     Args:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, Player, FinalRank and Prize. FinalRank
-            is -1 when the rank was not registered in the hand history (for
-            example, players still active when the owner's logs end).
+        pd.DataFrame: Columns Owner, TournID, Player, FinalRank and Prize.
+            The key is Owner plus TournID plus Player: the ranks are as
+            observed by the owner's archive, and an owner eliminated early
+            does not see the final rank of everyone — FinalRank is -1 when
+            the rank was not registered in the owner's logs.
     """
     # The rank and prize of a player appear only in the hand of the elimination
     # or victory, with -1 / null everywhere else, so the maximum aggregates it
     dim = (
-        df.groupby([Column.TOURN_ID, Column.PLAYER], as_index=False)
+        df.groupby([Column.OWNER, Column.TOURN_ID, Column.PLAYER], as_index=False)
         .agg(
             **{
                 Column.FINAL_RANK: (Column.FINAL_RANK, "max"),
@@ -245,7 +271,7 @@ def build_dim_final_rank(df: pd.DataFrame) -> pd.DataFrame:
             }
         )
         .astype({Column.TOURN_ID: "int64"})
-        .sort_values([Column.TOURN_ID, Column.PLAYER], ignore_index=True)
+        .sort_values([Column.OWNER, Column.TOURN_ID, Column.PLAYER], ignore_index=True)
     )
 
     return dim
@@ -295,20 +321,20 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
     """
     # One row per player per hand, with the four hierarchical action columns
     # and the context needed downstream (seat, position, posts, stack, the
-    # hand context that goes into the fact table, and the boards)
+    # cards and outcome that go into the fact table, and the boards)
     context_columns = [
-        Column.LOCAL_TIME,
         Column.SEAT,
         Column.POSITION,
         Column.STACK,
         Column.POSTED_ANTE,
         Column.POSTED_BLIND,
         Column.BLINDS,
-        Column.TABLE_SIZE,
-        Column.LEVEL,
-        Column.PLAYING,
-        Column.ANTE,
+        Column.OWNER,
         Column.OWNERS_HAND,
+        Column.SHOW_DOWN,
+        Column.CARD_COMBINATION,
+        Column.RESULT,
+        Column.BALANCE,
         Column.BOARD_FLOP,
         Column.BOARD_TURN,
         Column.BOARD_RIVER,
@@ -603,7 +629,7 @@ def _compute_total_pot(fact: pd.DataFrame) -> pd.DataFrame:
     return fact
 
 
-def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
+def build_fact_player_action(df: pd.DataFrame) -> pd.DataFrame:
     """
     Build the fact table, with one row per event of a player in a hand.
 
@@ -628,12 +654,27 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, HandID, LocalTime, TableSize, Playing,
-            Level, Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
-            Stack, PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder, AddedValue, TotalValue,
-            TotalPot, BoardC1 to BoardC5, OwnerC1 and OwnerC2, sorted by
-            ActionOrder inside each hand. ActionIndex is 0 for posts and
-            restarts at 1 for each player/round of voluntary actions.
+        pd.DataFrame: Columns Owner (whose archive logged the hand —
+            archives of more than one owner can be modeled together),
+            TournID and HandID (the three form the key of dim_hand, which
+            holds the context that is constant across the hand), Round, Player,
+            Seat, Position, Stack, PostedAnte, PostedBlind, Action,
+            ActionIndex, ActionOrder,
+            AddedValue, TotalValue, TotalPot and BoardC1 to BoardC5, plus
+            the cards and combinations: OwnerC1, OwnerC2, OwnerCombination
+            and OwnerCombinationScore describe the owner's holding on every
+            row of the hand, like the board; RevealedShowDownC1,
+            RevealedShowDownC2, RevealedShowDownCombination,
+            RevealedShowDownCombinationScore and RevealedShowDownPokerHand
+            (the combination the platform itself named) register, on every
+            row of the player that revealed cards at showdown — the owner
+            included — what the show at the end proved the player was
+            holding. Scores go from 1 (High Card) to 10 (Royal Flush).
+            Result and Balance close each row with the outcome of the
+            player in the hand, also a future event registered early. Rows
+            are sorted by ActionOrder inside each hand. ActionIndex is 0
+            for posts and restarts at 1 for each player/round of voluntary
+            actions.
     """
     # One row per event, sorted as the hand unfolded, with the amounts.
     # The full list of players anchors the order even when the big blind or
@@ -671,27 +712,66 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     fact[ModelColumn.BOARD_C4] = [_get_element(x, 3) for x in visible_boards]
     fact[ModelColumn.BOARD_C5] = [_get_element(x, 4) for x in visible_boards]
 
-    # Flatten the hand context that lives in the fact: level as an integer,
-    # one column per blind and per owner card
-    fact[Column.LEVEL] = fact[Column.LEVEL].map(_roman_to_int).astype("Int64")
-    fact[ModelColumn.SMALL_BLIND] = [_get_element(x, 0) for x in fact[Column.BLINDS]]
-    fact[ModelColumn.BIG_BLIND] = [_get_element(x, 1) for x in fact[Column.BLINDS]]
+    # Flatten the owner's cards: they are hand context on every row, like
+    # the board — the private knowledge the whole hand was observed with.
+    # The rest of the hand context (timestamp, table size, level, blinds
+    # and ante) lives in dim_hand, keeping the fact lean
     fact[ModelColumn.OWNER_C1] = [_get_element(x, 0) for x in fact[Column.OWNERS_HAND]]
     fact[ModelColumn.OWNER_C2] = [_get_element(x, 1) for x in fact[Column.OWNERS_HAND]]
+
+    # The cards the player of the row revealed at showdown — the owner
+    # included. The show is a future event of the hand, registered on every
+    # row of the player from the first action: knowing what was held is what
+    # makes the behavior that led to the show analyzable
+    fact[ModelColumn.REVEALED_SHOW_DOWN_C1] = [
+        _get_element(x, 0) for x in fact[Column.SHOW_DOWN]
+    ]
+    fact[ModelColumn.REVEALED_SHOW_DOWN_C2] = [
+        _get_element(x, 1) for x in fact[Column.SHOW_DOWN]
+    ]
+
+    # The combination made at the moment of each event, with the board
+    # visible in the round: the owner's on every row, the revealed one on
+    # the rows of the player that revealed both cards. On preflop the board
+    # is empty, so a pocket pair is already One Pair
+    boards = [tuple(board) if board is not None else () for board in visible_boards]
+    owner_combinations = [
+        _combination(c1, c2, board)
+        for c1, c2, board in zip(
+            fact[ModelColumn.OWNER_C1], fact[ModelColumn.OWNER_C2], boards
+        )
+    ]
+    revealed_combinations = [
+        _combination(c1, c2, board)
+        for c1, c2, board in zip(
+            fact[ModelColumn.REVEALED_SHOW_DOWN_C1],
+            fact[ModelColumn.REVEALED_SHOW_DOWN_C2],
+            boards,
+        )
+    ]
+    fact[ModelColumn.OWNER_COMBINATION] = [name for name, _ in owner_combinations]
+    fact[ModelColumn.OWNER_COMBINATION_SCORE] = pd.array(
+        [score for _, score in owner_combinations], dtype="Int64"
+    )
+    fact[ModelColumn.REVEALED_SHOW_DOWN_COMBINATION] = [
+        name for name, _ in revealed_combinations
+    ]
+    fact[ModelColumn.REVEALED_SHOW_DOWN_COMBINATION_SCORE] = pd.array(
+        [score for _, score in revealed_combinations], dtype="Int64"
+    )
+
+    # The combination the platform itself named at showdown ("two pair,
+    # Aces and Kings"), when the player showed: richer than the inferred
+    # category, and another future event registered on the player's rows
+    fact[ModelColumn.REVEALED_SHOW_DOWN_POKER_HAND] = fact[Column.CARD_COMBINATION]
 
     # Final structure of the fact table
     fact = fact.astype({Column.TOURN_ID: "int64", Column.HAND_ID: "int64"}).loc[
         :,
         [
+            Column.OWNER,
             Column.TOURN_ID,
             Column.HAND_ID,
-            Column.LOCAL_TIME,
-            Column.TABLE_SIZE,
-            Column.PLAYING,
-            Column.LEVEL,
-            Column.ANTE,
-            ModelColumn.SMALL_BLIND,
-            ModelColumn.BIG_BLIND,
             ModelColumn.ROUND,
             Column.PLAYER,
             Column.SEAT,
@@ -712,6 +792,15 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             ModelColumn.BOARD_C5,
             ModelColumn.OWNER_C1,
             ModelColumn.OWNER_C2,
+            ModelColumn.OWNER_COMBINATION,
+            ModelColumn.OWNER_COMBINATION_SCORE,
+            ModelColumn.REVEALED_SHOW_DOWN_C1,
+            ModelColumn.REVEALED_SHOW_DOWN_C2,
+            ModelColumn.REVEALED_SHOW_DOWN_COMBINATION,
+            ModelColumn.REVEALED_SHOW_DOWN_COMBINATION_SCORE,
+            ModelColumn.REVEALED_SHOW_DOWN_POKER_HAND,
+            Column.RESULT,
+            Column.BALANCE,
         ],
     ]
 
@@ -754,13 +843,12 @@ def build_star_schema(
 
     Reads all .parquet files produced by the convert command, concatenates
     them and splits the result into one fact table and three dimensions:
-    fact_player_actions, dim_tourn_summary, dim_player_summary and
-    dim_final_rank.
+    fact_player_action, dim_tournament, dim_hand and dim_final_rank.
 
-    When a GDPR mode is informed, only the fact table is generated, with the
-    identifying columns pseudonymized and removed as described in the
-    anonymize module, and a report of the transformations is saved next
-    to it.
+    When a GDPR mode is informed, the final-rank dimension is not
+    generated and the other tables leave with their identifiers
+    pseudonymized, as described in the anonymize module, with a report of
+    the transformations saved next to them.
 
     Args:
         source (str): Directory containing the converted .parquet files.
@@ -778,24 +866,34 @@ def build_star_schema(
 
     mode = _parse_gdpr_mode(gdpr)
     if mode:
-        # The dimensions are not generated: they exist to describe who the
-        # players are, how the tournament went and what each one received.
+        # Everything the analysis needs leaves - the fact, the hand
+        # dimension and the tournament dimension - anonymized with the
+        # same salt, so the pseudonyms keep joining across the tables,
+        # and with every time column removed. Only the final-rank
+        # dimension is not generated: the nickname, final rank and prize
+        # of every player mirror publicly available tournament results,
+        # the easiest re-identification path there is.
         # The Player column stores names escaped for regex, so the owners
         # are escaped the same way to match them in keep-owner mode
+        session_salt = salt or generate_salt()
         owners = {re.escape(owner) for owner in df[Column.OWNER].dropna().unique()}
-        fact = anonymize_fact(
-            build_fact_player_actions(df),
-            salt or generate_salt(),
-            mode=mode,
-            owners=owners,
-        )
-        tables = {ModelTable.FACT_PLAYER_ACTIONS: fact}
+        tables = {
+            ModelTable.FACT_PLAYER_ACTION: anonymize_table(
+                build_fact_player_action(df), session_salt, mode=mode, owners=owners
+            ),
+            ModelTable.DIM_TOURNAMENT: anonymize_table(
+                build_dim_tournament(df), session_salt, mode=mode, owners=owners
+            ),
+            ModelTable.DIM_HAND: anonymize_table(
+                build_dim_hand(df), session_salt, mode=mode, owners=owners
+            ),
+        }
     else:
         # Build the four tables of the star schema
         tables = {
-            ModelTable.FACT_PLAYER_ACTIONS: build_fact_player_actions(df),
-            ModelTable.DIM_TOURN_SUMMARY: build_dim_tourn_summary(df),
-            ModelTable.DIM_PLAYER_SUMMARY: build_dim_player_summary(df),
+            ModelTable.FACT_PLAYER_ACTION: build_fact_player_action(df),
+            ModelTable.DIM_TOURNAMENT: build_dim_tournament(df),
+            ModelTable.DIM_HAND: build_dim_hand(df),
             ModelTable.DIM_FINAL_RANK: build_dim_final_rank(df),
         }
 

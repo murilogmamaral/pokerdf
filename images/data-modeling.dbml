@@ -1,0 +1,78 @@
+// pokerdf star schema — the source of the data model diagram.
+// Paste into dbdiagram.io and export as data-modeling-vX.Y.svg
+// (see README.md in this folder for the versioning rules)
+
+Table dim_tournament {
+  Owner varchar [pk]
+  TournID integer [pk]
+  LocalStartTime timestamp
+  Modality varchar
+  BuyIn varchar
+}
+
+Table dim_hand {
+  Owner varchar [pk]
+  TournID integer [pk]
+  HandID integer [pk]
+  LocalTime timestamp
+  TableSize integer
+  Playing integer
+  Level integer
+  Ante float
+  SmallBlind float
+  BigBlind float
+}
+
+Table fact_player_action {
+  Owner varchar [not null]
+  TournID integer [not null]
+  HandID integer [not null]
+  Round varchar
+  Player varchar [not null]
+  Seat integer
+  Position varchar
+  Stack float
+  PostedAnte float
+  PostedBlind float
+  Action varchar
+  ActionIndex integer
+  ActionOrder integer
+  AddedValue float
+  TotalValue float
+  TotalPot float
+  BoardC1 varchar
+  BoardC2 varchar
+  BoardC3 varchar
+  BoardC4 varchar
+  BoardC5 varchar
+  OwnerC1 varchar
+  OwnerC2 varchar
+  OwnerCombination varchar
+  OwnerCombinationScore integer
+  RevealedShowDownC1 varchar
+  RevealedShowDownC2 varchar
+  RevealedShowDownCombination varchar
+  RevealedShowDownCombinationScore integer
+  RevealedShowDownPokerHand varchar
+  Result varchar
+  Balance float
+}
+
+Table dim_final_rank {
+  Owner varchar [pk]
+  TournID integer [pk]
+  Player varchar [pk]
+  FinalRank integer
+  Prize float
+}
+
+Ref: fact_player_action.Owner > dim_tournament.Owner
+Ref: fact_player_action.TournID > dim_tournament.TournID
+
+Ref: fact_player_action.Owner > dim_hand.Owner
+Ref: fact_player_action.TournID > dim_hand.TournID
+Ref: fact_player_action.HandID > dim_hand.HandID
+
+Ref: fact_player_action.Owner > dim_final_rank.Owner
+Ref: fact_player_action.TournID > dim_final_rank.TournID
+Ref: fact_player_action.Player > dim_final_rank.Player
