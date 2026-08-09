@@ -104,22 +104,23 @@ def test_full_mode_pseudonymizes_the_owner_column(fact: pd.DataFrame) -> None:
     assert (result.loc[owner_rows, "Player"] == result.loc[owner_rows, "Owner"]).all()
 
 
-def test_full_mode_gives_the_owner_matching_pseudonyms_for_escaped_names() -> None:
-    # The Player column stores names escaped for regex; the Owner column
-    # stores them raw. The same person must receive the same pseudonym in
-    # both, also when the name contains regex characters
+def test_full_mode_gives_the_owner_matching_pseudonyms() -> None:
+    # Both columns hold the nickname exactly as the platform wrote it, so
+    # the same person receives the same pseudonym in both — also when the
+    # nickname contains characters that are special to a regex
     fact = pd.DataFrame(
         {
-            "TournID": ["1"],
-            "HandID": ["2"],
-            "Player": ["pepek\\.99"],
-            "Owner": ["pepek.99"],
+            "TournID": ["1", "1"],
+            "HandID": ["2", "2"],
+            "Player": ["Villain.One", "VillainTwo"],
+            "Owner": ["Villain.One", "Villain.One"],
         }
     )
 
     result = anonymize_table(fact, "salt", GdprMode.FULL)
 
     assert result["Player"][0] == result["Owner"][0]
+    assert result["Player"][1] != result["Owner"][1]
 
 
 def test_full_mode_anonymizes_the_hand_dimension_consistently(

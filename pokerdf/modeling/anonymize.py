@@ -24,7 +24,6 @@ what allows a person to be identified.
 """
 
 import hashlib
-import re
 import secrets
 from collections.abc import Iterable
 from enum import StrEnum
@@ -150,17 +149,11 @@ def anonymize_table(
         anonymized[column] = pseudonymize(anonymized[column], salt, keep=keep)
 
     # The Owner column names whose archive logged the hand. It stays in
-    # keep-owner mode; in full mode it is pseudonymized through the escaped
-    # form of the name, so the owner receives the same pseudonym here and
-    # in the Player column, which stores names escaped for regex
+    # keep-owner mode; in full mode it is pseudonymized like any other
+    # nickname, so the owner receives the same pseudonym here and in the
+    # Player column
     if not keep_owner and Column.OWNER in anonymized.columns:
-        escaped = {
-            value: re.escape(value)
-            for value in anonymized[Column.OWNER].dropna().unique()
-        }
-        anonymized[Column.OWNER] = pseudonymize(
-            anonymized[Column.OWNER].map(escaped), salt
-        )
+        anonymized[Column.OWNER] = pseudonymize(anonymized[Column.OWNER], salt)
 
     # Remove every time column: it cannot be pseudonymized without losing
     # its meaning, and kept it would identify the tournament

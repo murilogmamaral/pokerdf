@@ -439,3 +439,79 @@ def test_get_prize_ticket_is_not_awarded_to_the_other_players(
     satellite_final_hand: list[str],
 ) -> None:
     assert r.get_prize("VillainB", satellite_final_hand) == [None]
+
+
+# ---------------------------------------------------------------------------
+# Nicknames with characters that are special to a regex
+# ---------------------------------------------------------------------------
+# A nickname is arbitrary text and routinely contains ".", "-", "(", ")" or a
+# space. It is interpolated into every player-specific pattern, so it has to be
+# escaped there - and only there, so the nickname the methods return is the one
+# the platform wrote. "VillainXOne" is in the hand on purpose: an unescaped
+# "Villain.One" would match it too, silently returning another player's data.
+# The nicknames here are invented: real ones are personal data of third
+# parties and never belong in the repository.
+TRICKY_HAND = [
+    # One stage per element, as the converter splits a hand
+    "Hand #44401: Tournament #77777, $1.84+$0.16 USD Hold'em No Limit"
+    " - Level I (10/20) - 2020/10/11 3:22:15 BRT [2020/10/11 2:22:15 ET]\n"
+    "Table '77777 1' 4-max Seat #1 is the button\n"
+    "Seat 1: VillainXOne (900 in chips) \n"
+    "Seat 2: Villain.One (500 in chips) \n"
+    "Seat 3: Villain Two 0 (480 in chips) \n"
+    "Seat 4: VillainThree) (520 in chips) \n"
+    "Villain Two 0: posts small blind 10\n"
+    "VillainThree): posts big blind 20\n",
+    "HOLE CARDS ***\n"
+    "Dealt to Villain.One [8h Kh]\n"
+    "VillainXOne: folds \n"
+    "Villain.One: calls 20\n"
+    "Villain Two 0: folds \n"
+    "VillainThree): checks \n",
+    "FLOP *** [Jh 5s 4s]\n" "VillainThree): bets 40\n" "Villain.One: calls 40\n",
+    "SHOW DOWN ***\n"
+    "VillainThree): shows [7h Td] (a pair of Sevens)\n"
+    "Villain.One: shows [8h Kh] (a pair of Jacks)\n"
+    "Villain.One collected 130 from pot\n",
+    "SUMMARY ***\n"
+    "Total pot 130 | Rake 0 \n"
+    "Board [Jh 5s 4s]\n"
+    "Seat 1: VillainXOne (button) folded before Flop (didn't bet)\n"
+    "Seat 2: Villain.One showed [8h Kh] and won (130) with a pair of Jacks\n"
+    "Seat 3: Villain Two 0 (small blind) folded before Flop\n"
+    "Seat 4: VillainThree) (big blind) showed [7h Td] and lost"
+    " with a pair of Sevens\n",
+]
+
+
+def test_get_players_returns_the_nicknames_untouched() -> None:
+    assert r.get_players(TRICKY_HAND) == [
+        "VillainXOne",
+        "Villain.One",
+        "Villain Two 0",
+        "VillainThree)",
+    ]
+
+
+def test_capture_works_for_nicknames_with_regex_characters() -> None:
+    # A closing parenthesis would be a syntax error in an unescaped pattern
+    assert r.get_seat("VillainThree)", TRICKY_HAND) == [4]
+    assert r.get_stack("VillainThree)", TRICKY_HAND) == [520.0]
+    assert r.get_position("VillainThree)", TRICKY_HAND) == ["big blind"]
+    assert r.get_posted_blind("VillainThree)", TRICKY_HAND) == [20.0]
+    assert r.get_showed_card("VillainThree)", TRICKY_HAND) == [("7h", "Td")]
+    assert r.get_result("VillainThree)", TRICKY_HAND) == ["lost"]
+    # Spaces and hyphens are escaped by re.escape as well
+    assert r.get_seat("Villain Two 0", TRICKY_HAND) == [3]
+    assert r.get_position("Villain Two 0", TRICKY_HAND) == ["small blind"]
+
+
+def test_a_dot_in_a_nickname_does_not_match_another_player() -> None:
+    # Unescaped, "Villain.One" would also match the line of "VillainXOne"
+    assert r.get_seat("Villain.One", TRICKY_HAND) == [2]
+    assert r.get_stack("Villain.One", TRICKY_HAND) == [500.0]
+    assert r.get_balance("Villain.One", TRICKY_HAND) == [130.0]
+    assert r.get_card_combination("Villain.One", TRICKY_HAND) == ["a pair of Jacks"]
+    # And the other player keeps their own data
+    assert r.get_seat("VillainXOne", TRICKY_HAND) == [1]
+    assert r.get_position("VillainXOne", TRICKY_HAND) == ["button"]

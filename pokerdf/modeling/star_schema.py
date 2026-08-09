@@ -1,5 +1,4 @@
 import os
-import re
 from glob import glob
 from typing import Any
 
@@ -873,10 +872,8 @@ def build_star_schema(
         # dimension is not generated: the nickname, final rank and prize
         # of every player mirror publicly available tournament results,
         # the easiest re-identification path there is.
-        # The Player column stores names escaped for regex, so the owners
-        # are escaped the same way to match them in keep-owner mode
         session_salt = salt or generate_salt()
-        owners = {re.escape(owner) for owner in df[Column.OWNER].dropna().unique()}
+        owners = set(df[Column.OWNER].dropna().unique())
         tables = {
             ModelTable.FACT_PLAYER_ACTION: anonymize_table(
                 build_fact_player_action(df), session_salt, mode=mode, owners=owners
