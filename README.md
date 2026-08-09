@@ -1,9 +1,9 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/logo/pokerdf-logo-dark.svg">
-  <img src="https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/logo/pokerdf-logo-light.svg" alt="PokerDF">
+  <img src="https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/logo/pokerdf-logo-light.svg" alt="pokerdf">
 </picture>
 
-# PokerDF
+# pokerdf
 
 [![PyPI](https://img.shields.io/pypi/v/pokerdf?color=blue)](https://pypi.org/project/pokerdf/)
 [![CI](https://img.shields.io/github/actions/workflow/status/murilogmamaral/pokerdf/ci.yml?branch=main&logo=github&label=CI)](https://github.com/murilogmamaral/pokerdf/actions/workflows/ci.yml)
@@ -12,7 +12,7 @@
 
 Converts poker hand history files into structured Pandas DataFrames, making it easier to analyze your games.
 
-Fast and reliable, PokerDF is able to `convert` 20,000 hand history files, or 450,000 hands, into _.parquet_ per minute, in a MacBook Air M4 with 10-core CPU. The `modeling` command then builds the star schema at 5 million player events per minute.
+Fast and reliable, pokerdf is able to `convert` 20,000 hand history files, or 450,000 hands, into _.parquet_ per minute, in a MacBook Air M4 with 10-core CPU. The `modeling` command then builds the star schema at 5 million player events per minute.
 
 Currently supports PokerStars. Make sure hand histories are saved in English.
 

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="PokerDF">
-  <title>PokerDF</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="pokerdf">
+  <title>pokerdf</title>
   <path d="M64.000 64.000 L113.246 64.000 L64.000 113.246 Z" fill="#EC6153"/>
   <path d="M64.000 8.960 L119.040 64.000 L64.000 119.040 L8.960 64.000 Z M64.000 14.754 L113.246 64.000 L64.000 113.246 L14.754 64.000 Z" fill="#F0F0F2" fill-rule="evenodd"/>
   <line x1="14.754" y1="64.000" x2="113.246" y2="64.000" stroke="#F0F0F2" stroke-width="1.448"/>
