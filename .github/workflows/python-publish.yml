@@ -1,14 +1,21 @@
 # Deploys the package to https://pypi.org/project/pokerdf/
 #
-# Trigger it manually via "Run workflow" (workflow_dispatch) in the Actions tab,
-# choosing the semver level to bump (patch by default). No manual version bump
-# is needed: the version in pyproject.toml always reflects the latest published
-# release, and this pipeline infers the next one from the chosen level.
+# Trigger it manually via "Run workflow" (workflow_dispatch) in the Actions tab.
+# No manual version bump is needed: the version in pyproject.toml always
+# reflects the latest published release, and the semver level of the next one
+# is inferred ("auto", the default) from the Conventional Commit titles that
+# landed on main since the last tag - CI enforces the format on every pull
+# request, and the squash commit takes the title of the pull request:
+#   type!: (or a BREAKING CHANGE footer)  -> major
+#   feat:                                 -> minor
+#   fix:, docs:, refactor:, and the rest  -> patch
+# Choosing an explicit level overrides the inference, for the cases where the
+# semantics live in the data rather than in the commit titles.
 #
 # Full pipeline:
 #   1. test            -> run the test suite; nothing happens if it fails
-#   2. bump-and-build  -> bump the version with uv, commit the bump back to
-#                         main, then build sdist/wheel
+#   2. bump-and-build  -> infer or take the level, bump the version with uv,
+#                         commit the bump back to main, then build sdist/wheel
 #   3. github-release  -> create the git tag and the GitHub release dynamically,
 #                         named "v{version}", with the distributions attached
 #   4. pypi-publish    -> upload the distributions to PyPI (Trusted Publishing)
@@ -19,10 +26,11 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: "Semver level to bump (patch: 1.0.6 -> 1.0.7)"
+        description: "Semver level (auto: inferred from the commit titles)"
         type: choice
-        default: patch
+        default: auto
         options:
+          - auto
           - patch
           - minor
           - major
@@ -67,16 +75,53 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history and tags, required to inspect the commits since
+          # the last release when inferring the semver level
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.11"
 
+      - name: Determine the semver level
+        id: level
+        run: |
+          if [ "${{ inputs.bump }}" != "auto" ]; then
+            echo "Level chosen manually: ${{ inputs.bump }}"
+            echo "level=${{ inputs.bump }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then RANGE="$LAST_TAG..HEAD"; else RANGE="HEAD"; fi
+
+          # One subject per commit since the last release, without the bump
+          # commits of previous deploys
+          SUBJECTS=$(git log "$RANGE" --no-merges --pretty="%s" | grep -v "^bump version to" || true)
+          if [ -z "$SUBJECTS" ]; then
+            echo "::error::No commits since ${LAST_TAG:-the first commit}: nothing to release."
+            exit 1
+          fi
+          echo "Commits since ${LAST_TAG:-the first commit}:"
+          echo "$SUBJECTS"
+
+          # Highest level found wins: breaking marker, then feat, then patch
+          BODIES=$(git log "$RANGE" --no-merges --pretty="%B")
+          LEVEL=patch
+          if echo "$SUBJECTS" | grep -qE "^[a-z]+(\([^)]*\))?!:" || echo "$BODIES" | grep -q "BREAKING CHANGE"; then
+            LEVEL=major
+          elif echo "$SUBJECTS" | grep -qE "^feat(\([^)]*\))?:"; then
+            LEVEL=minor
+          fi
+          echo "Inferred level: $LEVEL"
+          echo "level=$LEVEL" >> "$GITHUB_OUTPUT"
+
       - name: Bump version in pyproject.toml
         id: bump
         run: |
-          uv version --bump "${{ inputs.bump }}"
+          uv version --bump "${{ steps.level.outputs.level }}"
           echo "version=$(uv version --short)" >> "$GITHUB_OUTPUT"
 
       - name: Commit and push the bump to main
