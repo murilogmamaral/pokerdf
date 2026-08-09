@@ -85,7 +85,7 @@ class ModelColumn(StrEnum):
     REVEALED_SHOW_DOWN_C2 = "RevealedShowDownC2"
     REVEALED_SHOW_DOWN_COMBINATION = "RevealedShowDownCombination"
     REVEALED_SHOW_DOWN_COMBINATION_SCORE = "RevealedShowDownCombinationScore"
-    POKER_HAND = "PokerHand"
+    REVEALED_SHOW_DOWN_POKER_HAND = "RevealedShowDownPokerHand"
     ROUND = "Round"
     ACTION_ORDER = "ActionOrder"
     ACTION_INDEX = "ActionIndex"
@@ -110,5 +110,4 @@ class ModelTable(StrEnum):
 
     FACT_PLAYER_ACTIONS = "fact_player_actions"
     DIM_TOURN_SUMMARY = "dim_tourn_summary"
-    DIM_PLAYER_SUMMARY = "dim_player_summary"
     DIM_FINAL_RANK = "dim_final_rank"

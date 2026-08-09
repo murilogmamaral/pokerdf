@@ -147,24 +147,25 @@ You may want to build a pipeline to incrementally feed your table with new hand 
 | Prize             | Prize won by the player, if any (satellite tickets: face value) | 30000.00                       | float           |
 
 ## Data Modeling
-For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of dimensional model (star schema) split into four tables that may be useful for most cases: `fact_player_actions` works as the fact table, holding one row per event of a player in a hand, while `dim_tourn_summary`, `dim_player_summary`, and `dim_final_rank` work as dimension tables.
+For advanced analytics, you will need to transform the data generated with the package and explore different data models. The final structure of your data may vary depending on the specific goals of your project. You will find below a suggestion of dimensional model (star schema) split into three tables that may be useful for most cases: `fact_player_actions` works as the fact table, holding one row per event of a player in a hand, while `dim_tourn_summary` and `dim_final_rank` work as dimension tables.
 
 The reasoning behind this design:
 
 - **The fact is deliberately wide and analysis-ready.** Everything that describes an event — who, where, when, with which stack, facing which board — lives on the row itself, so feature engineering needs no joins. The repetition of hand-level context (level, blinds, table size) is intentional: columnar formats like parquet compress constant-per-hand values to almost nothing, so the storage cost is negligible while every query gets simpler.
 - **Posts are events, not metadata.** The ante and blind posts are rows like any action, carrying the real (possibly partial, when all-in) amounts. This makes the pot a pure running sum, gives a row to players that never acted voluntarily (a big blind winning a walk, an all-in on the post), and lets the dynamic `Stack` be reconstructed uniformly.
-- **Each dimension answers one question at one grain.** `dim_tourn_summary` describes the tournament (context for slicing); `dim_player_summary` holds the outcome of each player in each hand (result, amount collected, the combination named by the platform); `dim_final_rank` holds the outcome of each player in the tournament. There is no hand dimension on purpose: after moving the hand context into the fact, it would keep a single attribute, and a dimension that thin is better dissolved (`HandID` works as a degenerate dimension, and `LocalTime` lives in the fact).
+- **Each dimension answers one question at one grain.** `dim_tourn_summary` describes the tournament (context for slicing); `dim_final_rank` holds the outcome of each player in the tournament. There is no hand dimension and no player-hand dimension on purpose: everything they would hold is either hand context or a future event of the hand, and both belong on the rows of the fact (`HandID` works as a degenerate dimension, and `LocalTime`, the outcome and the revealed cards live in the fact).
+- **The outcome of the hand is registered on every row of its player.** `Result` (folded, lost, mucked, non-sd win, won), `Balance` (the amount collected from the pot) and `RevealedShowDownPokerHand` (the combination the platform itself named at showdown) are future events recorded early, exactly like the revealed cards: knowing how the hand ended is what makes the behavior that led there analyzable.
 - **The reconstructed amounts follow the platform's own arithmetic** (bet levels, short all-in blinds, calls above a short post) and were validated against the raw logs: the final `TotalPot` matches the reported "Total pot" in 100% of 135k+ real hands.  
 - **The known holdings are inferred on every row, at the moment of the row.** `OwnerC1..C2` and `OwnerCombination` are hand context like the board: they fill every row of the hand, so any behavior can be analyzed against the owner's holding without joins. `RevealedShowDownC1..C2` and `RevealedShowDownCombination` register, on every row of a player that revealed cards at showdown — the owner included — what the show at the end proved the player was holding: a future event recorded early, which is what makes the behavior that led to it analyzable. The combinations name the best hand each holding makes with the board visible at that moment, each with an integer score from 1 (High Card) to 10 (Royal Flush), ready for aggregation. The evaluator was validated against the platform's own showdown labels: 100% agreement over 70k+ real showdowns.  
 
 
 ![data-modeling](https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/data-modeling-v1.6.svg)
 
-You can generate these four tables automatically with the `modeling` command, pointing to a folder of _.parquet_ files produced by the `convert` command:
+You can generate these three tables automatically with the `modeling` command, pointing to a folder of _.parquet_ files produced by the `convert` command:
 ```
 pokerdf modeling /path/to/parquet/files
 ```
-The command concatenates all files and saves the four tables as _.parquet_ inside `./modeling/{SESSION_ID}/`.
+The command concatenates all files and saves the three tables as _.parquet_ inside `./modeling/{SESSION_ID}/`.
 
 #### Sharing the data: `--gdpr`
 
@@ -229,6 +230,9 @@ One row per event of a player: the ante and blind posts open each hand as rows (
 | RevealedShowDownC1..C2 | Cards the player of the row revealed at showdown — the owner included — registered on every row of that player in the hand | 7h, Td |
 | RevealedShowDownCombination | Best combination the revealed cards make with the visible board (null when only one card was shown) | One Pair |
 | RevealedShowDownCombinationScore | The same combination as an integer, from 1 to 10                                 | 2           |
+| RevealedShowDownPokerHand | Combination the platform itself named at showdown, when the player showed             | a pair of Aces |
+| Result      | Result of the hand for the player of the row (folded, lost, mucked, non-sd win, won), on every row of the player | won |
+| Balance     | Amount the player of the row collected from the pot in the hand (null when nothing was collected; the winners' amounts sum to the pot) | 840.0 |
 
 #### dim_tourn_summary
 
@@ -241,19 +245,6 @@ One row per tournament.
 | Modality       | The type of game being played        | USD Hold'em No Limit |
 | BuyIn          | The buy-in of the tournament         | $4.60+$0.40          |
 | Owner          | Owner of the hand history files      | ownername            |
-
-#### dim_player_summary
-
-One row per player in each hand, holding the outcome: the result, the amount collected and the combination named by the platform at showdown. The cards revealed at showdown live in the fact table (`RevealedShowDownC1..C2`), next to the actions they explain.
-
-| Column         | Description                                                | Example    |
-|----------------|-------------------------------------------------------------|------------|
-| TournID        | Tournament of the hand                                     | 2928882649 |
-| HandID         | Hand in which the player participated                      | 215024616736 |
-| Player         | Name of the player                                         | playername |
-| Result         | Result of the hand (folded, lost, mucked, non-sd win, won) | won        |
-| Balance        | Amount collected from the pot by the player in the hand (null when nothing was collected; the winners' amounts sum to the pot) | 840.0      |
-| PokerHand      | Card combination named by the platform at showdown         | a pair of Aces |
 
 #### dim_final_rank
 

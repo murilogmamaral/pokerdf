@@ -14,7 +14,6 @@ from pokerdf.modeling.star_schema import (
     _combination,
     _roman_to_int,
     build_dim_final_rank,
-    build_dim_player_summary,
     build_dim_tourn_summary,
     build_fact_player_actions,
     build_star_schema,
@@ -109,6 +108,9 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "RevealedShowDownC2",
         "RevealedShowDownCombination",
         "RevealedShowDownCombinationScore",
+        "RevealedShowDownPokerHand",
+        "Result",
+        "Balance",
     ]
     assert set(fact["Round"]) <= {"preflop", "flop", "turn", "river"}
     assert fact["TournID"].dtype == "int64"
@@ -275,6 +277,25 @@ def test_combination_requires_both_hole_cards() -> None:
     assert _combination("Ah", None, ("Jh", "5s", "4s")) == (None, None)
     assert _combination(None, None, ()) == (None, None)
     assert _combination("Ah", "Ad", ()) == ("One Pair", 2)
+
+
+def test_fact_registers_the_outcome_on_every_row_of_the_player(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269866589: the outcome of each player — result, amount
+    # collected and the combination the platform named at showdown — is a
+    # future event of the hand, registered on every row of the player.
+    # garciamurilo won 40 showing a pair of Jacks; VillainB mucked and
+    # collected nothing
+    rows = fact[fact["HandID"] == 219269866589]
+    owner = rows[rows["Player"] == "garciamurilo"]
+    assert (owner["Result"] == "won").all()
+    assert (owner["Balance"] == 40.0).all()
+    assert (owner["RevealedShowDownPokerHand"] == "a pair of Jacks").all()
+    villain = rows[rows["Player"] == "VillainB"]
+    assert (villain["Result"] == "mucked").all()
+    assert villain["Balance"].isna().all()
+    assert villain["RevealedShowDownPokerHand"].isna().all()
 
 
 def test_fact_stack_is_dynamic(fact: pd.DataFrame) -> None:
@@ -540,48 +561,6 @@ def test_dim_tourn_summary(source_df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
-# dim_player_summary
-# ---------------------------------------------------------------------------
-def test_dim_player_summary_has_one_row_per_player_per_hand(
-    source_df: pd.DataFrame,
-) -> None:
-    dim = build_dim_player_summary(source_df)
-    assert len(dim) == len(source_df)
-    assert not dim.duplicated(subset=["TournID", "HandID", "Player"]).any()
-
-
-def test_dim_player_summary_values(source_df: pd.DataFrame) -> None:
-    dim = build_dim_player_summary(source_df)
-    row = dim[(dim["HandID"] == 11111) & (dim["Player"] == "garciamurilo")].iloc[0]
-    assert row["Result"] == "folded"
-    # Seat, Position, the dynamic Stack, the posts and the showdown cards
-    # live in the fact table
-    for column in [
-        "Seat",
-        "Position",
-        "Stack",
-        "PostedAnte",
-        "PostedBlind",
-        "RevealedShowDownC1",
-        "RevealedShowDownC2",
-    ]:
-        assert column not in dim.columns
-
-
-def test_dim_player_summary_keeps_the_platform_combination(
-    source_df: pd.DataFrame,
-) -> None:
-    # Hand 219269866589: the combination named by the platform at showdown
-    # stays in the dimension; the cards themselves live in the fact table
-    dim = build_dim_player_summary(source_df)
-    row = dim[(dim["HandID"] == 219269866589) & (dim["Player"] == "garciamurilo")].iloc[
-        0
-    ]
-    assert row["Balance"] == 40.0
-    assert row["PokerHand"] == "a pair of Jacks"
-
-
-# ---------------------------------------------------------------------------
 # dim_final_rank
 # ---------------------------------------------------------------------------
 def test_dim_final_rank(source_df: pd.DataFrame) -> None:
@@ -598,7 +577,7 @@ def test_dim_final_rank(source_df: pd.DataFrame) -> None:
 # ---------------------------------------------------------------------------
 # build_star_schema
 # ---------------------------------------------------------------------------
-def test_build_star_schema_saves_the_four_tables(
+def test_build_star_schema_saves_the_three_tables(
     converted_dir: Path, tmp_path: Path
 ) -> None:
     number_of_rows = build_star_schema(str(converted_dir), str(tmp_path))
@@ -606,7 +585,6 @@ def test_build_star_schema_saves_the_four_tables(
     expected_tables = [
         "fact_player_actions",
         "dim_tourn_summary",
-        "dim_player_summary",
         "dim_final_rank",
     ]
     assert list(number_of_rows.keys()) == expected_tables
@@ -704,6 +682,9 @@ def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:
             "Owner": ["utg"] * 4,
             "OwnersHand": [["Ah", "Kh"]] * 4,
             "ShowDown": [[None, None]] * 4,
+            "CardCombination": [None] * 4,
+            "Result": ["folded", "folded", "won", "folded"],
+            "Balance": [None, None, 50.0, None],
             "PreflopAction": [
                 [("folds", "")],
                 placeholder[0],

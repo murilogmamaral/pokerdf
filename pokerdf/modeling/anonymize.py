@@ -209,10 +209,12 @@ Applied
   final rank and the prizes received.
 - Pseudonymized with a salted BLAKE2b digest (Article 4(5)): {pseudonymized}.
 - Kept in every mode: the cards revealed at showdown (RevealedShowDownC1,
-  RevealedShowDownC2) and the combinations derived from the cards and the
-  board (OwnerCombination, RevealedShowDownCombination and their scores).
-  They were shown at the table, and once the player holding them is
-  pseudonymized they describe the game, not a person.
+  RevealedShowDownC2), the combinations derived from the cards and the
+  board (OwnerCombination, RevealedShowDownCombination and their scores)
+  and the combination the platform named at showdown
+  (RevealedShowDownPokerHand). They were shown at the table, and once the
+  player holding them is pseudonymized they describe the game, not a
+  person.
 - Removed: {dropped}, which allows a hand to be matched against publicly
   available tournament results.
 {owner_line}
