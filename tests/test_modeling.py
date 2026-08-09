@@ -545,14 +545,14 @@ def test_dim_tournament(source_df: pd.DataFrame) -> None:
     assert list(dim.columns) == [
         "Owner",
         "TournID",
-        "LocalStartTime",
+        "TournStartTimeCET",
         "Modality",
         "BuyIn",
     ]
     row = dim.iloc[0]
     assert row["TournID"] == 99999
     assert row["Owner"] == "garciamurilo"
-    assert row["LocalStartTime"] == pd.Timestamp("2020-10-11 03:22:15")
+    assert row["TournStartTimeCET"] == pd.Timestamp("2020-10-11 07:22:15")
     assert row["Modality"] == "USD Hold'em No Limit"
     assert row["BuyIn"] == "$1.84+$0.16"
     # TableSize belongs to the fact table
@@ -577,7 +577,7 @@ def test_dim_hand_carries_the_hand_context(source_df: pd.DataFrame) -> None:
         "Owner",
         "TournID",
         "HandID",
-        "LocalTime",
+        "HandStartTimeCET",
         "TableSize",
         "Playing",
         "Level",
@@ -587,7 +587,7 @@ def test_dim_hand_carries_the_hand_context(source_df: pd.DataFrame) -> None:
     ]
     row = dim[dim["HandID"] == 11111].iloc[0]
     assert row["Owner"] == "garciamurilo"
-    assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:22:15")
+    assert row["HandStartTimeCET"] == pd.Timestamp("2020-10-11 07:22:15")
     assert row["TableSize"] == 3
     assert row["Playing"] == 3
     assert row["Level"] == 1
@@ -664,7 +664,7 @@ def test_build_star_schema_gdpr_saves_everything_but_the_final_rank(
     # The hand dimension loses its timestamp and joins the fact through
     # the pseudonyms, since the salt is shared
     dim = pd.read_parquet(tmp_path / "dim_hand.parquet")
-    assert "LocalTime" not in dim.columns
+    assert "HandStartTimeCET" not in dim.columns
     assert "garciamurilo" not in set(dim["Owner"])
     assert set(dim["HandID"]) == set(table["HandID"])
     assert set(dim["Owner"]) == set(table["Owner"])
@@ -674,7 +674,7 @@ def test_build_star_schema_gdpr_saves_everything_but_the_final_rank(
     tourn = pd.read_parquet(tmp_path / "dim_tournament.parquet")
     assert "garciamurilo" not in set(tourn["Owner"])
     assert set(tourn["TournID"]) == set(table["TournID"])
-    assert "LocalStartTime" not in tourn.columns
+    assert "TournStartTimeCET" not in tourn.columns
 
 
 def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(
@@ -730,7 +730,7 @@ def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:
         {
             "TournID": ["1"] * 4,
             "HandID": ["100"] * 4,
-            "LocalTime": [pd.Timestamp("2020-01-01 12:00:00")] * 4,
+            "HandStartTimeCET": [pd.Timestamp("2020-01-01 12:00:00")] * 4,
             "Player": ["sb", "bb", "utg", "btn"],
             "Seat": [1, 2, 4, 9],
             "Position": ["small blind", "big blind", None, "button"],

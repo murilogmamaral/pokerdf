@@ -67,7 +67,7 @@ def test_get_table_id(first_hand: list[str]) -> None:
 
 
 def test_get_time(first_hand: list[str]) -> None:
-    assert r.get_time(first_hand) == [pd.Timestamp("2020-10-11 03:22:15")]
+    assert r.get_time(first_hand) == [pd.Timestamp("2020-10-11 07:22:15")]
 
 
 def test_get_level(first_hand: list[str]) -> None:
@@ -515,3 +515,45 @@ def test_a_dot_in_a_nickname_does_not_match_another_player() -> None:
     # And the other player keeps their own data
     assert r.get_seat("VillainXOne", TRICKY_HAND) == [1]
     assert r.get_position("VillainXOne", TRICKY_HAND) == ["button"]
+
+
+# ---------------------------------------------------------------------------
+# Moments in CET
+# ---------------------------------------------------------------------------
+# The platform writes the time of every hand in Eastern Time, either next to
+# the local time of the player or alone. Eastern Time is the anchor because it
+# is the one always present: reading whichever timestamp comes first would put
+# two different time zones in the same column. The output is CET as a fixed
+# UTC+1, so Eastern Time is six hours behind it in winter and five in summer.
+def _header(text: str) -> list[str]:
+    return [f"Hand #1: Tournament #2, Hold'em No Limit - Level I (10/20) - {text}\n"]
+
+
+def test_get_time_reads_eastern_time_and_not_the_local_time() -> None:
+    # Only the bracketed moment is Eastern Time; 10:00 is the player's clock
+    hand = _header("2020/07/15 10:00:00 BRT [2020/07/15 9:00:00 ET]")
+    assert r.get_time(hand) == [pd.Timestamp("2020-07-15 14:00:00")]
+
+
+def test_get_time_follows_the_daylight_saving_of_eastern_time() -> None:
+    # The same 9 a.m. in Eastern Time is a different instant in January and in
+    # July, so the distance to a fixed UTC+1 is six hours in one and five in
+    # the other. A constant offset would be wrong for half the year
+    summer = _header("2020/07/15 10:00:00 BRT [2020/07/15 9:00:00 ET]")
+    winter = _header("2021/01/15 10:00:00 BRT [2021/01/15 9:00:00 ET]")
+    assert r.get_time(summer) == [pd.Timestamp("2020-07-15 14:00:00")]
+    assert r.get_time(winter) == [pd.Timestamp("2021-01-15 15:00:00")]
+
+
+def test_get_time_reads_the_header_without_a_local_time() -> None:
+    # Some clients write no local time and the only moment given is already
+    # Eastern Time
+    hand = _header("2021/02/22 17:51:13 ET")
+    assert r.get_time(hand) == [pd.Timestamp("2021-02-22 23:51:13")]
+
+
+def test_get_time_resolves_the_hour_that_happens_twice() -> None:
+    # On the night the clocks go back, 1:30 a.m. Eastern Time happens twice;
+    # the first of the two is taken, so the conversion never fails
+    hand = _header("2020/11/01 3:30:00 BRT [2020/11/01 1:30:00 ET]")
+    assert r.get_time(hand) == [pd.Timestamp("2020-11-01 06:30:00")]

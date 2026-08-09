@@ -28,7 +28,7 @@ EXPECTED_COLUMNS = [
     "TournID",
     "TableID",
     "HandID",
-    "LocalTime",
+    "HandStartTimeCET",
     "Level",
     "Ante",
     "Blinds",
@@ -118,7 +118,7 @@ def test_compose_dataframe_has_expected_columns_in_order() -> None:
 def test_compose_dataframe_has_expected_dtypes() -> None:
     df = compose_dataframe()
     assert df["TableSize"].dtype == "int64"
-    assert df["LocalTime"].dtype == "datetime64[ns]"
+    assert df["HandStartTimeCET"].dtype == "datetime64[ns]"
     assert df["Ante"].dtype == "float64"
     assert df["AnteAllIn"].dtype == "bool"
     assert df["Modality"].dtype == "object"

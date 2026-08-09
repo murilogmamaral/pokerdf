@@ -9,7 +9,7 @@ class ValidateInput(BaseModel):
     TournID: list[str]
     TableID: list[str]
     HandID: list[str]
-    LocalTime: list[datetime]
+    HandStartTimeCET: list[datetime]
     Level: list[str]
     Ante: list[float | None]
     Blinds: list[tuple[float, float]]

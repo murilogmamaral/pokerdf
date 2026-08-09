@@ -1,6 +1,12 @@
 import re
+from datetime import timedelta, timezone
 from typing import Any
 import pandas as pd
+
+# Every moment in the converted data is expressed in CET, as a fixed offset
+# of one hour from UTC: it never shifts with daylight saving, so the
+# difference between two moments is always the time that really elapsed
+CET = timezone(timedelta(hours=1))
 
 
 class RegexPatterns:
@@ -263,28 +269,61 @@ class RegexPatterns:
 
         return result
 
+    def _eastern_to_cet(self, moment: pd.Timestamp) -> pd.Timestamp:
+        """
+        Convert a moment written in Eastern Time to CET.
+
+        Args:
+            moment (pd.Timestamp): Naive moment, as written by the platform
+                in Eastern Time.
+
+        Returns:
+            pd.Timestamp: The same instant as a naive CET moment.
+        """
+        # Eastern Time follows the daylight saving of the United States, so
+        # its distance to UTC changes through the year and only the time
+        # zone database resolves it. On the night the clocks go back an hour
+        # happens twice and the first one is taken; the hour that does not
+        # exist when they go forward is shifted into the following one
+        eastern = moment.tz_localize(
+            "America/New_York", ambiguous=True, nonexistent="shift_forward"
+        )
+
+        return eastern.tz_convert(CET).tz_localize(None)
+
     def get_time(self, hand: list[str]) -> list[pd.Timestamp]:
         """
-        Get current datetime of the tournament.
+        Get the moment the hand was dealt, in CET.
+
+        The header always carries the time of the platform in Eastern Time,
+        either in brackets next to the local time of the player
+        ("2020/10/14 10:33:59 BRT [2020/10/14 9:33:59 ET]") or alone, when
+        the client wrote no local time ("2021/02/22 17:51:13 ET"). Eastern
+        Time is therefore the one anchor present in every hand, and the
+        local time is not: reading whichever timestamp comes first would
+        mix time zones in the same column.
 
         Args:
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List with the current datetime as pd.Timestamp
-                (for example, [Timestamp('2020-11-06 10:02:19')]).
+            list: List with the moment of the hand in CET as pd.Timestamp
+                (for example, [Timestamp('2020-11-06 16:02:19')]).
         """
-        # Pattern to extract
-        regex = r"(\d{4}/\d{2}/\d{2} \d{1,2}:\d{1,2}:\d{1,2})"
+        # Pattern to extract: the timestamp written in Eastern Time, in
+        # brackets when the local time of the player precedes it
+        timestamp = r"(\d{4}/\d{2}/\d{2} \d{1,2}:\d{1,2}:\d{1,2})"
 
         # Get the first content of a played hand
         target = hand[0]
 
         # Apply regex
-        result = re.findall(regex, target)
+        result = re.findall(rf"\[{timestamp} ET\]", target) or re.findall(
+            rf"{timestamp} ET", target
+        )
 
-        # Normalize string
-        result = [pd.to_datetime(x) for x in result]
+        # Normalize string and bring the moment to CET
+        result = [self._eastern_to_cet(pd.to_datetime(x)) for x in result]
 
         # Normalize output
         result = self._guarantee_unicity(result)

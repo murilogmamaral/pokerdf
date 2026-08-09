@@ -56,7 +56,10 @@ PSEUDONYMIZED_COLUMNS = [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
 # Removed in every mode, from whichever table carries them: a timestamp
 # matched against publicly available tournament schedules and results
 # identifies the tournament, re-identifying the players in it
-DROPPED_COLUMNS: list[StrEnum] = [Column.LOCAL_TIME, ModelColumn.LOCAL_START_TIME]
+DROPPED_COLUMNS: list[StrEnum] = [
+    Column.HAND_START_TIME_CET,
+    ModelColumn.TOURN_START_TIME_CET,
+]
 
 # The private cards of the owner, repeated on every row of the hand. They
 # are kept in every mode: the decisions in the dataset can only be studied
