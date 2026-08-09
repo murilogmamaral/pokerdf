@@ -4,7 +4,32 @@ version = "1.3.1"
 description = "Converts poker hand history files to pandas DataFrames."
 readme = "README.md"
 authors = [{ name = "Murilo Amaral", email = "murilogmamaral@gmail.com" }]
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11.5"
+keywords = [
+    "poker",
+    "pokerstars",
+    "hand-history",
+    "data-analysis",
+    "data-engineering",
+    "analytics",
+    "pandas",
+    "parquet",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
 dependencies = [
     "joblib==1.3.2",
     "pandas>=2.0.0",
@@ -16,7 +41,10 @@ dependencies = [
 pokerdf = "pokerdf.main:main"
 
 [project.urls]
+Homepage = "https://github.com/murilogmamaral/pokerdf"
 Repository = "https://github.com/murilogmamaral/pokerdf"
+Issues = "https://github.com/murilogmamaral/pokerdf/issues"
+Changelog = "https://github.com/murilogmamaral/pokerdf/releases"
 
 [dependency-groups]
 dev = [
@@ -36,7 +64,10 @@ dev = [
 constraint-dependencies = ["pandas<3.0.0"]
 
 [build-system]
-requires = ["hatchling"]
+# 1.27 is the first release that understands the SPDX license expression
+# declared above (PEP 639): older versions silently fall back to the legacy
+# metadata field, hiding the license from the PyPI page
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]

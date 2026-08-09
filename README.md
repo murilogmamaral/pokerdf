@@ -1,8 +1,13 @@
 # PokerDF
 
+[![PyPI](https://img.shields.io/pypi/v/pokerdf?color=blue)](https://pypi.org/project/pokerdf/)
+[![CI](https://img.shields.io/github/actions/workflow/status/murilogmamaral/pokerdf/ci.yml?branch=main&logo=github&label=CI)](https://github.com/murilogmamaral/pokerdf/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/pypi/l/pokerdf?color=green)](https://github.com/murilogmamaral/pokerdf/blob/main/LICENSE)
+[![Downloads](https://img.shields.io/pepy/dt/pokerdf?color=blue)](https://pepy.tech/projects/pokerdf)
+
 Converts poker hand history files into structured Pandas DataFrames, making it easier to analyze your games.
 
-Fast and reliable, PokerDF is able to process 3,000 hand history files into _.parquet_ per minute, in a MacBook Air M2 with 8-core CPU.
+Fast and reliable, PokerDF is able to `convert` 4,000 hand history files, or 85,000 hands, into _.parquet_ per minute, in a MacBook Air M4 with 10-core CPU. The `modeling` command then builds the star schema at 5 million player events per minute.
 
 Currently supports PokerStars. Make sure hand histories are saved in English.
 
