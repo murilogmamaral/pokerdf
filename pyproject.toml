@@ -64,7 +64,10 @@ dev = [
 constraint-dependencies = ["pandas<3.0.0"]
 
 [build-system]
-requires = ["hatchling"]
+# 1.27 is the first release that understands the SPDX license expression
+# declared above (PEP 639): older versions silently fall back to the legacy
+# metadata field, hiding the license from the PyPI page
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
