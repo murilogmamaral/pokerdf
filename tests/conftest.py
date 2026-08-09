@@ -9,8 +9,11 @@ marker, and each hand is split into stages by "\n*** ".
 from pathlib import Path
 from typing import Callable
 
+import pandas as pd
 import pytest
 
+from pokerdf.core.read_and_convert import convert_txt_to_tabular_data
+from pokerdf.modeling.star_schema import build_fact_player_actions, load_converted_data
 from pokerdf.utils.strings import PLATFORM
 
 FIXTURE_PATH = (
@@ -78,6 +81,27 @@ def elimination_hand(get_hand: Callable[[str], list[str]]) -> list[str]:
 def final_hand(get_hand: Callable[[str], list[str]]) -> list[str]:
     """Last hand: garciamurilo wins the tournament and receives the prize."""
     return get_hand("219269977250")
+
+
+@pytest.fixture(scope="session")
+def converted_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Directory with the fixture converted to .parquet, like convert does."""
+    df = convert_txt_to_tabular_data(str(FIXTURE_PATH)).reset_index(drop=True)
+    folder = tmp_path_factory.mktemp("converted")
+    df.to_parquet(folder / "20201011-T99999.parquet", index=False)
+    return folder
+
+
+@pytest.fixture(scope="session")
+def source_df(converted_dir: Path) -> pd.DataFrame:
+    """Converted data loaded the same way the modeling command loads it."""
+    return load_converted_data(str(converted_dir))
+
+
+@pytest.fixture(scope="session")
+def fact(source_df: pd.DataFrame) -> pd.DataFrame:
+    """Fact table built from the converted fixture."""
+    return build_fact_player_actions(source_df)
 
 
 KO_FIXTURE_PATH = (

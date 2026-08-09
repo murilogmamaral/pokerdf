@@ -6,11 +6,61 @@ from pathlib import Path
 import pytest
 
 from pokerdf.main import (
+    _build_parser,
     _create_destination_folder,
     _print_elapsed_time,
     _validate_source_directory,
 )
 import datetime
+
+
+# ---------------------------------------------------------------------------
+# _build_parser
+# ---------------------------------------------------------------------------
+def test_parser_reads_the_convert_command() -> None:
+    arguments = _build_parser().parse_args(["convert", "/tmp/hands"])
+
+    assert arguments.command == "convert"
+    assert arguments.path == "/tmp/hands"
+
+
+def test_parser_defaults_modeling_to_no_anonymization() -> None:
+    arguments = _build_parser().parse_args(["modeling", "/tmp/parquets"])
+
+    assert arguments.gdpr is None
+    assert arguments.salt is None
+
+
+def test_parser_reads_the_gdpr_arguments() -> None:
+    arguments = _build_parser().parse_args(
+        ["modeling", "/tmp/parquets", "--gdpr", "full", "--salt", "secret"]
+    )
+
+    assert arguments.gdpr == "full"
+    assert arguments.salt == "secret"
+
+
+def test_parser_reads_the_keep_owner_mode() -> None:
+    arguments = _build_parser().parse_args(
+        ["modeling", "/tmp/parquets", "--gdpr", "keep-owner"]
+    )
+
+    assert arguments.gdpr == "keep-owner"
+
+
+def test_parser_rejects_an_unknown_gdpr_mode() -> None:
+    with pytest.raises(SystemExit):
+        _build_parser().parse_args(["modeling", "/tmp/parquets", "--gdpr", "rgpd"])
+
+
+def test_parser_rejects_an_unknown_command() -> None:
+    with pytest.raises(SystemExit):
+        _build_parser().parse_args(["modelling", "/tmp/parquets"])
+
+
+def test_parser_requires_a_command() -> None:
+    with pytest.raises(SystemExit):
+        _build_parser().parse_args([])
 
 
 # ---------------------------------------------------------------------------

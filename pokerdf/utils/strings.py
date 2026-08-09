@@ -14,6 +14,9 @@ PARQUET_EXTENSION = ".parquet"
 SUCCESS_LOG = "success.txt"
 FAIL_LOG = "fail.txt"
 
+# Report saved alongside an anonymized modeling session
+ANONYMIZATION_REPORT = "anonymization.txt"
+
 # Root folders and session identifier of the outputs
 OUTPUT_FOLDER = "output"
 MODELING_FOLDER = "modeling"

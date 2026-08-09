@@ -8,9 +8,7 @@ does, so the whole pipeline convert -> parquet -> star schema is exercised.
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
-from pokerdf.core.read_and_convert import convert_txt_to_tabular_data
 from pokerdf.modeling.star_schema import (
     _roman_to_int,
     build_dim_final_rank,
@@ -18,7 +16,6 @@ from pokerdf.modeling.star_schema import (
     build_dim_tourn_summary,
     build_fact_player_actions,
     build_star_schema,
-    load_converted_data,
 )
 
 FIXTURE_PATH = (
@@ -28,23 +25,8 @@ FIXTURE_PATH = (
 )
 
 
-@pytest.fixture(scope="module")
-def converted_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Directory with the fixture converted to .parquet, like convert does."""
-    df = convert_txt_to_tabular_data(str(FIXTURE_PATH)).reset_index(drop=True)
-    folder = tmp_path_factory.mktemp("converted")
-    df.to_parquet(folder / "20201011-T99999.parquet", index=False)
-    return folder
-
-
-@pytest.fixture(scope="module")
-def source_df(converted_dir: Path) -> pd.DataFrame:
-    return load_converted_data(str(converted_dir))
-
-
-@pytest.fixture(scope="module")
-def fact(source_df: pd.DataFrame) -> pd.DataFrame:
-    return build_fact_player_actions(source_df)
+# The converted_dir, source_df and fact fixtures live in conftest.py, since
+# the anonymization tests build on the same pipeline
 
 
 # ---------------------------------------------------------------------------
@@ -518,7 +500,7 @@ def test_dim_final_rank(source_df: pd.DataFrame) -> None:
 # ---------------------------------------------------------------------------
 # build_star_schema
 # ---------------------------------------------------------------------------
-def test_build_star_schema_saves_the_five_tables(
+def test_build_star_schema_saves_the_four_tables(
     converted_dir: Path, tmp_path: Path
 ) -> None:
     number_of_rows = build_star_schema(str(converted_dir), str(tmp_path))
@@ -534,6 +516,62 @@ def test_build_star_schema_saves_the_five_tables(
         table = pd.read_parquet(tmp_path / f"{name}.parquet")
         assert len(table) == number_of_rows[name]
         assert len(table) > 0
+
+
+def test_build_star_schema_gdpr_saves_only_the_fact_and_a_report(
+    converted_dir: Path, tmp_path: Path
+) -> None:
+    number_of_rows = build_star_schema(str(converted_dir), str(tmp_path), gdpr="full")
+
+    # No dimension is generated, and the report sits next to the data
+    assert list(number_of_rows.keys()) == ["fact_player_actions"]
+    assert sorted(p.name for p in tmp_path.iterdir()) == [
+        "anonymization.txt",
+        "fact_player_actions.parquet",
+    ]
+
+    table = pd.read_parquet(tmp_path / "fact_player_actions.parquet")
+    assert len(table) == number_of_rows["fact_player_actions"]
+    # The owner's nickname must not survive, but their cards always do
+    assert "garciamurilo" not in set(table["Player"])
+    assert "LocalTime" not in table.columns
+    assert "OwnerC1" in table.columns
+
+
+def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(
+    converted_dir: Path, tmp_path: Path
+) -> None:
+    build_star_schema(str(converted_dir), str(tmp_path), gdpr="keep-owner")
+
+    table = pd.read_parquet(tmp_path / "fact_player_actions.parquet")
+    # The owner keeps their nickname and their hole cards; every third
+    # party is pseudonymized and the timestamp is still removed
+    players = set(table["Player"])
+    assert "garciamurilo" in players
+    assert players.isdisjoint({"VillainA", "VillainB"})
+    assert "OwnerC1" in table.columns
+    assert "LocalTime" not in table.columns
+
+
+def test_build_star_schema_gdpr_honors_a_given_salt(
+    converted_dir: Path, tmp_path: Path
+) -> None:
+    first, second, third = tmp_path / "a", tmp_path / "b", tmp_path / "c"
+    for folder in (first, second, third):
+        folder.mkdir()
+
+    build_star_schema(str(converted_dir), str(first), gdpr="full", salt="fixed")
+    build_star_schema(str(converted_dir), str(second), gdpr="full", salt="fixed")
+    build_star_schema(str(converted_dir), str(third), gdpr="full")
+
+    players = [
+        pd.read_parquet(folder / "fact_player_actions.parquet")["Player"]
+        for folder in (first, second, third)
+    ]
+    # The same salt gives the same pseudonyms, so sessions can be appended
+    assert players[0].equals(players[1])
+    # A random salt does not, which is what makes it irreversible
+    assert not players[0].equals(players[2])
 
 
 def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:

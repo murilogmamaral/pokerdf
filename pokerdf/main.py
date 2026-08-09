@@ -1,10 +1,13 @@
+import argparse
 import datetime
 import os
 import sys
 
 from pokerdf.core.read_and_convert import execute_in_parallel
+from pokerdf.modeling.anonymize import GdprMode
 from pokerdf.modeling.star_schema import build_star_schema
 from pokerdf.utils.strings import (
+    ANONYMIZATION_REPORT,
     HAND_HISTORY_EXTENSION,
     MODELING_FOLDER,
     OUTPUT_FOLDER,
@@ -90,6 +93,54 @@ def _print_elapsed_time(start_time: datetime.datetime) -> None:
     )
 
 
+def _build_parser() -> argparse.ArgumentParser:
+    """
+    Build the command line parser of the package.
+
+    Returns:
+        argparse.ArgumentParser: Parser with the convert and modeling
+            subcommands and their arguments.
+    """
+    parser = argparse.ArgumentParser(
+        prog="pokerdf",
+        description="Convert poker hand history files into tabular data.",
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    convert = subparsers.add_parser(
+        "convert",
+        help="convert hand history .txt files into .parquet files",
+    )
+    convert.add_argument("path", help="directory containing the .txt files")
+
+    modeling = subparsers.add_parser(
+        "modeling",
+        help="split converted .parquet files into a star schema",
+    )
+    modeling.add_argument("path", help="directory containing the .parquet files")
+    modeling.add_argument(
+        "--gdpr",
+        choices=[mode.value for mode in GdprMode],
+        help=(
+            "anonymize the output so it can be shared: both modes build the "
+            "fact table alone, pseudonymize the tournament, hand and player "
+            "identifiers and remove the timestamp, always keeping the hole "
+            "cards of the owner; 'full' pseudonymizes the owner's nickname "
+            "as well, while 'keep-owner' keeps it"
+        ),
+    )
+    modeling.add_argument(
+        "--salt",
+        help=(
+            "salt of the pseudonyms, to keep them stable across sessions. "
+            "Requires --gdpr. When omitted, a random salt is generated "
+            "and not stored, which makes the pseudonyms irreversible"
+        ),
+    )
+
+    return parser
+
+
 def main() -> None:
     """
     Main function to process command line arguments and execute a command.
@@ -98,18 +149,20 @@ def main() -> None:
       saving them in ./output/{SESSION_ID}.
     - 'modeling': reads converted .parquet files and splits them into a star
       schema (one fact table and three dimensions), saving the four tables
-      in ./modeling/{SESSION_ID}.
+      in ./modeling/{SESSION_ID}. With --gdpr, only the fact table is
+      generated, without the columns that identify a person.
 
     Raises:
-        SystemExit: If there are not enough arguments or if an invalid command is provided.
+        SystemExit: If the arguments are invalid.
     """
+    parser = _build_parser()
+    arguments = parser.parse_args()
 
-    if len(sys.argv) < 3:
-        print("Usage: pokerdf convert <path> | pokerdf modeling <path>")
-        sys.exit(1)
+    command = arguments.command
+    source_path = arguments.path
 
-    command = sys.argv[1]
-    source_path = sys.argv[2]
+    if command == "modeling" and arguments.salt and not arguments.gdpr:
+        parser.error("--salt requires --gdpr")
 
     if command == "convert":
 
@@ -143,20 +196,24 @@ def main() -> None:
         # Create the destination folder of the session
         destination_path = _create_destination_folder(MODELING_FOLDER)
 
-        # Build the star schema (one fact table and four dimensions)
+        # Build the star schema, anonymized when a GDPR mode is informed
         number_of_rows = build_star_schema(
-            source=source_path, destination=destination_path
+            source=source_path,
+            destination=destination_path,
+            gdpr=arguments.gdpr,
+            salt=arguments.salt,
         )
 
         # Print a summary of the generated tables
         for name, rows in number_of_rows.items():
             print(f"   DONE: {name}{PARQUET_EXTENSION} ({rows} rows)")
 
+        # Point to the report of the applied transformations
+        if arguments.gdpr:
+            print(f"   DONE: {ANONYMIZATION_REPORT} ({arguments.gdpr} mode)")
+
         # Report the elapsed time
         _print_elapsed_time(start_time)
-
-    else:
-        print(f"The command '{command}' does not exist.")
 
 
 if __name__ == "__main__":
