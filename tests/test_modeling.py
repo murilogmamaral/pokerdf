@@ -208,17 +208,27 @@ def test_fact_broadcasts_the_opponents_showdown_cards(fact: pd.DataFrame) -> Non
     assert (rows["ShowDownC2"] == "Td").all()
 
 
-def test_fact_showdown_columns_only_describe_the_opponents(
-    fact: pd.DataFrame,
-) -> None:
-    # Hand 219269866589: garciamurilo (the owner) showed [8h Kh], but his
-    # cards already live in OwnerC1 and OwnerC2 — the showdown columns are
-    # reserved for the opponents
+def test_fact_showdown_columns_include_the_owner(fact: pd.DataFrame) -> None:
+    # Hand 219269866589: garciamurilo (the owner) showed [8h Kh]. OwnerC1
+    # and OwnerC2 describe what was dealt; the showdown columns describe
+    # what was revealed at the table, whoever the player is — so on the
+    # owner's rows the two families coincide, and the revealed combination
+    # matches the dealt one
     rows = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "garciamurilo")]
     assert (rows["OwnerC1"] == "8h").all()
     assert (rows["OwnerC2"] == "Kh").all()
+    assert (rows["ShowDownC1"] == "8h").all()
+    assert (rows["ShowDownC2"] == "Kh").all()
+    assert (rows["ShowDownCombination"] == rows["OwnerCombination"]).all()
+    assert (rows["ShowDownCombinationScore"] == rows["OwnerCombinationScore"]).all()
+
+
+def test_fact_showdown_columns_are_null_without_a_show(fact: pd.DataFrame) -> None:
+    # Hand 11111: everyone folded to the big blind, so nobody revealed cards
+    rows = fact[fact["HandID"] == 11111]
     assert rows["ShowDownC1"].isna().all()
     assert rows["ShowDownC2"].isna().all()
+    assert rows["ShowDownCombination"].isna().all()
 
 
 def test_fact_infers_the_owner_combination_at_each_moment(
@@ -242,9 +252,8 @@ def test_fact_infers_the_combination_of_the_shown_opponent(
     fact: pd.DataFrame,
 ) -> None:
     # Hand 219269866589: VillainB mucked 7h Td, so his combination at each
-    # moment is known — and only on his own rows, never on the owner's
-    rows = fact[fact["HandID"] == 219269866589]
-    villain = rows[rows["Player"] == "VillainB"]
+    # moment is known — on his own rows
+    villain = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "VillainB")]
     assert villain[
         ["Round", "ShowDownCombination", "ShowDownCombinationScore"]
     ].values.tolist() == [
@@ -254,9 +263,9 @@ def test_fact_infers_the_combination_of_the_shown_opponent(
         ["turn", "One Pair", 2],
         ["river", "One Pair", 2],
     ]
-    owner = rows[rows["Player"] == "garciamurilo"]
-    assert owner["ShowDownCombination"].isna().all()
-    assert owner["ShowDownCombinationScore"].isna().all()
+    # And his rows never carry the owner's holding
+    assert villain["OwnerC1"].isna().all()
+    assert villain["OwnerCombination"].isna().all()
 
 
 def test_combination_requires_both_hole_cards() -> None:

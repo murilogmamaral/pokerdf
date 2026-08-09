@@ -654,15 +654,15 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             Stack, PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder,
             AddedValue, TotalValue, TotalPot and BoardC1 to BoardC5, plus
             the card columns, which always describe the player of the row:
-            OwnerC1 and OwnerC2 (the dealt hole cards, on the owner's rows),
-            ShowDownC1 and ShowDownC2 (the cards revealed at showdown, on
-            every row of the opponent that revealed them), and the
-            combination each holding makes with the board visible at the
-            moment of the event — OwnerCombination and ShowDownCombination,
-            with their scores from 1 (High Card) to 10 (Royal Flush). Rows
-            are sorted by ActionOrder inside each hand. ActionIndex is 0 for
-            posts and restarts at 1 for each player/round of voluntary
-            actions.
+            OwnerC1 and OwnerC2 (the hole cards dealt to the owner, on the
+            owner's rows), ShowDownC1 and ShowDownC2 (the cards revealed at
+            showdown — the owner included — on every row of the player that
+            revealed them), and the combination each holding makes with the
+            board visible at the moment of the event — OwnerCombination and
+            ShowDownCombination, with their scores from 1 (High Card) to 10
+            (Royal Flush). Rows are sorted by ActionOrder inside each hand.
+            ActionIndex is 0 for posts and restarts at 1 for each
+            player/round of voluntary actions.
     """
     # One row per event, sorted as the hand unfolded, with the amounts.
     # The full list of players anchors the order even when the big blind or
@@ -721,20 +721,22 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     fact[ModelColumn.OWNER_C1] = [_get_element(x, 0) for x in dealt]
     fact[ModelColumn.OWNER_C2] = [_get_element(x, 1) for x in dealt]
 
-    # The cards revealed by an opponent at showdown, broadcast to every row
-    # of the opponent in the hand: the show happens at the end, but it
-    # reveals what was held from the first action
-    shown = [
-        None if from_owner else cards
-        for from_owner, cards in zip(is_owner, fact[Column.SHOW_DOWN])
+    # The cards revealed at showdown by the player of the row — the owner
+    # included — broadcast to every row of the player in the hand: the show
+    # happens at the end, but it reveals what was held from the first
+    # action. OwnerC1/OwnerC2 describe what was dealt (private knowledge);
+    # these columns describe what was revealed at the table (a public event)
+    fact[ModelColumn.SHOW_DOWN_C1] = [
+        _get_element(x, 0) for x in fact[Column.SHOW_DOWN]
     ]
-    fact[ModelColumn.SHOW_DOWN_C1] = [_get_element(x, 0) for x in shown]
-    fact[ModelColumn.SHOW_DOWN_C2] = [_get_element(x, 1) for x in shown]
+    fact[ModelColumn.SHOW_DOWN_C2] = [
+        _get_element(x, 1) for x in fact[Column.SHOW_DOWN]
+    ]
 
     # The combination made at the moment of each event, from the cards the
     # player of the row could use: the hole cards plus the board visible in
     # the round. On preflop the board is empty, so a pocket pair is already
-    # One Pair. An opponent is only evaluated when both revealed cards are
+    # One Pair. A revealed holding is only evaluated when both cards are
     # known
     boards = [tuple(board) if board is not None else () for board in visible_boards]
     owner_combinations = [
