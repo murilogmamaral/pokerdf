@@ -13,6 +13,7 @@ from pokerdf.modeling.anonymize import (
     describe,
     generate_salt,
 )
+from pokerdf.modeling.evaluation import COMBINATION_SCORES, evaluate_hand
 from pokerdf.utils.columns import Column, ModelColumn, ModelTable, Round
 from pokerdf.utils.strings import ANONYMIZATION_REPORT, PARQUET_EXTENSION
 
@@ -129,6 +130,31 @@ def _get_element(sequence: Any, index: int) -> Any:
         return None
 
     return sequence[index]
+
+
+def _combination(
+    card1: str | None, card2: str | None, board: tuple[str, ...]
+) -> tuple[str | None, int | None]:
+    """
+    Name and score the combination made by two hole cards and a board.
+
+    Args:
+        card1 (str | None): First hole card.
+        card2 (str | None): Second hole card.
+        board (tuple[str, ...]): Community cards visible at the moment,
+            empty on preflop.
+
+    Returns:
+        tuple[str | None, int | None]: Name and score of the combination
+            (1 High Card to 10 Royal Flush), or (None, None) when the two
+            hole cards are not both known — a single revealed card cannot
+            say what the hand was.
+    """
+    if card1 is None or card2 is None:
+        return None, None
+
+    combination = evaluate_hand((card1, card2, *board))
+    return str(combination), COMBINATION_SCORES[combination]
 
 
 def load_converted_data(path: str) -> pd.DataFrame:
@@ -627,11 +653,14 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             Level, Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
             Stack, PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder,
             AddedValue, TotalValue, TotalPot, BoardC1 to BoardC5, OwnerC1 and
-            OwnerC2, and ShowDownC1 and ShowDownC2 (the cards revealed at
+            OwnerC2, ShowDownC1 and ShowDownC2 (the cards revealed at
             showdown by the opponents, on every row of the player in the
-            hand), sorted by ActionOrder inside each hand. ActionIndex is 0
-            for posts and restarts at 1 for each player/round of voluntary
-            actions.
+            hand), and the combination each holding makes with the board
+            visible at the moment of the event — OwnerCombination and
+            ShowDownCombination, with their scores from 1 (High Card) to 10
+            (Royal Flush). Rows are sorted by ActionOrder inside each hand.
+            ActionIndex is 0 for posts and restarts at 1 for each
+            player/round of voluntary actions.
     """
     # One row per event, sorted as the hand unfolded, with the amounts.
     # The full list of players anchors the order even when the big blind or
@@ -693,6 +722,35 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     fact[ModelColumn.SHOW_DOWN_C1] = [_get_element(x, 0) for x in shown]
     fact[ModelColumn.SHOW_DOWN_C2] = [_get_element(x, 1) for x in shown]
 
+    # The combination made at the moment of each event, from the cards the
+    # player could use: the hole cards plus the board visible in the round.
+    # On preflop the board is empty, so a pocket pair is already One Pair.
+    # The owner is evaluated on every row; an opponent only on their own
+    # rows, when both revealed cards are known
+    boards = [tuple(board) if board is not None else () for board in visible_boards]
+    owner_combinations = [
+        _combination(c1, c2, board)
+        for c1, c2, board in zip(
+            fact[ModelColumn.OWNER_C1], fact[ModelColumn.OWNER_C2], boards
+        )
+    ]
+    showdown_combinations = [
+        _combination(c1, c2, board)
+        for c1, c2, board in zip(
+            fact[ModelColumn.SHOW_DOWN_C1], fact[ModelColumn.SHOW_DOWN_C2], boards
+        )
+    ]
+    fact[ModelColumn.OWNER_COMBINATION] = [name for name, _ in owner_combinations]
+    fact[ModelColumn.OWNER_COMBINATION_SCORE] = pd.array(
+        [score for _, score in owner_combinations], dtype="Int64"
+    )
+    fact[ModelColumn.SHOW_DOWN_COMBINATION] = [
+        name for name, _ in showdown_combinations
+    ]
+    fact[ModelColumn.SHOW_DOWN_COMBINATION_SCORE] = pd.array(
+        [score for _, score in showdown_combinations], dtype="Int64"
+    )
+
     # Final structure of the fact table
     fact = fact.astype({Column.TOURN_ID: "int64", Column.HAND_ID: "int64"}).loc[
         :,
@@ -726,8 +784,12 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             ModelColumn.BOARD_C5,
             ModelColumn.OWNER_C1,
             ModelColumn.OWNER_C2,
+            ModelColumn.OWNER_COMBINATION,
+            ModelColumn.OWNER_COMBINATION_SCORE,
             ModelColumn.SHOW_DOWN_C1,
             ModelColumn.SHOW_DOWN_C2,
+            ModelColumn.SHOW_DOWN_COMBINATION,
+            ModelColumn.SHOW_DOWN_COMBINATION_SCORE,
         ],
     ]
 

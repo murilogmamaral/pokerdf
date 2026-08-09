@@ -11,6 +11,7 @@ import pandas as pd
 import pytest
 
 from pokerdf.modeling.star_schema import (
+    _combination,
     _roman_to_int,
     build_dim_final_rank,
     build_dim_player_summary,
@@ -102,8 +103,12 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "BoardC5",
         "OwnerC1",
         "OwnerC2",
+        "OwnerCombination",
+        "OwnerCombinationScore",
         "ShowDownC1",
         "ShowDownC2",
+        "ShowDownCombination",
+        "ShowDownCombinationScore",
     ]
     assert set(fact["Round"]) <= {"preflop", "flop", "turn", "river"}
     assert fact["TournID"].dtype == "int64"
@@ -202,6 +207,55 @@ def test_fact_showdown_columns_only_describe_the_opponents(
     assert (rows["OwnerC2"] == "Kh").all()
     assert rows["ShowDownC1"].isna().all()
     assert rows["ShowDownC2"].isna().all()
+
+
+def test_fact_infers_the_owner_combination_at_each_moment(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269866589: the owner holds 8h Kh and the board runs
+    # Jh 5s 4s / Jc / 2h — a high card until the turn pairs the jacks.
+    # The combination is hand context, so it fills every row of the round
+    rows = fact[fact["HandID"] == 219269866589]
+    by_round = {
+        round_name: group for round_name, group in rows.groupby("Round", sort=False)
+    }
+    for round_name, expected_name, expected_score in [
+        ("preflop", "High Card", 1),
+        ("flop", "High Card", 1),
+        ("turn", "One Pair", 2),
+        ("river", "One Pair", 2),
+    ]:
+        assert (by_round[round_name]["OwnerCombination"] == expected_name).all()
+        assert (by_round[round_name]["OwnerCombinationScore"] == expected_score).all()
+
+
+def test_fact_infers_the_combination_of_the_shown_opponent(
+    fact: pd.DataFrame,
+) -> None:
+    # Hand 219269866589: VillainB mucked 7h Td, so his combination at each
+    # moment is known — and only on his own rows, never on the owner's
+    rows = fact[fact["HandID"] == 219269866589]
+    villain = rows[rows["Player"] == "VillainB"]
+    assert villain[
+        ["Round", "ShowDownCombination", "ShowDownCombinationScore"]
+    ].values.tolist() == [
+        ["preflop", "High Card", 1],  # posts big blind
+        ["preflop", "High Card", 1],  # checks
+        ["flop", "High Card", 1],
+        ["turn", "One Pair", 2],
+        ["river", "One Pair", 2],
+    ]
+    owner = rows[rows["Player"] == "garciamurilo"]
+    assert owner["ShowDownCombination"].isna().all()
+    assert owner["ShowDownCombinationScore"].isna().all()
+
+
+def test_combination_requires_both_hole_cards() -> None:
+    # A single revealed card cannot say what the hand was: the cards are
+    # kept, but no combination is inferred
+    assert _combination("Ah", None, ("Jh", "5s", "4s")) == (None, None)
+    assert _combination(None, None, ()) == (None, None)
+    assert _combination("Ah", "Ad", ()) == ("One Pair", 2)
 
 
 def test_fact_stack_is_dynamic(fact: pd.DataFrame) -> None:
