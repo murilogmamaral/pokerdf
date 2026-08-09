@@ -9,7 +9,9 @@
 #   type!: (or a BREAKING CHANGE footer)  -> major
 #   feat:                                 -> minor
 #   fix:, docs:, refactor:, and the rest  -> patch
-# Choosing an explicit level overrides the inference, for the cases where the
+# A title the inference cannot read fails the run: guessing could hide a
+# feature or a breaking change inside a patch release. Choosing an explicit
+# level overrides the inference, both for those cases and for releases whose
 # semantics live in the data rather than in the commit titles.
 #
 # Full pipeline:
@@ -107,10 +109,25 @@ jobs:
           echo "Commits since ${LAST_TAG:-the first commit}:"
           echo "$SUBJECTS"
 
-          # Highest level found wins: breaking marker, then feat, then patch
+          # Every title must be readable by the inference: a title outside
+          # the convention could hide a feature - or a breaking change -
+          # inside a patch release. Choosing the level manually in the
+          # dispatch input is the escape hatch for those releases
+          INVALID=$(echo "$SUBJECTS" | grep -vE "^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([^)]*\))?!?: .+" || true)
+          if [ -n "$INVALID" ]; then
+            echo "::error::Cannot infer the level: the titles below do not follow Conventional Commits. Fix them or re-run the workflow choosing patch, minor or major explicitly."
+            echo "$INVALID"
+            exit 1
+          fi
+
+          # Highest level found wins: breaking marker, then feat, then patch.
+          # The breaking-change marker is only read from a footer line, as
+          # the specification defines it: matching the phrase anywhere in a
+          # body once inferred a major from a commit that merely described
+          # this convention
           BODIES=$(git log "$RANGE" --no-merges --pretty="%B")
           LEVEL=patch
-          if echo "$SUBJECTS" | grep -qE "^[a-z]+(\([^)]*\))?!:" || echo "$BODIES" | grep -q "BREAKING CHANGE"; then
+          if echo "$SUBJECTS" | grep -qE "^[a-z]+(\([^)]*\))?!:" || echo "$BODIES" | grep -qE "^BREAKING[ -]CHANGE:"; then
             LEVEL=major
           elif echo "$SUBJECTS" | grep -qE "^feat(\([^)]*\))?:"; then
             LEVEL=minor
