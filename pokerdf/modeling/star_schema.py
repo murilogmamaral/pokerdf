@@ -327,7 +327,6 @@ def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
         Column.LEVEL,
         Column.PLAYING,
         Column.ANTE,
-        Column.OWNER,
         Column.OWNERS_HAND,
         Column.SHOW_DOWN,
         Column.BOARD_FLOP,
@@ -653,16 +652,16 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             Level, Ante, SmallBlind, BigBlind, Round, Player, Seat, Position,
             Stack, PostedAnte, PostedBlind, Action, ActionIndex, ActionOrder,
             AddedValue, TotalValue, TotalPot and BoardC1 to BoardC5, plus
-            the card columns, which always describe the player of the row:
-            OwnerC1 and OwnerC2 (the hole cards dealt to the owner, on the
-            owner's rows), ShowDownC1 and ShowDownC2 (the cards revealed at
-            showdown — the owner included — on every row of the player that
-            revealed them), and the combination each holding makes with the
-            board visible at the moment of the event — OwnerCombination and
-            ShowDownCombination, with their scores from 1 (High Card) to 10
-            (Royal Flush). Rows are sorted by ActionOrder inside each hand.
-            ActionIndex is 0 for posts and restarts at 1 for each
-            player/round of voluntary actions.
+            the cards and combinations: OwnerC1, OwnerC2, OwnerCombination
+            and OwnerCombinationScore describe the owner's holding on every
+            row of the hand, like the board; RevealedShowDownC1,
+            RevealedShowDownC2, RevealedShowDownCombination and
+            RevealedShowDownCombinationScore register, on every row of the
+            player that revealed cards at showdown — the owner included —
+            what the show at the end proved the player was holding. Scores
+            go from 1 (High Card) to 10 (Royal Flush). Rows are sorted by
+            ActionOrder inside each hand. ActionIndex is 0 for posts and
+            restarts at 1 for each player/round of voluntary actions.
     """
     # One row per event, sorted as the hand unfolded, with the amounts.
     # The full list of players anchors the order even when the big blind or
@@ -701,43 +700,30 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     fact[ModelColumn.BOARD_C5] = [_get_element(x, 4) for x in visible_boards]
 
     # Flatten the hand context that lives in the fact: level as an integer,
-    # one column per blind and per owner card
+    # one column per blind and per owner card. The owner's cards are hand
+    # context on every row, like the board: the private knowledge the whole
+    # hand was observed with
     fact[Column.LEVEL] = fact[Column.LEVEL].map(_roman_to_int).astype("Int64")
     fact[ModelColumn.SMALL_BLIND] = [_get_element(x, 0) for x in fact[Column.BLINDS]]
     fact[ModelColumn.BIG_BLIND] = [_get_element(x, 1) for x in fact[Column.BLINDS]]
-    # Every card column describes the player of the row, so the cards known
-    # for a player only appear on that player's own rows. The Player column
-    # stores names escaped for regex; the owner is stored raw
-    escaped_owners = {
-        owner: re.escape(owner) for owner in fact[Column.OWNER].dropna().unique()
-    }
-    is_owner = fact[Column.PLAYER] == fact[Column.OWNER].map(escaped_owners)
+    fact[ModelColumn.OWNER_C1] = [_get_element(x, 0) for x in fact[Column.OWNERS_HAND]]
+    fact[ModelColumn.OWNER_C2] = [_get_element(x, 1) for x in fact[Column.OWNERS_HAND]]
 
-    # The hole cards dealt to the owner, on the owner's rows
-    dealt = [
-        cards if from_owner else None
-        for from_owner, cards in zip(is_owner, fact[Column.OWNERS_HAND])
-    ]
-    fact[ModelColumn.OWNER_C1] = [_get_element(x, 0) for x in dealt]
-    fact[ModelColumn.OWNER_C2] = [_get_element(x, 1) for x in dealt]
-
-    # The cards revealed at showdown by the player of the row — the owner
-    # included — broadcast to every row of the player in the hand: the show
-    # happens at the end, but it reveals what was held from the first
-    # action. OwnerC1/OwnerC2 describe what was dealt (private knowledge);
-    # these columns describe what was revealed at the table (a public event)
-    fact[ModelColumn.SHOW_DOWN_C1] = [
+    # The cards the player of the row revealed at showdown — the owner
+    # included. The show is a future event of the hand, registered on every
+    # row of the player from the first action: knowing what was held is what
+    # makes the behavior that led to the show analyzable
+    fact[ModelColumn.REVEALED_SHOW_DOWN_C1] = [
         _get_element(x, 0) for x in fact[Column.SHOW_DOWN]
     ]
-    fact[ModelColumn.SHOW_DOWN_C2] = [
+    fact[ModelColumn.REVEALED_SHOW_DOWN_C2] = [
         _get_element(x, 1) for x in fact[Column.SHOW_DOWN]
     ]
 
-    # The combination made at the moment of each event, from the cards the
-    # player of the row could use: the hole cards plus the board visible in
-    # the round. On preflop the board is empty, so a pocket pair is already
-    # One Pair. A revealed holding is only evaluated when both cards are
-    # known
+    # The combination made at the moment of each event, with the board
+    # visible in the round: the owner's on every row, the revealed one on
+    # the rows of the player that revealed both cards. On preflop the board
+    # is empty, so a pocket pair is already One Pair
     boards = [tuple(board) if board is not None else () for board in visible_boards]
     owner_combinations = [
         _combination(c1, c2, board)
@@ -745,21 +731,23 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             fact[ModelColumn.OWNER_C1], fact[ModelColumn.OWNER_C2], boards
         )
     ]
-    showdown_combinations = [
+    revealed_combinations = [
         _combination(c1, c2, board)
         for c1, c2, board in zip(
-            fact[ModelColumn.SHOW_DOWN_C1], fact[ModelColumn.SHOW_DOWN_C2], boards
+            fact[ModelColumn.REVEALED_SHOW_DOWN_C1],
+            fact[ModelColumn.REVEALED_SHOW_DOWN_C2],
+            boards,
         )
     ]
     fact[ModelColumn.OWNER_COMBINATION] = [name for name, _ in owner_combinations]
     fact[ModelColumn.OWNER_COMBINATION_SCORE] = pd.array(
         [score for _, score in owner_combinations], dtype="Int64"
     )
-    fact[ModelColumn.SHOW_DOWN_COMBINATION] = [
-        name for name, _ in showdown_combinations
+    fact[ModelColumn.REVEALED_SHOW_DOWN_COMBINATION] = [
+        name for name, _ in revealed_combinations
     ]
-    fact[ModelColumn.SHOW_DOWN_COMBINATION_SCORE] = pd.array(
-        [score for _, score in showdown_combinations], dtype="Int64"
+    fact[ModelColumn.REVEALED_SHOW_DOWN_COMBINATION_SCORE] = pd.array(
+        [score for _, score in revealed_combinations], dtype="Int64"
     )
 
     # Final structure of the fact table
@@ -797,10 +785,10 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
             ModelColumn.OWNER_C2,
             ModelColumn.OWNER_COMBINATION,
             ModelColumn.OWNER_COMBINATION_SCORE,
-            ModelColumn.SHOW_DOWN_C1,
-            ModelColumn.SHOW_DOWN_C2,
-            ModelColumn.SHOW_DOWN_COMBINATION,
-            ModelColumn.SHOW_DOWN_COMBINATION_SCORE,
+            ModelColumn.REVEALED_SHOW_DOWN_C1,
+            ModelColumn.REVEALED_SHOW_DOWN_C2,
+            ModelColumn.REVEALED_SHOW_DOWN_COMBINATION,
+            ModelColumn.REVEALED_SHOW_DOWN_COMBINATION_SCORE,
         ],
     ]
 

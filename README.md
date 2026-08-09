@@ -155,7 +155,7 @@ The reasoning behind this design:
 - **Posts are events, not metadata.** The ante and blind posts are rows like any action, carrying the real (possibly partial, when all-in) amounts. This makes the pot a pure running sum, gives a row to players that never acted voluntarily (a big blind winning a walk, an all-in on the post), and lets the dynamic `Stack` be reconstructed uniformly.
 - **Each dimension answers one question at one grain.** `dim_tourn_summary` describes the tournament (context for slicing); `dim_player_summary` holds the outcome of each player in each hand (result, amount collected, the combination named by the platform); `dim_final_rank` holds the outcome of each player in the tournament. There is no hand dimension on purpose: after moving the hand context into the fact, it would keep a single attribute, and a dimension that thin is better dissolved (`HandID` works as a degenerate dimension, and `LocalTime` lives in the fact).
 - **The reconstructed amounts follow the platform's own arithmetic** (bet levels, short all-in blinds, calls above a short post) and were validated against the raw logs: the final `TotalPot` matches the reported "Total pot" in 100% of 135k+ real hands.  
-- **Every card column describes the player of the row.** `OwnerC1..C2` and `OwnerCombination` hold what was dealt to the owner, on the owner's rows; `ShowDownC1..C2` and `ShowDownCombination` hold what was revealed at showdown, on the rows of any player that revealed cards — the owner included — broadcast to all of that player's rows in the hand, since the show at the end reveals what was held from the first action. The combinations name the best hand the known holding makes with the board visible at that moment, each with an integer score from 1 (High Card) to 10 (Royal Flush), ready for aggregation. The evaluator was validated against the platform's own showdown labels: 100% agreement over 70k+ real showdowns.  
+- **The known holdings are inferred on every row, at the moment of the row.** `OwnerC1..C2` and `OwnerCombination` are hand context like the board: they fill every row of the hand, so any behavior can be analyzed against the owner's holding without joins. `RevealedShowDownC1..C2` and `RevealedShowDownCombination` register, on every row of a player that revealed cards at showdown — the owner included — what the show at the end proved the player was holding: a future event recorded early, which is what makes the behavior that led to it analyzable. The combinations name the best hand each holding makes with the board visible at that moment, each with an integer score from 1 (High Card) to 10 (Royal Flush), ready for aggregation. The evaluator was validated against the platform's own showdown labels: 100% agreement over 70k+ real showdowns.  
 
 
 ![data-modeling](https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/data-modeling.svg)
@@ -177,7 +177,7 @@ Two GDPR principles guide what the command does:
 - **Data minimisation (Article 5(1)(c))** — what is not needed to analyze the game is not produced. The dimension tables are not generated at all, since they exist to describe who the players are: the nickname of the owner of the logs, the buy-in paid, the final rank and the prizes received. `LocalTime` is removed from the fact table.
 - **Pseudonymisation (Article 4(5))** — `TournID`, `HandID` and `Player` are replaced by salted BLAKE2b digests. The same nickname always maps to the same pseudonym, so grouping and joining keep working, but nothing points back to a person or to a hand that can be looked up on the platform.
 
-Everything that makes the data worth analyzing is preserved: the order of the actions, the amounts, the pot, the stacks, the board, the positions — and the cards. Your own hole cards (`OwnerC1`, `OwnerC2`), the cards revealed at showdown (`ShowDownC1`, `ShowDownC2`) and the combinations derived from them are kept in every mode, since the decisions in the dataset can only be studied against the holdings they were made with, and cards shown at the table describe the game, not a person.
+Everything that makes the data worth analyzing is preserved: the order of the actions, the amounts, the pot, the stacks, the board, the positions — and the cards. Your own hole cards (`OwnerC1`, `OwnerC2`), the cards revealed at showdown (`RevealedShowDownC1`, `RevealedShowDownC2`) and the combinations derived from them are kept in every mode, since the decisions in the dataset can only be studied against the holdings they were made with, and cards shown at the table describe the game, not a person.
 
 Two modes are available:
 
@@ -223,12 +223,12 @@ One row per event of a player: the ante and blind posts open each hand as rows (
 | TotalValue  | Total put in by the player in the round after the action (on preflop includes the posted ante/blind)  | 64.0        |
 | TotalPot    | Total pot right after the action (uncalled bets returned at the end are not discounted)               | 156.0       |
 | BoardC1..C5 | Board visible at the moment of the action (empty on preflop, 3 cards on flop, 4 on turn, 5 on river)  | 4d, Tc, 7s  |
-| OwnerC1..C2 | Hole cards dealt to the owner of the logs, on the owner's own rows                                    | Ah, Qd      |
+| OwnerC1..C2 | Hole cards of the owner of the logs, on every row of the hand                                         | Ah, Qd      |
 | OwnerCombination | Best combination the owner's cards make with the visible board (on preflop, a pocket pair is already One Pair) | Two Pair |
 | OwnerCombinationScore | The same combination as an integer, from 1 (High Card) to 10 (Royal Flush)                  | 3           |
-| ShowDownC1..C2 | Cards revealed at showdown by the player of the row — the owner included — on every row of that player in the hand | 7h, Td |
-| ShowDownCombination | Best combination the revealed cards make with the visible board (null when only one card was shown) | One Pair |
-| ShowDownCombinationScore | The same combination as an integer, from 1 to 10                                         | 2           |
+| RevealedShowDownC1..C2 | Cards the player of the row revealed at showdown — the owner included — registered on every row of that player in the hand | 7h, Td |
+| RevealedShowDownCombination | Best combination the revealed cards make with the visible board (null when only one card was shown) | One Pair |
+| RevealedShowDownCombinationScore | The same combination as an integer, from 1 to 10                                 | 2           |
 
 #### dim_tourn_summary
 
@@ -244,7 +244,7 @@ One row per tournament.
 
 #### dim_player_summary
 
-One row per player in each hand, holding the outcome: the result, the amount collected and the combination named by the platform at showdown. The cards revealed at showdown live in the fact table (`ShowDownC1..C2`), next to the actions they explain.
+One row per player in each hand, holding the outcome: the result, the amount collected and the combination named by the platform at showdown. The cards revealed at showdown live in the fact table (`RevealedShowDownC1..C2`), next to the actions they explain.
 
 | Column         | Description                                                | Example    |
 |----------------|-------------------------------------------------------------|------------|

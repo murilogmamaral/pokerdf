@@ -105,10 +105,10 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "OwnerC2",
         "OwnerCombination",
         "OwnerCombinationScore",
-        "ShowDownC1",
-        "ShowDownC2",
-        "ShowDownCombination",
-        "ShowDownCombinationScore",
+        "RevealedShowDownC1",
+        "RevealedShowDownC2",
+        "RevealedShowDownCombination",
+        "RevealedShowDownCombinationScore",
     ]
     assert set(fact["Round"]) <= {"preflop", "flop", "turn", "river"}
     assert fact["TournID"].dtype == "int64"
@@ -147,19 +147,15 @@ def test_fact_carries_hand_context(fact: pd.DataFrame) -> None:
     assert row["BigBlind"] == 20.0
 
 
-def test_fact_owner_cards_only_on_the_owners_rows(fact: pd.DataFrame) -> None:
-    # Hand 11111: the owner was dealt 3s Jh. Every card column describes the
-    # player of the row, so the cards appear on the owner's rows and on
-    # nobody else's
+def test_fact_owner_cards_and_combination_on_every_row(fact: pd.DataFrame) -> None:
+    # Hand 11111: the owner was dealt 3s Jh. The owner's holding is hand
+    # context, like the board: it fills every row of the hand — also the
+    # opponents' — so any behavior can be analyzed against it without joins
     rows = fact[fact["HandID"] == 11111]
-    owner = rows[rows["Player"] == "garciamurilo"]
-    others = rows[rows["Player"] != "garciamurilo"]
-    assert (owner["OwnerC1"] == "3s").all()
-    assert (owner["OwnerC2"] == "Jh").all()
-    assert others["OwnerC1"].isna().all()
-    assert others["OwnerC2"].isna().all()
-    assert others["OwnerCombination"].isna().all()
-    assert others["OwnerCombinationScore"].isna().all()
+    assert (rows["OwnerC1"] == "3s").all()
+    assert (rows["OwnerC2"] == "Jh").all()
+    assert (rows["OwnerCombination"] == "High Card").all()
+    assert (rows["OwnerCombinationScore"] == 1).all()
 
 
 def test_fact_carries_seat_and_position(fact: pd.DataFrame) -> None:
@@ -204,8 +200,8 @@ def test_fact_broadcasts_the_opponents_showdown_cards(fact: pd.DataFrame) -> Non
     # post included
     rows = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "VillainB")]
     assert len(rows) > 1
-    assert (rows["ShowDownC1"] == "7h").all()
-    assert (rows["ShowDownC2"] == "Td").all()
+    assert (rows["RevealedShowDownC1"] == "7h").all()
+    assert (rows["RevealedShowDownC2"] == "Td").all()
 
 
 def test_fact_showdown_columns_include_the_owner(fact: pd.DataFrame) -> None:
@@ -217,35 +213,40 @@ def test_fact_showdown_columns_include_the_owner(fact: pd.DataFrame) -> None:
     rows = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "garciamurilo")]
     assert (rows["OwnerC1"] == "8h").all()
     assert (rows["OwnerC2"] == "Kh").all()
-    assert (rows["ShowDownC1"] == "8h").all()
-    assert (rows["ShowDownC2"] == "Kh").all()
-    assert (rows["ShowDownCombination"] == rows["OwnerCombination"]).all()
-    assert (rows["ShowDownCombinationScore"] == rows["OwnerCombinationScore"]).all()
+    assert (rows["RevealedShowDownC1"] == "8h").all()
+    assert (rows["RevealedShowDownC2"] == "Kh").all()
+    assert (rows["RevealedShowDownCombination"] == rows["OwnerCombination"]).all()
+    assert (
+        rows["RevealedShowDownCombinationScore"] == rows["OwnerCombinationScore"]
+    ).all()
 
 
 def test_fact_showdown_columns_are_null_without_a_show(fact: pd.DataFrame) -> None:
     # Hand 11111: everyone folded to the big blind, so nobody revealed cards
     rows = fact[fact["HandID"] == 11111]
-    assert rows["ShowDownC1"].isna().all()
-    assert rows["ShowDownC2"].isna().all()
-    assert rows["ShowDownCombination"].isna().all()
+    assert rows["RevealedShowDownC1"].isna().all()
+    assert rows["RevealedShowDownC2"].isna().all()
+    assert rows["RevealedShowDownCombination"].isna().all()
 
 
 def test_fact_infers_the_owner_combination_at_each_moment(
     fact: pd.DataFrame,
 ) -> None:
     # Hand 219269866589: the owner holds 8h Kh and the board runs
-    # Jh 5s 4s / Jc / 2h — a high card until the turn pairs the jacks
-    owner = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "garciamurilo")]
-    assert owner[
-        ["Round", "OwnerCombination", "OwnerCombinationScore"]
-    ].values.tolist() == [
-        ["preflop", "High Card", 1],  # posts small blind
-        ["preflop", "High Card", 1],  # calls
-        ["flop", "High Card", 1],
-        ["turn", "One Pair", 2],
-        ["river", "One Pair", 2],
-    ]
+    # Jh 5s 4s / Jc / 2h — a high card until the turn pairs the jacks.
+    # The combination follows the round, on every row of the round
+    rows = fact[fact["HandID"] == 219269866589]
+    by_round = {
+        round_name: group for round_name, group in rows.groupby("Round", sort=False)
+    }
+    for round_name, expected_name, expected_score in [
+        ("preflop", "High Card", 1),
+        ("flop", "High Card", 1),
+        ("turn", "One Pair", 2),
+        ("river", "One Pair", 2),
+    ]:
+        assert (by_round[round_name]["OwnerCombination"] == expected_name).all()
+        assert (by_round[round_name]["OwnerCombinationScore"] == expected_score).all()
 
 
 def test_fact_infers_the_combination_of_the_shown_opponent(
@@ -255,7 +256,7 @@ def test_fact_infers_the_combination_of_the_shown_opponent(
     # moment is known — on his own rows
     villain = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "VillainB")]
     assert villain[
-        ["Round", "ShowDownCombination", "ShowDownCombinationScore"]
+        ["Round", "RevealedShowDownCombination", "RevealedShowDownCombinationScore"]
     ].values.tolist() == [
         ["preflop", "High Card", 1],  # posts big blind
         ["preflop", "High Card", 1],  # checks
@@ -263,9 +264,9 @@ def test_fact_infers_the_combination_of_the_shown_opponent(
         ["turn", "One Pair", 2],
         ["river", "One Pair", 2],
     ]
-    # And his rows never carry the owner's holding
-    assert villain["OwnerC1"].isna().all()
-    assert villain["OwnerCombination"].isna().all()
+    # And his rows also carry the owner's holding, which is hand context
+    assert (villain["OwnerC1"] == "8h").all()
+    assert villain["OwnerCombination"].notna().all()
 
 
 def test_combination_requires_both_hole_cards() -> None:
@@ -561,8 +562,8 @@ def test_dim_player_summary_values(source_df: pd.DataFrame) -> None:
         "Stack",
         "PostedAnte",
         "PostedBlind",
-        "ShowDownC1",
-        "ShowDownC2",
+        "RevealedShowDownC1",
+        "RevealedShowDownC2",
     ]:
         assert column not in dim.columns
 
