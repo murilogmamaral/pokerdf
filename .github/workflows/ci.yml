@@ -41,7 +41,15 @@ jobs:
         run: uv run mypy pokerdf/ tests/
 
   test:
+    # Every Python version declared in the classifiers of pyproject.toml is
+    # tested here, so the supported range is proven and not just claimed
+    name: test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -49,11 +57,13 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
           enable-cache: true
 
+      # --python overrides the version pinned in .python-version,
+      # which would otherwise force every job to run on 3.11
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --python ${{ matrix.python-version }}
 
       - name: Run tests
-        run: uv run python -m pytest tests/ -q
+        run: uv run --python ${{ matrix.python-version }} python -m pytest tests/ -q
