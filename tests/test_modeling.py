@@ -14,6 +14,7 @@ from pokerdf.modeling.star_schema import (
     _combination,
     _roman_to_int,
     build_dim_final_rank,
+    build_dim_hand,
     build_dim_tournament,
     build_fact_player_actions,
     build_star_schema,
@@ -76,13 +77,6 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "TournID",
         "HandID",
         "Owner",
-        "LocalTime",
-        "TableSize",
-        "Playing",
-        "Level",
-        "Ante",
-        "SmallBlind",
-        "BigBlind",
         "Round",
         "Player",
         "Seat",
@@ -138,18 +132,11 @@ def test_fact_explodes_single_action(fact: pd.DataFrame) -> None:
     ]
 
 
-def test_fact_carries_hand_context(fact: pd.DataFrame) -> None:
-    # Hand 11111: 3-max at level I (blinds 10/20), 3 players, no ante,
-    # logged by the archive of garciamurilo
-    row = fact[fact["HandID"] == 11111].iloc[0]
-    assert row["Owner"] == "garciamurilo"
-    assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:22:15")
-    assert row["TableSize"] == 3
-    assert row["Level"] == 1
-    assert row["Playing"] == 3
-    assert pd.isna(row["Ante"])
-    assert row["SmallBlind"] == 10.0
-    assert row["BigBlind"] == 20.0
+def test_fact_carries_the_owner_on_every_row(fact: pd.DataFrame) -> None:
+    # Owner completes the key of dim_hand (TournID, HandID, Owner), where
+    # the constant context of the hand lives
+    rows = fact[fact["HandID"] == 11111]
+    assert (rows["Owner"] == "garciamurilo").all()
 
 
 def test_fact_owner_cards_and_combination_on_every_row(fact: pd.DataFrame) -> None:
@@ -566,6 +553,31 @@ def test_dim_tournament(source_df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
+# dim_hand
+# ---------------------------------------------------------------------------
+def test_dim_hand_has_one_row_per_hand_per_owner(source_df: pd.DataFrame) -> None:
+    dim = build_dim_hand(source_df)
+    hands = source_df.drop_duplicates(subset=["TournID", "HandID", "Owner"])
+    assert len(dim) == len(hands)
+    assert not dim.duplicated(subset=["TournID", "HandID", "Owner"]).any()
+
+
+def test_dim_hand_carries_the_hand_context(source_df: pd.DataFrame) -> None:
+    # Hand 11111: 3-max at level I (blinds 10/20), 3 players, no ante,
+    # logged by the archive of garciamurilo
+    dim = build_dim_hand(source_df)
+    row = dim[dim["HandID"] == 11111].iloc[0]
+    assert row["Owner"] == "garciamurilo"
+    assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:22:15")
+    assert row["TableSize"] == 3
+    assert row["Playing"] == 3
+    assert row["Level"] == 1
+    assert pd.isna(row["Ante"])
+    assert row["SmallBlind"] == 10.0
+    assert row["BigBlind"] == 20.0
+
+
+# ---------------------------------------------------------------------------
 # dim_final_rank
 # ---------------------------------------------------------------------------
 def test_dim_final_rank(source_df: pd.DataFrame) -> None:
@@ -582,7 +594,7 @@ def test_dim_final_rank(source_df: pd.DataFrame) -> None:
 # ---------------------------------------------------------------------------
 # build_star_schema
 # ---------------------------------------------------------------------------
-def test_build_star_schema_saves_the_three_tables(
+def test_build_star_schema_saves_the_four_tables(
     converted_dir: Path, tmp_path: Path
 ) -> None:
     number_of_rows = build_star_schema(str(converted_dir), str(tmp_path))
@@ -590,6 +602,7 @@ def test_build_star_schema_saves_the_three_tables(
     expected_tables = [
         "fact_player_actions",
         "dim_tournament",
+        "dim_hand",
         "dim_final_rank",
     ]
     assert list(number_of_rows.keys()) == expected_tables
@@ -599,15 +612,17 @@ def test_build_star_schema_saves_the_three_tables(
         assert len(table) > 0
 
 
-def test_build_star_schema_gdpr_saves_only_the_fact_and_a_report(
+def test_build_star_schema_gdpr_saves_the_fact_the_hand_dim_and_a_report(
     converted_dir: Path, tmp_path: Path
 ) -> None:
     number_of_rows = build_star_schema(str(converted_dir), str(tmp_path), gdpr="full")
 
-    # No dimension is generated, and the report sits next to the data
-    assert list(number_of_rows.keys()) == ["fact_player_actions"]
+    # Only the fact and the hand dimension are generated (the context the
+    # analysis needs), and the report sits next to the data
+    assert list(number_of_rows.keys()) == ["fact_player_actions", "dim_hand"]
     assert sorted(p.name for p in tmp_path.iterdir()) == [
         "anonymization.txt",
+        "dim_hand.parquet",
         "fact_player_actions.parquet",
     ]
 
@@ -615,8 +630,15 @@ def test_build_star_schema_gdpr_saves_only_the_fact_and_a_report(
     assert len(table) == number_of_rows["fact_player_actions"]
     # The owner's nickname must not survive, but their cards always do
     assert "garciamurilo" not in set(table["Player"])
-    assert "LocalTime" not in table.columns
     assert "OwnerC1" in table.columns
+
+    # The hand dimension loses the timestamp and joins the fact through
+    # the pseudonyms, since both were anonymized with the same salt
+    dim = pd.read_parquet(tmp_path / "dim_hand.parquet")
+    assert "LocalTime" not in dim.columns
+    assert "garciamurilo" not in set(dim["Owner"])
+    assert set(dim["HandID"]) == set(table["HandID"])
+    assert set(dim["Owner"]) == set(table["Owner"])
 
 
 def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(

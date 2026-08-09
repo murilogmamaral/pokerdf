@@ -16,9 +16,11 @@ Two GDPR principles guide what is done here:
   are replaced by salted digests, which keep the dataset consistent without
   pointing back to a person.
 
-The transformations are applied to the fact table after it is built, so the
-reconstruction of the hand (order of the actions, amounts, pot and stacks)
-is unaffected: what changes is only what allows a person to be identified.
+The transformations are applied to the fact table and to the hand dimension
+after they are built, with the same salt, so the reconstruction of the hand
+(order of the actions, amounts, pot, stacks and the context they are read
+against) is unaffected and the tables keep joining: what changes is only
+what allows a person to be identified.
 """
 
 import hashlib
@@ -52,8 +54,9 @@ DIGEST_SIZE = 8
 # to a person or to a hand that can be looked up on the platform
 PSEUDONYMIZED_COLUMNS = [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
 
-# Removed in every mode: the timestamp allows a hand to be matched against
-# public tournament results, re-identifying the players in it
+# Removed in every mode, from the hand dimension where it lives: the
+# timestamp allows a hand to be matched against public tournament results,
+# re-identifying the players in it
 DROPPED_COLUMNS = [Column.LOCAL_TIME]
 
 # The private cards of the owner, repeated on every row of the hand. They
@@ -108,17 +111,21 @@ def pseudonymize(values: pd.Series, salt: str, keep: Iterable[str] = ()) -> pd.S
     return digests.where(digests.notna(), values)
 
 
-def anonymize_fact(
-    fact: pd.DataFrame,
+def anonymize_table(
+    table: pd.DataFrame,
     salt: str,
     mode: GdprMode,
     owners: Iterable[str] = (),
 ) -> pd.DataFrame:
     """
-    Apply the GDPR transformations of a mode to the fact table.
+    Apply the GDPR transformations of a mode to a table of the star schema.
+
+    The same function anonymizes the fact table and the hand dimension:
+    each transformation applies to the columns the table has, and the same
+    salt gives the same pseudonyms in both, so the tables keep joining.
 
     Args:
-        fact (pd.DataFrame): Fact table built by build_fact_player_actions.
+        table (pd.DataFrame): Fact table or hand dimension.
         salt (str): Salt used to derive the pseudonyms.
         mode (GdprMode): In FULL mode the nickname of the owner is
             pseudonymized like everyone else's, in the Player and Owner
@@ -131,11 +138,13 @@ def anonymize_fact(
         pd.DataFrame: The same table with the identifying columns replaced
             by pseudonyms and the identifying-only columns removed.
     """
-    anonymized = fact.copy()
+    anonymized = table.copy()
     keep_owner = mode == GdprMode.KEEP_OWNER
 
     # Replace the identifiers by pseudonyms, sparing the owner when kept
     for column in PSEUDONYMIZED_COLUMNS:
+        if column not in anonymized.columns:
+            continue
         keep = set(owners) if keep_owner and column == Column.PLAYER else set()
         anonymized[column] = pseudonymize(anonymized[column], salt, keep=keep)
 
@@ -143,7 +152,7 @@ def anonymize_fact(
     # keep-owner mode; in full mode it is pseudonymized through the escaped
     # form of the name, so the owner receives the same pseudonym here and
     # in the Player column, which stores names escaped for regex
-    if not keep_owner:
+    if not keep_owner and Column.OWNER in anonymized.columns:
         escaped = {
             value: re.escape(value)
             for value in anonymized[Column.OWNER].dropna().unique()
@@ -221,9 +230,14 @@ Mode: {mode}
 
 Applied
 -------
-- Dimension tables were not generated (data minimisation, Article 5(1)(c)).
-  They carry the start time of each tournament, the buy-in paid, and the
+- The tournament and final-rank dimensions were not generated (data
+  minimisation, Article 5(1)(c)): they carry the nickname of the owner of
+  the logs, the start time of each tournament, the buy-in paid, and the
   nickname, final rank and prize of every player.
+- The hand dimension is generated, since it carries the context the
+  amounts are read against (table size, players dealt in, level, blinds
+  and antes). Its identifiers are pseudonymized with the same salt as the
+  fact's, so the tables keep joining.
 - Pseudonymized with a salted BLAKE2b digest (Article 4(5)): {pseudonymized}.
 - Kept in every mode: the cards revealed at showdown (RevealedShowDownC1,
   RevealedShowDownC2), the combinations derived from the cards and the

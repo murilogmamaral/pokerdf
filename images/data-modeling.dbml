@@ -10,10 +10,10 @@ Table dim_tournament {
   BuyIn varchar
 }
 
-Table fact_player_actions {
-  TournID integer [not null]
-  HandID integer [not null]
-  Owner varchar
+Table dim_hand {
+  TournID integer [pk]
+  HandID integer [pk]
+  Owner varchar [pk]
   LocalTime timestamp
   TableSize integer
   Playing integer
@@ -21,6 +21,12 @@ Table fact_player_actions {
   Ante float
   SmallBlind float
   BigBlind float
+}
+
+Table fact_player_actions {
+  TournID integer [not null]
+  HandID integer [not null]
+  Owner varchar [not null]
   Round varchar
   Player varchar [not null]
   Seat integer
@@ -61,5 +67,8 @@ Table dim_final_rank {
 
 Ref: fact_player_actions.TournID > dim_tournament.TournID
 Ref: fact_player_actions.Owner > dim_tournament.Owner
+Ref: fact_player_actions.TournID > dim_hand.TournID
+Ref: fact_player_actions.HandID > dim_hand.HandID
+Ref: fact_player_actions.Owner > dim_hand.Owner
 Ref: fact_player_actions.TournID > dim_final_rank.TournID
 Ref: fact_player_actions.Player > dim_final_rank.Player

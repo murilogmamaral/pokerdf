@@ -148,9 +148,10 @@ def main() -> None:
     - 'convert': converts hand history .txt files into .parquet files,
       saving them in ./output/{SESSION_ID}.
     - 'modeling': reads converted .parquet files and splits them into a star
-      schema (one fact table and two dimensions), saving the three tables
-      in ./modeling/{SESSION_ID}. With --gdpr, only the fact table is
-      generated, without the columns that identify a person.
+      schema (one fact table and three dimensions), saving the four tables
+      in ./modeling/{SESSION_ID}. With --gdpr, only the fact table and the
+      hand dimension are generated, without the columns that identify a
+      person.
 
     Raises:
         SystemExit: If the arguments are invalid.

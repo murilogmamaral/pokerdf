@@ -110,4 +110,5 @@ class ModelTable(StrEnum):
 
     FACT_PLAYER_ACTIONS = "fact_player_actions"
     DIM_TOURNAMENT = "dim_tournament"
+    DIM_HAND = "dim_hand"
     DIM_FINAL_RANK = "dim_final_rank"
