@@ -74,9 +74,9 @@ def test_load_converted_data_casts_prize_to_float(source_df: pd.DataFrame) -> No
 # ---------------------------------------------------------------------------
 def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
     assert list(fact.columns) == [
+        "Owner",
         "TournID",
         "HandID",
-        "Owner",
         "Round",
         "Player",
         "Seat",
@@ -542,6 +542,13 @@ def test_dim_tournament(source_df: pd.DataFrame) -> None:
     # at a different time, so Owner is part of the key
     dim = build_dim_tournament(source_df)
     assert len(dim) == 1
+    assert list(dim.columns) == [
+        "Owner",
+        "TournID",
+        "LocalStartTime",
+        "Modality",
+        "BuyIn",
+    ]
     row = dim.iloc[0]
     assert row["TournID"] == 99999
     assert row["Owner"] == "garciamurilo"
@@ -566,6 +573,18 @@ def test_dim_hand_carries_the_hand_context(source_df: pd.DataFrame) -> None:
     # Hand 11111: 3-max at level I (blinds 10/20), 3 players, no ante,
     # logged by the archive of garciamurilo
     dim = build_dim_hand(source_df)
+    assert list(dim.columns) == [
+        "Owner",
+        "TournID",
+        "HandID",
+        "LocalTime",
+        "TableSize",
+        "Playing",
+        "Level",
+        "Ante",
+        "SmallBlind",
+        "BigBlind",
+    ]
     row = dim[dim["HandID"] == 11111].iloc[0]
     assert row["Owner"] == "garciamurilo"
     assert row["LocalTime"] == pd.Timestamp("2020-10-11 03:22:15")

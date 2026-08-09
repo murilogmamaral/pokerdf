@@ -185,14 +185,14 @@ def build_dim_tournament(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, Owner, LocalStartTime, Modality and
-            BuyIn. The key is TournID plus Owner: the dimension describes
+        pd.DataFrame: Columns Owner, TournID, LocalStartTime, Modality and
+            BuyIn. The key is Owner plus TournID: the dimension describes
             the tournament as observed by an owner's archive, and each
             owner can start it at a different time — the start time is the
             time of the first hand the owner's client logged.
     """
     dim = (
-        df.groupby([Column.TOURN_ID, Column.OWNER], as_index=False)
+        df.groupby([Column.OWNER, Column.TOURN_ID], as_index=False)
         .agg(
             **{
                 ModelColumn.LOCAL_START_TIME: (Column.LOCAL_TIME, "min"),
@@ -215,7 +215,7 @@ def build_dim_hand(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, HandID, Owner, LocalTime, TableSize,
+        pd.DataFrame: Columns Owner, TournID, HandID, LocalTime, TableSize,
             Playing, Level, Ante, SmallBlind and BigBlind — the context
             that is constant across the events of a hand, keeping the fact
             table lean. Owner is part of the key: two archives can log the
@@ -227,9 +227,9 @@ def build_dim_hand(df: pd.DataFrame) -> pd.DataFrame:
 
     dim = pd.DataFrame(
         {
+            Column.OWNER: hands[Column.OWNER],
             Column.TOURN_ID: hands[Column.TOURN_ID].astype("int64"),
             Column.HAND_ID: hands[Column.HAND_ID].astype("int64"),
-            Column.OWNER: hands[Column.OWNER],
             Column.LOCAL_TIME: hands[Column.LOCAL_TIME],
             Column.TABLE_SIZE: hands[Column.TABLE_SIZE],
             Column.PLAYING: hands[Column.PLAYING],
@@ -240,7 +240,9 @@ def build_dim_hand(df: pd.DataFrame) -> pd.DataFrame:
         }
     )
 
-    return dim.sort_values([Column.TOURN_ID, Column.HAND_ID], ignore_index=True)
+    return dim.sort_values(
+        [Column.OWNER, Column.TOURN_ID, Column.HAND_ID], ignore_index=True
+    )
 
 
 def build_dim_final_rank(df: pd.DataFrame) -> pd.DataFrame:
@@ -652,10 +654,10 @@ def build_fact_player_action(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, HandID, Owner (whose archive logged
-            the hand — archives of more than one owner can be modeled
-            together, and the three form the key of dim_hand, which holds
-            the context that is constant across the hand), Round, Player,
+        pd.DataFrame: Columns Owner (whose archive logged the hand —
+            archives of more than one owner can be modeled together),
+            TournID and HandID (the three form the key of dim_hand, which
+            holds the context that is constant across the hand), Round, Player,
             Seat, Position, Stack, PostedAnte, PostedBlind, Action,
             ActionIndex, ActionOrder,
             AddedValue, TotalValue, TotalPot and BoardC1 to BoardC5, plus
@@ -767,9 +769,9 @@ def build_fact_player_action(df: pd.DataFrame) -> pd.DataFrame:
     fact = fact.astype({Column.TOURN_ID: "int64", Column.HAND_ID: "int64"}).loc[
         :,
         [
+            Column.OWNER,
             Column.TOURN_ID,
             Column.HAND_ID,
-            Column.OWNER,
             ModelColumn.ROUND,
             Column.PLAYER,
             Column.SEAT,
