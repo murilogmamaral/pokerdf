@@ -165,6 +165,28 @@ pokerdf modeling /path/to/parquet/files
 ```
 The command concatenates all files and saves the four tables as _.parquet_ inside `./modeling/{SESSION_ID}/`.
 
+#### Sharing the data: `--anonymize`
+
+A hand history is not only about you. It carries the nicknames of everyone who sat at the table, identifiers that link each hand back to the platform records, and timestamps that allow a hand to be matched against public tournament results. Before sharing a dataset, or using it outside your own machine, run:
+```
+pokerdf modeling /path/to/parquet/files --anonymize rgpd
+```
+In `rgpd` mode the command:
+
+- **builds the fact table only.** The dimensions exist to describe who the players are: the nickname of the owner of the logs, the buy-in paid, the cards revealed at showdown, the final rank and the prizes received.
+- **pseudonymizes `TournID`, `HandID` and `Player`** with a salted BLAKE2b digest. The same nickname always maps to the same pseudonym, so grouping and joining still work, but nothing points back to a person or to a hand that can be looked up on the platform.
+- **removes `LocalTime`, `OwnerC1` and `OwnerC2`.** The timestamp allows a hand to be correlated with public results, and the cards of the owner are their own private holding, repeated on every row of the hand.
+
+Everything that makes the data worth analyzing is preserved: the order of the actions, the amounts, the pot, the stacks, the board and the positions.
+
+By default the salt is random and is never stored, which makes the pseudonyms irreversible. To append new sessions to an existing anonymized dataset, the pseudonyms have to be stable, so inform your own salt:
+```
+pokerdf modeling /path/to/parquet/files --anonymize rgpd --salt your-secret
+```
+Keep that salt as securely as the original data: whoever holds it can confirm a nickname by hashing it.
+
+Each anonymized session also writes an `anonymization.txt` report next to the data, describing what was applied and which risks remain — the most relevant being that the owner of the logs plays in every hand of their own archive, so the pseudonym present in all of them is the owner.
+
 #### fact_player_actions
 
 One row per event of a player: the ante and blind posts open each hand as rows (with the real — possibly partial — amounts that left each stack), followed by every action, sorted exactly as the hand unfolded: rounds in chronological order, starting from the first seat to act (the seat after the big blind on preflop, the seat after the button postflop). The amounts are reconstructed by replaying each round with the betting rules of the game, so they reflect the chips that actually moved.

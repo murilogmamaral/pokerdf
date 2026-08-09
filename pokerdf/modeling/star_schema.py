@@ -6,8 +6,13 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.dataset
 
+from pokerdf.modeling.anonymize import (
+    anonymize_fact,
+    describe,
+    generate_salt,
+)
 from pokerdf.utils.columns import Column, ModelColumn, ModelTable, Round
-from pokerdf.utils.strings import PARQUET_EXTENSION
+from pokerdf.utils.strings import ANONYMIZATION_REPORT, PARQUET_EXTENSION
 
 # Unified schema of the .parquet files produced by the convert command.
 # Reading with an explicit schema is required because columns that are entirely
@@ -711,7 +716,12 @@ def build_fact_player_actions(df: pd.DataFrame) -> pd.DataFrame:
     return fact
 
 
-def build_star_schema(source: str, destination: str) -> dict[str, int]:
+def build_star_schema(
+    source: str,
+    destination: str,
+    anonymize: str | None = None,
+    salt: str | None = None,
+) -> dict[str, int]:
     """
     Build the star schema from converted data and save it as .parquet files.
 
@@ -720,9 +730,18 @@ def build_star_schema(source: str, destination: str) -> dict[str, int]:
     fact_player_actions, dim_tourn_summary, dim_player_summary and
     dim_final_rank.
 
+    When an anonymization mode is informed, only the fact table is generated,
+    with the identifying columns pseudonymized and removed as described in
+    the anonymize module, and a report of the transformations is saved next
+    to it.
+
     Args:
         source (str): Directory containing the converted .parquet files.
-        destination (str): Directory where the four tables will be saved.
+        destination (str): Directory where the tables will be saved.
+        anonymize (str | None): Anonymization mode, or None to build the
+            complete star schema.
+        salt (str | None): Salt of the pseudonyms. When omitted, a random one
+            is generated for this session and not stored.
 
     Returns:
         dict[str, int]: Number of rows of each generated table.
@@ -730,13 +749,24 @@ def build_star_schema(source: str, destination: str) -> dict[str, int]:
     # Load all converted files as a single DataFrame
     df = load_converted_data(source)
 
-    # Build the four tables of the star schema
-    tables = {
-        ModelTable.FACT_PLAYER_ACTIONS: build_fact_player_actions(df),
-        ModelTable.DIM_TOURN_SUMMARY: build_dim_tourn_summary(df),
-        ModelTable.DIM_PLAYER_SUMMARY: build_dim_player_summary(df),
-        ModelTable.DIM_FINAL_RANK: build_dim_final_rank(df),
-    }
+    if anonymize:
+        # The dimensions are not generated: they exist to describe who the
+        # players are, how the tournament went and what each one received
+        fact = anonymize_fact(build_fact_player_actions(df), salt or generate_salt())
+        tables = {ModelTable.FACT_PLAYER_ACTIONS: fact}
+
+        # Save the report of what was applied, next to the data
+        report_path = os.path.join(destination, ANONYMIZATION_REPORT)
+        with open(report_path, "w") as file:
+            file.write(describe(anonymize, reused_salt=salt is not None))
+    else:
+        # Build the four tables of the star schema
+        tables = {
+            ModelTable.FACT_PLAYER_ACTIONS: build_fact_player_actions(df),
+            ModelTable.DIM_TOURN_SUMMARY: build_dim_tourn_summary(df),
+            ModelTable.DIM_PLAYER_SUMMARY: build_dim_player_summary(df),
+            ModelTable.DIM_FINAL_RANK: build_dim_final_rank(df),
+        }
 
     # Save each table and collect its number of rows
     number_of_rows = {}
