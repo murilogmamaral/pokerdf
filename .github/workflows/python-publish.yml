@@ -9,16 +9,24 @@
 #   type!: (or a BREAKING CHANGE footer)  -> major
 #   feat:                                 -> minor
 #   fix:, docs:, refactor:, and the rest  -> patch
-# Choosing an explicit level overrides the inference, for the cases where the
+# A title the inference cannot read fails the run: guessing could hide a
+# feature or a breaking change inside a patch release. Choosing an explicit
+# level overrides the inference, both for those cases and for releases whose
 # semantics live in the data rather than in the commit titles.
 #
 # Full pipeline:
 #   1. test            -> run the test suite; nothing happens if it fails
-#   2. bump-and-build  -> infer or take the level, bump the version with uv,
-#                         commit the bump back to main, then build sdist/wheel
-#   3. github-release  -> create the git tag and the GitHub release dynamically,
+#   2. plan            -> infer or take the level and compute the exact
+#                         version about to be released, without side effects
+#   3. approve         -> pause until the plan is approved in the Actions UI
+#                         (required reviewers of the release-approval
+#                         environment); nothing is bumped, tagged or
+#                         published before the approval
+#   4. bump-and-build  -> bump the version with uv, commit the bump back to
+#                         main, then build sdist/wheel
+#   5. github-release  -> create the git tag and the GitHub release dynamically,
 #                         named "v{version}", with the distributions attached
-#   4. pypi-publish    -> upload the distributions to PyPI (Trusted Publishing)
+#   6. pypi-publish    -> upload the distributions to PyPI (Trusted Publishing)
 
 name: Upload Python Package
 
@@ -62,16 +70,14 @@ jobs:
       - name: Run tests
         run: uv run python -m pytest tests/ -q
 
-  bump-and-build:
+  plan:
     runs-on: ubuntu-latest
     needs:
       - test
-    permissions:
-      # Required to push the version bump commit to main
-      contents: write
     outputs:
-      version: ${{ steps.bump.outputs.version }}
-      sha: ${{ steps.push.outputs.sha }}
+      level: ${{ steps.level.outputs.level }}
+      current: ${{ steps.next.outputs.current }}
+      next: ${{ steps.next.outputs.next }}
 
     steps:
       - uses: actions/checkout@v4
@@ -107,10 +113,25 @@ jobs:
           echo "Commits since ${LAST_TAG:-the first commit}:"
           echo "$SUBJECTS"
 
-          # Highest level found wins: breaking marker, then feat, then patch
+          # Every title must be readable by the inference: a title outside
+          # the convention could hide a feature - or a breaking change -
+          # inside a patch release. Choosing the level manually in the
+          # dispatch input is the escape hatch for those releases
+          INVALID=$(echo "$SUBJECTS" | grep -vE "^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([^)]*\))?!?: .+" || true)
+          if [ -n "$INVALID" ]; then
+            echo "::error::Cannot infer the level: the titles below do not follow Conventional Commits. Fix them or re-run the workflow choosing patch, minor or major explicitly."
+            echo "$INVALID"
+            exit 1
+          fi
+
+          # Highest level found wins: breaking marker, then feat, then patch.
+          # The breaking-change marker is only read from a footer line, as
+          # the specification defines it: matching the phrase anywhere in a
+          # body once inferred a major from a commit that merely described
+          # this convention
           BODIES=$(git log "$RANGE" --no-merges --pretty="%B")
           LEVEL=patch
-          if echo "$SUBJECTS" | grep -qE "^[a-z]+(\([^)]*\))?!:" || echo "$BODIES" | grep -q "BREAKING CHANGE"; then
+          if echo "$SUBJECTS" | grep -qE "^[a-z]+(\([^)]*\))?!:" || echo "$BODIES" | grep -qE "^BREAKING[ -]CHANGE:"; then
             LEVEL=major
           elif echo "$SUBJECTS" | grep -qE "^feat(\([^)]*\))?:"; then
             LEVEL=minor
@@ -118,10 +139,60 @@ jobs:
           echo "Inferred level: $LEVEL"
           echo "level=$LEVEL" >> "$GITHUB_OUTPUT"
 
+      - name: Compute the version about to be released
+        id: next
+        run: |
+          CURRENT=$(uv version --short)
+          NEXT=$(uv version --bump "${{ steps.level.outputs.level }}" --dry-run --short)
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "next=$NEXT" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Release plan"
+            echo ""
+            echo "| Current | Level | Next |"
+            echo "|---------|-------|------|"
+            echo "| $CURRENT | ${{ steps.level.outputs.level }} | **$NEXT** |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  approve:
+    # Pauses the run until a required reviewer of the release-approval
+    # environment approves it in the Actions UI. The summary of the plan
+    # job shows the exact version about to be released, and nothing is
+    # bumped, tagged or published before the approval
+    runs-on: ubuntu-latest
+    needs:
+      - plan
+    environment: release-approval
+
+    steps:
+      - name: Confirm the approved plan
+        run: |
+          echo "Approved release: ${{ needs.plan.outputs.current }} -> ${{ needs.plan.outputs.next }} (${{ needs.plan.outputs.level }})"
+
+  bump-and-build:
+    runs-on: ubuntu-latest
+    needs:
+      - plan
+      - approve
+    permissions:
+      # Required to push the version bump commit to main
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      sha: ${{ steps.push.outputs.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+
       - name: Bump version in pyproject.toml
         id: bump
         run: |
-          uv version --bump "${{ steps.level.outputs.level }}"
+          uv version --bump "${{ needs.plan.outputs.level }}"
           echo "version=$(uv version --short)" >> "$GITHUB_OUTPUT"
 
       - name: Commit and push the bump to main
