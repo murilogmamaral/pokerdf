@@ -661,19 +661,20 @@ def test_build_star_schema_gdpr_saves_everything_but_the_final_rank(
     assert "garciamurilo" not in set(table["Player"])
     assert "OwnerC1" in table.columns
 
-    # The hand dimension leaves whole - the timestamp included - and joins
-    # the fact through the pseudonyms, since the salt is shared
+    # The hand dimension loses its timestamp and joins the fact through
+    # the pseudonyms, since the salt is shared
     dim = pd.read_parquet(tmp_path / "dim_hand.parquet")
-    assert "LocalTime" in dim.columns
+    assert "LocalTime" not in dim.columns
     assert "garciamurilo" not in set(dim["Owner"])
     assert set(dim["HandID"]) == set(table["HandID"])
     assert set(dim["Owner"]) == set(table["Owner"])
 
-    # The tournament dimension is blurred the same way
+    # The tournament dimension is blurred the same way, without its
+    # start time
     tourn = pd.read_parquet(tmp_path / "dim_tournament.parquet")
     assert "garciamurilo" not in set(tourn["Owner"])
     assert set(tourn["TournID"]) == set(table["TournID"])
-    assert "LocalStartTime" in tourn.columns
+    assert "LocalStartTime" not in tourn.columns
 
 
 def test_build_star_schema_gdpr_keep_owner_spares_only_the_owner(

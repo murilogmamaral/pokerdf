@@ -151,7 +151,7 @@ def main() -> None:
       schema (one fact table and three dimensions), saving the four tables
       in ./modeling/{SESSION_ID}. With --gdpr, the final-rank dimension is
       not generated and the other tables leave with their identifiers
-      pseudonymized.
+      pseudonymized and their time columns removed.
 
     Raises:
         SystemExit: If the arguments are invalid.

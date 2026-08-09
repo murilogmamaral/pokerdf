@@ -8,6 +8,7 @@ since an anonymized dataset that cannot be analyzed is useless.
 import pandas as pd
 
 from pokerdf.modeling.anonymize import (
+    DROPPED_COLUMNS,
     OWNER_CARD_COLUMNS,
     PSEUDONYMIZED_COLUMNS,
     GdprMode,
@@ -16,7 +17,7 @@ from pokerdf.modeling.anonymize import (
     generate_salt,
     pseudonymize,
 )
-from pokerdf.modeling.star_schema import build_dim_hand
+from pokerdf.modeling.star_schema import build_dim_hand, build_dim_tournament
 
 # The owner of the fixture, as written in the Player column of the fact
 OWNER = "garciamurilo"
@@ -134,17 +135,22 @@ def test_full_mode_anonymizes_the_hand_dimension_consistently(
     assert set(anonymized_dim["TournID"]) == set(anonymized_fact["TournID"])
     assert set(anonymized_dim["HandID"]) == set(anonymized_fact["HandID"])
     assert set(anonymized_dim["Owner"]) == set(anonymized_fact["Owner"])
-    # Every attribute survives whole, the timestamp included
-    for column in [
-        "LocalTime",
-        "TableSize",
-        "Playing",
-        "Level",
-        "Ante",
-        "SmallBlind",
-        "BigBlind",
-    ]:
+    # The timestamp is removed; every other attribute survives whole
+    assert "LocalTime" not in anonymized_dim.columns
+    for column in ["TableSize", "Playing", "Level", "Ante", "SmallBlind", "BigBlind"]:
         pd.testing.assert_series_equal(anonymized_dim[column], dim[column])
+
+
+def test_time_columns_are_removed_from_every_table(source_df: pd.DataFrame) -> None:
+    # Any column of time identifies the tournament when matched against
+    # public schedules: LocalTime leaves dim_hand, LocalStartTime leaves
+    # dim_tournament
+    hand = anonymize_table(build_dim_hand(source_df), "salt", GdprMode.FULL)
+    tournament = anonymize_table(build_dim_tournament(source_df), "salt", GdprMode.FULL)
+
+    for column in DROPPED_COLUMNS:
+        assert column not in hand.columns
+        assert column not in tournament.columns
 
 
 def test_full_mode_keeps_the_hand_reconstruction(fact: pd.DataFrame) -> None:
@@ -233,7 +239,7 @@ def test_describe_reports_the_transformations() -> None:
     report = describe(GdprMode.FULL, reused_salt=False)
 
     assert "full" in report
-    for column in [*PSEUDONYMIZED_COLUMNS, *OWNER_CARD_COLUMNS]:
+    for column in [*PSEUDONYMIZED_COLUMNS, *DROPPED_COLUMNS, *OWNER_CARD_COLUMNS]:
         assert str(column) in report
     assert "Residual risks" in report
 

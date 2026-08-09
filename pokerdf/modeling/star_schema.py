@@ -867,12 +867,12 @@ def build_star_schema(
     mode = _parse_gdpr_mode(gdpr)
     if mode:
         # Everything the analysis needs leaves - the fact, the hand
-        # dimension whole (timestamps included) and the tournament
-        # dimension - anonymized with the same salt, so the pseudonyms
-        # keep joining across the tables. Only the final-rank dimension is
-        # not generated: the nickname, final rank and prize of every
-        # player mirror publicly available tournament results, the easiest
-        # re-identification path there is.
+        # dimension and the tournament dimension - anonymized with the
+        # same salt, so the pseudonyms keep joining across the tables,
+        # and with every time column removed. Only the final-rank
+        # dimension is not generated: the nickname, final rank and prize
+        # of every player mirror publicly available tournament results,
+        # the easiest re-identification path there is.
         # The Player column stores names escaped for regex, so the owners
         # are escaped the same way to match them in keep-owner mode
         session_salt = salt or generate_salt()

@@ -54,6 +54,11 @@ DIGEST_SIZE = 8
 # to a person or to a hand that can be looked up on the platform
 PSEUDONYMIZED_COLUMNS = [Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
 
+# Removed in every mode, from whichever table carries them: a timestamp
+# matched against publicly available tournament schedules and results
+# identifies the tournament, re-identifying the players in it
+DROPPED_COLUMNS: list[StrEnum] = [Column.LOCAL_TIME, ModelColumn.LOCAL_START_TIME]
+
 # The private cards of the owner, repeated on every row of the hand. They
 # are kept in every mode: the decisions in the dataset can only be studied
 # against the holding they were made with, so removing them would strip the
@@ -131,8 +136,8 @@ def anonymize_table(
 
     Returns:
         pd.DataFrame: The same table with the identifying columns replaced
-            by pseudonyms. Every attribute survives whole: what changes is
-            only what points back to a person or to the platform records.
+            by pseudonyms and the time columns removed. Every other
+            attribute survives whole.
     """
     anonymized = table.copy()
     keep_owner = mode == GdprMode.KEEP_OWNER
@@ -157,7 +162,11 @@ def anonymize_table(
             anonymized[Column.OWNER].map(escaped), salt
         )
 
-    return anonymized
+    # Remove every time column: it cannot be pseudonymized without losing
+    # its meaning, and kept it would identify the tournament
+    return anonymized.drop(
+        columns=[column for column in DROPPED_COLUMNS if column in anonymized.columns]
+    )
 
 
 def describe(mode: GdprMode, reused_salt: bool) -> str:
@@ -179,6 +188,7 @@ def describe(mode: GdprMode, reused_salt: bool) -> str:
     """
     keep_owner = mode == GdprMode.KEEP_OWNER
     pseudonymized = ", ".join(str(column) for column in PSEUDONYMIZED_COLUMNS)
+    dropped = ", ".join(str(column) for column in DROPPED_COLUMNS)
     owner_cards = ", ".join(str(column) for column in OWNER_CARD_COLUMNS)
 
     owner_line = (
@@ -227,10 +237,12 @@ Applied
   publicly available tournament results, the easiest re-identification
   path there is.
 - The fact table, the hand dimension and the tournament dimension leave
-  with every attribute whole, the timestamps included. What changes is
-  only the identifiers, pseudonymized with a salted BLAKE2b digest
+  with their identifiers pseudonymized with a salted BLAKE2b digest
   (Article 4(5)): {pseudonymized}, with the same salt in every table, so
   the pseudonyms keep joining across them.
+- Removed from every table that carries them: the time columns ({dropped}).
+  A timestamp matched against publicly available tournament schedules and
+  results identifies the tournament. Every other attribute leaves whole.
 - Kept in every mode: the cards revealed at showdown (RevealedShowDownC1,
   RevealedShowDownC2), the combinations derived from the cards and the
   board (OwnerCombination, RevealedShowDownCombination and their scores)
@@ -248,12 +260,9 @@ Residual risks
 - A hand is still described by its board and by the exact sequence and size
   of the bets, which is close to unique. Someone holding another copy of the
   same hand can match it and recover the identifiers from there.
-- The timestamps of the hands and the start time, modality and buy-in of
-  each tournament are kept for analytical value. Matched against publicly
-  available tournament schedules and results, they can identify the
-  tournament - and from there whoever appears in its public final table.
-- The values in chips, the levels and the size of the table are preserved,
-  as removing them would leave the dataset without analytical value.
+- The values in chips, the levels, the size of the table, the modality and
+  the buy-in are preserved, as removing them would leave the dataset
+  without analytical value.
 
 Nothing here replaces assessing, for your own case, whether sharing this
 data is lawful.
