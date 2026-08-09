@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/pokerdf?color=blue)](https://pypi.org/project/pokerdf/)
 [![Python](https://img.shields.io/pypi/pyversions/pokerdf)](https://pypi.org/project/pokerdf/)
 [![CI](https://github.com/murilogmamaral/pokerdf/actions/workflows/ci.yml/badge.svg)](https://github.com/murilogmamaral/pokerdf/actions/workflows/ci.yml)
-[![Downloads](https://img.shields.io/pypi/dm/pokerdf?color=blue)](https://pypi.org/project/pokerdf/)
+[![Downloads](https://img.shields.io/pepy/dt/pokerdf?color=blue)](https://pepy.tech/projects/pokerdf)
 [![License: MIT](https://img.shields.io/pypi/l/pokerdf?color=green)](LICENSE)
 
 Converts poker hand history files into structured Pandas DataFrames, making it easier to analyze your games.
