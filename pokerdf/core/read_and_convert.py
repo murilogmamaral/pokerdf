@@ -1,5 +1,4 @@
 import os
-import warnings
 from typing import Any
 
 import pandas as pd
@@ -21,8 +20,6 @@ from pokerdf.utils.strings import (
     SUCCESS_LOG,
 )
 from pokerdf.validation.pydantic_modules import ValidateInput
-
-warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 def get_files_paths(path: str) -> list[str]:

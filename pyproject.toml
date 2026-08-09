@@ -78,6 +78,11 @@ packages = ["pokerdf"]
 # fixtures (hand histories) and images out of the PyPI source distribution
 include = ["pokerdf", "README.md", "LICENSE", "pyproject.toml"]
 
+[tool.pytest.ini_options]
+# A warning is a regression that has not happened yet: the suite fails on
+# any of them, so new ones cannot pile up unnoticed
+filterwarnings = ["error"]
+
 [tool.flake8]
 max-line-length = 120
 extend-ignore = ["E203", "W503"]
