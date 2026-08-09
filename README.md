@@ -259,13 +259,14 @@ One row per hand of each owner's archive, holding the context that is constant a
 
 #### dim_final_rank
 
-One row per player in each tournament.
+One row per player in each tournament of each owner's archive — the key is `Owner` + `TournID` + `Player`: the ranks are as observed by the owner, and an owner eliminated early does not see everyone's final rank.
 
 | Column    | Description                                                             | Example    |
 |-----------|--------------------------------------------------------------------------|------------|
+| Owner     | Owner of the archive that observed the rank                             | ownername  |
 | TournID   | Tournament played                                                       | 2928882649 |
 | Player    | Name of the player                                                      | playername |
-| FinalRank | Final rank in the tournament (0 when finished without a reported place, -1 when not registered in the logs) | 27         |
+| FinalRank | Final rank in the tournament (0 when finished without a reported place, -1 when not registered in the owner's logs) | 27         |
 | Prize     | Prize received, when any                                                | 0.24       |
 
 ## License

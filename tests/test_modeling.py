@@ -581,8 +581,13 @@ def test_dim_hand_carries_the_hand_context(source_df: pd.DataFrame) -> None:
 # dim_final_rank
 # ---------------------------------------------------------------------------
 def test_dim_final_rank(source_df: pd.DataFrame) -> None:
+    # One row per player per tournament per owner: the ranks are as
+    # observed by the owner's archive, and an owner eliminated early does
+    # not see the final rank of everyone
     dim = build_dim_final_rank(source_df)
     assert len(dim) == 3
+    assert list(dim.columns) == ["Owner", "TournID", "Player", "FinalRank", "Prize"]
+    assert (dim["Owner"] == "garciamurilo").all()
     ranks = dim.set_index("Player")
     assert ranks.loc["garciamurilo", "FinalRank"] == 1
     assert ranks.loc["garciamurilo", "Prize"] == 6.0

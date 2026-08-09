@@ -245,20 +245,23 @@ def build_dim_hand(df: pd.DataFrame) -> pd.DataFrame:
 
 def build_dim_final_rank(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Build the final rank dimension, with one row per player in each tournament.
+    Build the final rank dimension, with one row per player in each
+    tournament of each owner's archive.
 
     Args:
         df (pd.DataFrame): Converted data loaded with load_converted_data.
 
     Returns:
-        pd.DataFrame: Columns TournID, Player, FinalRank and Prize. FinalRank
-            is -1 when the rank was not registered in the hand history (for
-            example, players still active when the owner's logs end).
+        pd.DataFrame: Columns Owner, TournID, Player, FinalRank and Prize.
+            The key is Owner plus TournID plus Player: the ranks are as
+            observed by the owner's archive, and an owner eliminated early
+            does not see the final rank of everyone — FinalRank is -1 when
+            the rank was not registered in the owner's logs.
     """
     # The rank and prize of a player appear only in the hand of the elimination
     # or victory, with -1 / null everywhere else, so the maximum aggregates it
     dim = (
-        df.groupby([Column.TOURN_ID, Column.PLAYER], as_index=False)
+        df.groupby([Column.OWNER, Column.TOURN_ID, Column.PLAYER], as_index=False)
         .agg(
             **{
                 Column.FINAL_RANK: (Column.FINAL_RANK, "max"),
@@ -266,7 +269,7 @@ def build_dim_final_rank(df: pd.DataFrame) -> pd.DataFrame:
             }
         )
         .astype({Column.TOURN_ID: "int64"})
-        .sort_values([Column.TOURN_ID, Column.PLAYER], ignore_index=True)
+        .sort_values([Column.OWNER, Column.TOURN_ID, Column.PLAYER], ignore_index=True)
     )
 
     return dim
