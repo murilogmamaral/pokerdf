@@ -319,6 +319,19 @@ def test_get_result_non_showdown_win(first_hand: list[str]) -> None:
     assert r.get_result("VillainB", first_hand) == ["non-sd win"]
 
 
+def test_get_result_out_of_hand() -> None:
+    hand = [
+        "PokerStars Hand #12345: Tournament #999, $1+$0 USD Hold'em No Limit",
+        "Seat 1: PlayerOne (1000)",
+        "Seat 2: PlayerTwo (1000) out of hand (moved from another table into small blind)",
+        "*** SUMMARY ***",
+        "Seat 1: PlayerOne collected (100)",
+        "Seat 2: PlayerTwo is out of hand (moved from another table into small blind)",
+    ]
+    assert r.get_result("PlayerTwo", hand) == ["out of hand"]
+    assert r.get_result("PlayerOne", hand) == ["non-sd win"]
+
+
 def test_get_balance(showdown_hand: list[str]) -> None:
     assert r.get_balance("garciamurilo", showdown_hand) == [40.0]
 
