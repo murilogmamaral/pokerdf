@@ -210,9 +210,14 @@ def convert_txt_to_tabular_data(path: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame with parsed data from the hand history.
     """
-    with open(path, "r", encoding="utf-8", errors="replace") as file:
-        txt = file.read()
-        result = apply_regex(txt)
+    try:
+        with open(path, "r", encoding="utf-8", errors="strict") as file:
+            txt = file.read()
+    except UnicodeDecodeError:
+        with open(path, "r", encoding="cp1252", errors="strict") as file:
+            txt = file.read()
+
+    result = apply_regex(txt)
 
     return result
 

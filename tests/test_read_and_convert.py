@@ -214,6 +214,33 @@ def test_convert_txt_to_tabular_data_matches_expected_parquet() -> None:
     )
 
 
+def test_convert_txt_to_tabular_data_handles_cp1252_fallback(tmp_path: Path) -> None:
+    # A nickname with a Windows-1252 byte (0x9A, š in cp1252)
+    cp1252_bytes = (
+        b"PokerStars Hand #100: Tournament #999, $1+$0 USD Hold'em No Limit - Level I (10/20) - 2025/05/16 12:00:00 ET\n"
+        b"Table '999 1' 9-max Seat #1 is the button\n"
+        b"Seat 1: garciamurilo (1000 in chips)\n"
+        b"Seat 2: \x9a_player (1000 in chips)\n"
+        b"garciamurilo: posts small blind 10\n"
+        b"\x9a_player: posts big blind 20\n"
+        b"*** HOLE CARDS ***\n"
+        b"Dealt to garciamurilo [Ah Kh]\n"
+        b"garciamurilo: folds\n"
+        b"Uncalled bet (10) returned to \x9a_player\n"
+        b"\x9a_player collected 20 from pot\n"
+        b"*** SUMMARY ***\n"
+        b"Total pot 20 | Rake 0\n"
+        b"Seat 1: garciamurilo (button) (small blind) folded before Flop\n"
+        b"Seat 2: \x9a_player (big blind) collected (20)\n"
+    )
+    file_path = tmp_path / "HH20250516 T999.txt"
+    file_path.write_bytes(cp1252_bytes)
+
+    df = convert_txt_to_tabular_data(str(file_path))
+    assert "\u0161_player" in df["Player"].values
+    assert not (df["Player"].str.contains("\ufffd")).any()
+
+
 # ---------------------------------------------------------------------------
 # _save_log
 # ---------------------------------------------------------------------------
