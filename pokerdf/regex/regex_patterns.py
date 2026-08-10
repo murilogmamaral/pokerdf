@@ -747,7 +747,7 @@ class RegexPatterns:
 
     def get_result(self, player: str, hand: list[str]) -> list[str]:
         """
-        Get the result of the hand for a player (folded, won, lost or mucked).
+        Get the result of the hand for a player (folded, won, lost, mucked, or out of hand).
 
         Args:
             player (str): Name of the player.
@@ -756,13 +756,18 @@ class RegexPatterns:
         Returns:
             list: List containing the result, like ['won']. When the player
                 collected the pot without a showdown, returns ['non-sd win'].
+                When the player was out of the hand, returns ['out of hand'].
         """
         escaped = re.escape(player)
-        # Pattern to extract
-        regex = rf"Seat \d+: {escaped} .*(\bfolded\b|\bwon\b|\blost\b|\bmucked\b).*"
-
-        # Get the last content of a played hand
         target = hand[-1]
+
+        # First check if the player was marked as "out of hand"
+        out_of_hand_regex = rf"Seat \d+: {escaped} .*\bout of hand\b.*"
+        if re.search(out_of_hand_regex, target):
+            return ["out of hand"]
+
+        # Pattern to extract standard result keywords
+        regex = rf"Seat \d+: {escaped} .*(\bfolded\b|\bwon\b|\blost\b|\bmucked\b).*"
 
         # Apply regex
         result = re.findall(regex, target)
