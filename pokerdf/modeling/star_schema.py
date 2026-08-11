@@ -323,6 +323,106 @@ def _blind_post_action(position: Any, posted: float, blinds: Any) -> str:
     )
 
 
+def _table_position_names(n_players: int) -> list[str]:
+    """
+    Standard table-position labels ordered from the button clockwise.
+
+    Args:
+        n_players (int): Number of players dealt in.
+
+    Returns:
+        list[str]: Labels of length n_players. Heads-up uses BTN/BB (the
+            button is also the small blind). Full-ring through 10-max uses
+            UTG…CO for the seats between the blinds and the button.
+    """
+    if n_players <= 0:
+        return []
+    if n_players == 1:
+        return ["BTN"]
+    if n_players == 2:
+        return ["BTN", "BB"]
+
+    # Seats after BB, early to late, ending on the cutoff
+    between_blinds_and_button = {
+        1: ["UTG"],
+        2: ["UTG", "CO"],
+        3: ["UTG", "HJ", "CO"],
+        4: ["UTG", "LJ", "HJ", "CO"],
+        5: ["UTG", "UTG+1", "LJ", "HJ", "CO"],
+        6: ["UTG", "UTG+1", "UTG+2", "LJ", "HJ", "CO"],
+        7: ["UTG", "UTG+1", "UTG+2", "UTG+3", "LJ", "HJ", "CO"],
+        8: ["UTG", "UTG+1", "UTG+2", "UTG+3", "UTG+4", "LJ", "HJ", "CO"],
+    }
+    middle_count = n_players - 3
+    middle = between_blinds_and_button.get(middle_count)
+    if middle is None:
+        # Unusual sizes: UTG, UTG+1, …, CO
+        middle = [
+            "UTG" if i == 0 else f"UTG+{i}" for i in range(max(middle_count - 1, 0))
+        ] + (["CO"] if middle_count > 0 else [])
+    return ["BTN", "SB", "BB", *middle]
+
+
+def _derive_table_positions(players: pd.DataFrame) -> pd.DataFrame:
+    """
+    Derive a TablePosition label for every player in every hand.
+
+    Positions are named relative to the button seat (BTN, SB, BB, UTG…CO),
+    degrading for short-handed and heads-up tables. Position (platform
+    provenance) is left unchanged; TablePosition is the poker derivation.
+
+    Args:
+        players (pd.DataFrame): One row per player per hand with TournID,
+            HandID, Seat and Position.
+
+    Returns:
+        pd.DataFrame: The same rows plus TablePosition filled for every
+            player.
+    """
+    keys = [Column.TOURN_ID, Column.HAND_ID]
+    rows: list[dict[str, Any]] = []
+
+    for (_, _), group in players.groupby(keys, sort=False):
+        seats = group[Column.SEAT].astype(int).tolist()
+        unique_seats = sorted(set(seats))
+        names = _table_position_names(len(unique_seats))
+
+        button_rows = group[group[Column.POSITION] == "button"]
+        button_seat = (
+            int(button_rows[Column.SEAT].iloc[0]) if not button_rows.empty else None
+        )
+        if button_seat is not None and button_seat in unique_seats:
+            start = unique_seats.index(button_seat)
+            ordered = unique_seats[start:] + unique_seats[:start]
+        else:
+            # No button label in the logs: fall back to ascending seat order
+            ordered = unique_seats
+
+        seat_to_label = {
+            seat: names[index] for index, seat in enumerate(ordered) if index < len(names)
+        }
+
+        for _, row in group.iterrows():
+            rows.append(
+                {
+                    Column.TOURN_ID: row[Column.TOURN_ID],
+                    Column.HAND_ID: row[Column.HAND_ID],
+                    Column.SEAT: row[Column.SEAT],
+                    ModelColumn.TABLE_POSITION: seat_to_label.get(
+                        int(row[Column.SEAT])
+                    ),
+                }
+            )
+
+    if not rows:
+        return players.assign(**{ModelColumn.TABLE_POSITION: pd.Series(dtype="object")})
+
+    derived = pd.DataFrame(rows).drop_duplicates(
+        subset=[*keys, Column.SEAT], keep="first"
+    )
+    return players.merge(derived, on=[*keys, Column.SEAT], how="left")
+
+
 def _explode_actions(df: pd.DataFrame) -> pd.DataFrame:
     """
     Explode the hierarchical action columns into one row per action, adding
@@ -681,8 +781,8 @@ def build_fact_player_action(df: pd.DataFrame) -> pd.DataFrame:
             archives of more than one owner can be modeled together),
             TournID and HandID (the three form the key of dim_hand, which
             holds the context that is constant across the hand), Round, Player,
-            Seat, Position, Stack, PostedAnte, PostedBlind, Action,
-            ActionIndex, ActionOrder,
+            Seat, Position, TablePosition, Stack, PostedAnte, PostedBlind,
+            Action, ActionIndex, ActionOrder,
             AddedValue, TotalValue, TotalPot and BoardC1 to BoardC5, plus
             the cards and combinations: OwnerC1, OwnerC2, OwnerCombination
             and OwnerCombinationScore describe the owner's holding on every
@@ -697,7 +797,8 @@ def build_fact_player_action(df: pd.DataFrame) -> pd.DataFrame:
             player in the hand, also a future event registered early. Rows
             are sorted by ActionOrder inside each hand. ActionIndex is 0
             for posts and restarts at 1 for each player/round of voluntary
-            actions.
+            actions. Position keeps the platform label (provenance);
+            TablePosition derives BTN/SB/BB/UTG…CO from the button seat.
     """
     # One row per event, sorted as the hand unfolded, with the amounts.
     # The full list of players anchors the order even when the big blind or
@@ -705,10 +806,24 @@ def build_fact_player_action(df: pd.DataFrame) -> pd.DataFrame:
     players = df.drop_duplicates(
         subset=[Column.TOURN_ID, Column.HAND_ID, Column.PLAYER]
     ).loc[:, [Column.TOURN_ID, Column.HAND_ID, Column.SEAT, Column.POSITION]]
+    players = _derive_table_positions(players)
     fact = _explode_actions(df)
     fact = _sort_chronologically(fact, players)
     fact = _compute_bet_amounts(fact)
     fact = _compute_total_pot(fact)
+    # Attach the derived table position without altering Position
+    fact = fact.merge(
+        players[
+            [
+                Column.TOURN_ID,
+                Column.HAND_ID,
+                Column.SEAT,
+                ModelColumn.TABLE_POSITION,
+            ]
+        ].drop_duplicates(subset=[Column.TOURN_ID, Column.HAND_ID, Column.SEAT]),
+        on=[Column.TOURN_ID, Column.HAND_ID, Column.SEAT],
+        how="left",
+    )
 
     # The board visible at the moment of the action, according to the round:
     # no cards on preflop, then the board of the round of the action
@@ -799,6 +914,7 @@ def build_fact_player_action(df: pd.DataFrame) -> pd.DataFrame:
             Column.PLAYER,
             Column.SEAT,
             Column.POSITION,
+            ModelColumn.TABLE_POSITION,
             Column.STACK,
             Column.POSTED_ANTE,
             Column.POSTED_BLIND,
