@@ -171,7 +171,7 @@ The reasoning behind this design:
 - **The known holdings are inferred on every row, at the moment of the row.** `OwnerC1..C2` and `OwnerCombination` are hand context like the board: they fill every row of the hand, so any behavior can be analyzed against the owner's holding without joins. `RevealedShowDownC1..C2` and `RevealedShowDownCombination` register, on every row of a player that revealed cards at showdown — the owner included — what the show at the end proved the player was holding: a future event recorded early, which is what makes the behavior that led to it analyzable. The combinations name the best hand each holding makes with the board visible at that moment, each with an integer score from 1 (High Card) to 10 (Royal Flush), ready for aggregation. The evaluator was validated against the platform's own showdown labels: 100% agreement over 70k+ real showdowns.  
 
 
-![data-modeling](https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/data-modeling-v1.7.svg)
+![data-modeling](https://raw.githubusercontent.com/murilogmamaral/pokerdf/main/images/data-modeling-v1.8.svg)
 
 You can generate these four tables automatically with the `modeling` command, pointing to a folder of _.parquet_ files produced by the `convert` command:
 ```
@@ -219,7 +219,8 @@ One row per event of a player: the ante and blind posts open each hand as rows (
 | Round       | Round of the action (preflop, flop, turn, river)                                                      | preflop     |
 | Player      | Player who acted                                                                                      | playername  |
 | Seat        | Seat number of the player                                                                             | 4           |
-| Position    | Position of the player (button, small blind, big blind), when any                                     | big blind   |
+| Position    | Position of the player (button, small blind, big blind), when any — platform provenance | big blind   |
+| TablePosition | Derived poker position relative to the button (BTN, SB, BB, UTG…CO); heads-up uses BTN/BB | UTG      |
 | Stack       | Stack of the player right after the event (starting stack minus everything pushed so far)             | 2340.0      |
 | PostedAnte  | Ante posted by the player in the hand (partial when all-in)                                           | 4.0         |
 | PostedBlind | Blind posted by the player in the hand (partial when all-in)                                          | 30.0        |

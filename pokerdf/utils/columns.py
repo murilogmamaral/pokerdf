@@ -91,6 +91,7 @@ class ModelColumn(StrEnum):
     REVEALED_SHOW_DOWN_COMBINATION_SCORE = "RevealedShowDownCombinationScore"
     REVEALED_SHOW_DOWN_POKER_HAND = "RevealedShowDownPokerHand"
     ROUND = "Round"
+    TABLE_POSITION = "TablePosition"
     ACTION_ORDER = "ActionOrder"
     ACTION_INDEX = "ActionIndex"
     ACTION = "Action"

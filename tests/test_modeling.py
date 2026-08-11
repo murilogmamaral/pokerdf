@@ -81,6 +81,7 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "Player",
         "Seat",
         "Position",
+        "TablePosition",
         "Stack",
         "PostedAnte",
         "PostedBlind",
@@ -155,10 +156,37 @@ def test_fact_carries_seat_and_position(fact: pd.DataFrame) -> None:
     row = fact[(fact["HandID"] == 11111) & (fact["Player"] == "garciamurilo")].iloc[0]
     assert row["Seat"] == 2
     assert row["Position"] == "small blind"
+    assert row["TablePosition"] == "SB"
     # VillainA was the button on seat 1
     row = fact[(fact["HandID"] == 11111) & (fact["Player"] == "VillainA")].iloc[0]
     assert row["Seat"] == 1
     assert row["Position"] == "button"
+    assert row["TablePosition"] == "BTN"
+
+
+def test_fact_table_position_filled_for_every_row(fact: pd.DataFrame) -> None:
+    assert fact["TablePosition"].notna().all()
+    # Platform labels coincide with the derived BTN/SB/BB names
+    labeled = fact[fact["Position"].notna()].drop_duplicates(
+        subset=["HandID", "Player"]
+    )
+    expected = {
+        "button": "BTN",
+        "small blind": "SB",
+        "big blind": "BB",
+    }
+    for _, row in labeled.iterrows():
+        platform = row["Position"]
+        if platform == "button" and row["TablePosition"] == "BTN":
+            continue
+        if platform in expected:
+            # Heads-up: platform may label the small-blind seat as button only
+            if platform == "small blind" and row["TablePosition"] == "BTN":
+                # Should not happen outside HU naming; HU uses BTN not SB
+                hu = fact[fact["HandID"] == row["HandID"]]["Player"].nunique() == 2
+                assert hu or row["TablePosition"] == "SB"
+            else:
+                assert row["TablePosition"] == expected[platform]
 
 
 def test_fact_materializes_the_posts_as_rows(fact: pd.DataFrame) -> None:
