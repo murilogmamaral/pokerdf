@@ -3,6 +3,8 @@ from datetime import timedelta, timezone
 from typing import Any
 import pandas as pd
 
+from pokerdf.utils.columns import HandResult
+
 # Every moment in the converted data is expressed in CET, as a fixed offset
 # of one hour from UTC: it never shifts with daylight saving, so the
 # difference between two moments is always the time that really elapsed
@@ -747,15 +749,21 @@ class RegexPatterns:
 
     def get_result(self, player: str, hand: list[str]) -> list[str]:
         """
-        Get the result of the hand for a player (folded, won, lost or mucked).
+        Get the outcome of the hand for a player, as a HandResult value.
+
+        The seat line of the player in the summary ends the hand with one of
+        four keywords: "folded", or — only on showdown lines — "won", "lost"
+        and "mucked". A seat line with none of them belongs to a player who
+        collected the pot uncontested ("collected"). Each case is named after
+        what it means, following the HandResult conventions.
 
         Args:
             player (str): Name of the player.
             hand (list): List of texts from a specific hand.
 
         Returns:
-            list: List containing the result, like ['won']. When the player
-                collected the pot without a showdown, returns ['non-sd win'].
+            list: List containing the result, like ['won at showdown'] or
+                ['won without showdown'].
         """
         escaped = re.escape(player)
         # Pattern to extract
@@ -767,8 +775,19 @@ class RegexPatterns:
         # Apply regex
         result = re.findall(regex, target)
 
+        # Name the outcome after what the keyword means: "won" and "lost"
+        # only ever appear on showdown lines, and a muck is a showdown loss
+        # in which the cards were never shown at the table
+        vocabulary = {
+            "folded": HandResult.FOLDED,
+            "won": HandResult.WON_AT_SHOWDOWN,
+            "lost": HandResult.LOST_AT_SHOWDOWN,
+            "mucked": HandResult.MUCKED_AT_SHOWDOWN,
+        }
+        result = [vocabulary[keyword] for keyword in result]
+
         # Normalize output
-        result = self._guarantee_unicity(result, fill="non-sd win")
+        result = self._guarantee_unicity(result, fill=HandResult.WON_WITHOUT_SHOWDOWN)
 
         return result
 

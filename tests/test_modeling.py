@@ -279,11 +279,11 @@ def test_fact_registers_the_outcome_on_every_row_of_the_player(
     # collected nothing
     rows = fact[fact["HandID"] == 219269866589]
     owner = rows[rows["Player"] == "garciamurilo"]
-    assert (owner["Result"] == "won").all()
+    assert (owner["Result"] == "won at showdown").all()
     assert (owner["Balance"] == 40.0).all()
     assert (owner["RevealedShowDownPokerHand"] == "a pair of Jacks").all()
     villain = rows[rows["Player"] == "VillainB"]
-    assert (villain["Result"] == "mucked").all()
+    assert (villain["Result"] == "mucked at showdown").all()
     assert villain["Balance"].isna().all()
     assert villain["RevealedShowDownPokerHand"].isna().all()
 
@@ -750,7 +750,7 @@ def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:
             "OwnersHand": [["Ah", "Kh"]] * 4,
             "ShowDown": [[None, None]] * 4,
             "CardCombination": [None] * 4,
-            "Result": ["folded", "folded", "won", "folded"],
+            "Result": ["folded", "folded", "won at showdown", "folded"],
             "Balance": [None, None, 50.0, None],
             "PreflopAction": [
                 [("folds", "")],
