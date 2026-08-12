@@ -53,11 +53,11 @@ Table fact_player_action {
   OwnerC2 varchar
   OwnerCombination varchar
   OwnerCombinationScore integer
-  RevealedShowDownC1 varchar
-  RevealedShowDownC2 varchar
-  RevealedShowDownCombination varchar
-  RevealedShowDownCombinationScore integer
-  RevealedShowDownPokerHand varchar
+  RevealedC1 varchar
+  RevealedC2 varchar
+  RevealedCombination varchar
+  RevealedCombinationScore integer
+  RevealedPokerHand varchar
   Result varchar
   Balance float
 }

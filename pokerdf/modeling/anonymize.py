@@ -252,11 +252,11 @@ Applied
   A timestamp matched against publicly available tournament schedules and
   results identifies the tournament, and the time zone of the player says
   roughly where they live. Every other attribute leaves whole.
-- Kept in every mode: the cards revealed at showdown (RevealedShowDownC1,
-  RevealedShowDownC2), the combinations derived from the cards and the
-  board (OwnerCombination, RevealedShowDownCombination and their scores)
-  and the combination the platform named at showdown
-  (RevealedShowDownPokerHand). They were shown at the table, and once the
+- Kept in every mode: the cards the players revealed, at showdown or
+  voluntarily (RevealedC1, RevealedC2), the combinations derived from the
+  cards and the board (OwnerCombination, RevealedCombination and their
+  scores) and the combination the platform named at showdown
+  (RevealedPokerHand). They were shown at the table, and once the
   player holding them is pseudonymized they describe the game, not a
   person.
 {owner_line}

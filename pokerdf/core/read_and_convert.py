@@ -101,7 +101,7 @@ def compose_dataframe() -> pd.DataFrame:
         Column.BOARD_FLOP: "object",
         Column.BOARD_TURN: "object",
         Column.BOARD_RIVER: "object",
-        Column.SHOW_DOWN: "object",
+        Column.REVEALED_CARDS: "object",
         Column.CARD_COMBINATION: "object",
         Column.RESULT: "object",
         Column.BALANCE: "float64",
