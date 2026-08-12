@@ -326,6 +326,71 @@ def test_a_voluntary_show_is_still_a_win_without_showdown() -> None:
     assert r.get_result("VillainG", TWO_CARD_SHOW_HAND) == ["won without showdown"]
 
 
+# "drona" is a suffix of "Malandrona": without the line anchors, every
+# pattern that begins at the nickname would also match inside the longer
+# nickname's lines, handing posts, actions and reveals to the wrong player
+SUFFIX_NICK_HAND = [
+    "Hand #77777: Tournament #77777, Hold'em No Limit - Level I (10/20)\n"
+    "Seat 1: Malandrona (500 in chips) \n"
+    "Seat 2: drona (480 in chips) \n"
+    "Malandrona: posts small blind 10\n"
+    "drona: posts big blind 20\n",
+    "HOLE CARDS ***\n"
+    "Malandrona: raises 40 to 60 and is all-in\n"
+    "drona: folds \n"
+    "Uncalled bet (40) returned to Malandrona\n"
+    "Malandrona collected 40 from pot\n"
+    "Malandrona: shows [Ah Kd]\n"
+    "Malandrona wins the $0.46 bounty for eliminating VillainZ\n"
+    "VillainZ finished the tournament in 3rd place\n",
+    "SUMMARY ***\n"
+    "Total pot 40 | Rake 0 \n"
+    "Seat 1: Malandrona (small blind) collected (40)\n"
+    "Seat 2: drona (big blind) folded before Flop\n",
+]
+
+
+def test_a_suffix_nickname_does_not_inherit_the_other_players_lines() -> None:
+    assert r.get_posted_blind("drona", SUFFIX_NICK_HAND) == [20.0]
+    assert r.get_actions("drona", SUFFIX_NICK_HAND, stage="HOLE CARDS ***") == [
+        [("folds", "")]
+    ]
+    assert r.get_allin("drona", SUFFIX_NICK_HAND, stage="HOLE CARDS ***") == [False]
+    assert r.get_showed_card("drona", SUFFIX_NICK_HAND) == [[None, None]]
+    assert r.get_bounty_won("drona", SUFFIX_NICK_HAND) == [None]
+    assert r.get_final_rank("Z", SUFFIX_NICK_HAND) == [-1]
+
+
+def test_the_anchors_keep_the_longer_nicknames_own_lines() -> None:
+    assert r.get_posted_blind("Malandrona", SUFFIX_NICK_HAND) == [10.0]
+    assert r.get_allin("Malandrona", SUFFIX_NICK_HAND, stage="HOLE CARDS ***") == [True]
+    assert r.get_showed_card("Malandrona", SUFFIX_NICK_HAND) == [("Ah", "Kd")]
+    assert r.get_bounty_won("Malandrona", SUFFIX_NICK_HAND) == [0.46]
+    assert r.get_final_rank("VillainZ", SUFFIX_NICK_HAND) == [3]
+
+
+# The summary seat lines are protected by the seat label instead of the line
+# anchor: the nickname always follows "Seat n: " there
+SUFFIX_SHOWDOWN_HAND = [
+    "Hand #77778: Tournament #77778, Hold'em No Limit - Level I (10/20)\n"
+    "Seat 1: Malandrona (500 in chips) \n"
+    "Seat 2: drona (480 in chips) \n",
+    "SUMMARY ***\n"
+    "Total pot 80 | Rake 0 \n"
+    "Seat 1: Malandrona showed [Ah Kd] and won (80) with a pair of Aces\n"
+    "Seat 2: drona (big blind) mucked [2c 2d]\n",
+]
+
+
+def test_summary_lines_do_not_leak_to_a_suffix_nickname() -> None:
+    assert r.get_showed_card("drona", SUFFIX_SHOWDOWN_HAND) == [("2c", "2d")]
+    assert r.get_card_combination("drona", SUFFIX_SHOWDOWN_HAND) == [None]
+    assert r.get_showed_card("Malandrona", SUFFIX_SHOWDOWN_HAND) == [("Ah", "Kd")]
+    assert r.get_card_combination("Malandrona", SUFFIX_SHOWDOWN_HAND) == [
+        "a pair of Aces"
+    ]
+
+
 def test_get_card_combination(showdown_hand: list[str]) -> None:
     assert r.get_card_combination("garciamurilo", showdown_hand) == ["a pair of Jacks"]
 
