@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from datetime import datetime
 
+from pokerdf.utils.columns import HandResult
+
 
 class ValidateInput(BaseModel):
     Modality: list[str]
@@ -39,7 +41,7 @@ class ValidateInput(BaseModel):
     BoardRiver: list[tuple[str, str, str, str, str] | tuple[()]]
     ShowDown: list[tuple[str, str | None] | tuple[None, None]]
     CardCombination: list[str | None]
-    Result: list[str]
+    Result: list[HandResult]
     Balance: list[float | None]
     UncalledReturned: list[float | None]
     BountyWon: list[float | None]

@@ -303,20 +303,20 @@ def test_get_card_combination_returns_none_without_showdown(
     assert r.get_card_combination("VillainA", showdown_hand) == [None]
 
 
-def test_get_result_won(showdown_hand: list[str]) -> None:
-    assert r.get_result("garciamurilo", showdown_hand) == ["won"]
+def test_get_result_won_at_showdown(showdown_hand: list[str]) -> None:
+    assert r.get_result("garciamurilo", showdown_hand) == ["won at showdown"]
 
 
-def test_get_result_mucked(showdown_hand: list[str]) -> None:
-    assert r.get_result("VillainB", showdown_hand) == ["mucked"]
+def test_get_result_mucked_at_showdown(showdown_hand: list[str]) -> None:
+    assert r.get_result("VillainB", showdown_hand) == ["mucked at showdown"]
 
 
 def test_get_result_folded(showdown_hand: list[str]) -> None:
     assert r.get_result("VillainA", showdown_hand) == ["folded"]
 
 
-def test_get_result_non_showdown_win(first_hand: list[str]) -> None:
-    assert r.get_result("VillainB", first_hand) == ["non-sd win"]
+def test_get_result_won_without_showdown(first_hand: list[str]) -> None:
+    assert r.get_result("VillainB", first_hand) == ["won without showdown"]
 
 
 def test_get_balance(showdown_hand: list[str]) -> None:
@@ -500,7 +500,7 @@ def test_capture_works_for_nicknames_with_regex_characters() -> None:
     assert r.get_position("VillainThree)", TRICKY_HAND) == ["big blind"]
     assert r.get_posted_blind("VillainThree)", TRICKY_HAND) == [20.0]
     assert r.get_showed_card("VillainThree)", TRICKY_HAND) == [("7h", "Td")]
-    assert r.get_result("VillainThree)", TRICKY_HAND) == ["lost"]
+    assert r.get_result("VillainThree)", TRICKY_HAND) == ["lost at showdown"]
     # Spaces and hyphens are escaped by re.escape as well
     assert r.get_seat("Villain Two 0", TRICKY_HAND) == [3]
     assert r.get_position("Villain Two 0", TRICKY_HAND) == ["small blind"]

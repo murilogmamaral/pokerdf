@@ -1,4 +1,5 @@
-"""Single source of truth for the column and table names used across the package.
+"""Single source of truth for the column names, table names and categorical
+vocabularies used across the package.
 
 The enums inherit from StrEnum, so every member behaves exactly like its string
 value: they can index DataFrames, be used as dictionary keys and be written to
@@ -107,6 +108,27 @@ class Round(StrEnum):
     FLOP = "flop"
     TURN = "turn"
     RIVER = "river"
+
+
+class HandResult(StrEnum):
+    """
+    Vocabulary of the Result column: the outcome of a hand for a player.
+
+    Every player dealt into a hand leaves it in exactly one of these five
+    ways. The values follow two conventions, so the common questions are one
+    string predicate away instead of a list kept in the head: every win
+    starts with "won", whether or not cards were needed, and every showdown
+    ends with "at showdown", whatever the outcome. A muck is a loss — the
+    platform always reveals a winning hand, so a mucked one never won — kept
+    apart from LOST_AT_SHOWDOWN because the cards were never shown at the
+    table.
+    """
+
+    FOLDED = "folded"
+    WON_WITHOUT_SHOWDOWN = "won without showdown"
+    WON_AT_SHOWDOWN = "won at showdown"
+    LOST_AT_SHOWDOWN = "lost at showdown"
+    MUCKED_AT_SHOWDOWN = "mucked at showdown"
 
 
 class ModelTable(StrEnum):
