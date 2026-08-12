@@ -99,11 +99,11 @@ def test_fact_has_expected_structure(fact: pd.DataFrame) -> None:
         "OwnerC2",
         "OwnerCombination",
         "OwnerCombinationScore",
-        "RevealedShowDownC1",
-        "RevealedShowDownC2",
-        "RevealedShowDownCombination",
-        "RevealedShowDownCombinationScore",
-        "RevealedShowDownPokerHand",
+        "RevealedC1",
+        "RevealedC2",
+        "RevealedCombination",
+        "RevealedCombinationScore",
+        "RevealedPokerHand",
         "Result",
         "Balance",
     ]
@@ -192,8 +192,8 @@ def test_fact_broadcasts_the_opponents_showdown_cards(fact: pd.DataFrame) -> Non
     # post included
     rows = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "VillainB")]
     assert len(rows) > 1
-    assert (rows["RevealedShowDownC1"] == "7h").all()
-    assert (rows["RevealedShowDownC2"] == "Td").all()
+    assert (rows["RevealedC1"] == "7h").all()
+    assert (rows["RevealedC2"] == "Td").all()
 
 
 def test_fact_showdown_columns_include_the_owner(fact: pd.DataFrame) -> None:
@@ -205,20 +205,18 @@ def test_fact_showdown_columns_include_the_owner(fact: pd.DataFrame) -> None:
     rows = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "garciamurilo")]
     assert (rows["OwnerC1"] == "8h").all()
     assert (rows["OwnerC2"] == "Kh").all()
-    assert (rows["RevealedShowDownC1"] == "8h").all()
-    assert (rows["RevealedShowDownC2"] == "Kh").all()
-    assert (rows["RevealedShowDownCombination"] == rows["OwnerCombination"]).all()
-    assert (
-        rows["RevealedShowDownCombinationScore"] == rows["OwnerCombinationScore"]
-    ).all()
+    assert (rows["RevealedC1"] == "8h").all()
+    assert (rows["RevealedC2"] == "Kh").all()
+    assert (rows["RevealedCombination"] == rows["OwnerCombination"]).all()
+    assert (rows["RevealedCombinationScore"] == rows["OwnerCombinationScore"]).all()
 
 
 def test_fact_showdown_columns_are_null_without_a_show(fact: pd.DataFrame) -> None:
     # Hand 11111: everyone folded to the big blind, so nobody revealed cards
     rows = fact[fact["HandID"] == 11111]
-    assert rows["RevealedShowDownC1"].isna().all()
-    assert rows["RevealedShowDownC2"].isna().all()
-    assert rows["RevealedShowDownCombination"].isna().all()
+    assert rows["RevealedC1"].isna().all()
+    assert rows["RevealedC2"].isna().all()
+    assert rows["RevealedCombination"].isna().all()
 
 
 def test_fact_infers_the_owner_combination_at_each_moment(
@@ -248,7 +246,7 @@ def test_fact_infers_the_combination_of_the_shown_opponent(
     # moment is known — on his own rows
     villain = fact[(fact["HandID"] == 219269866589) & (fact["Player"] == "VillainB")]
     assert villain[
-        ["Round", "RevealedShowDownCombination", "RevealedShowDownCombinationScore"]
+        ["Round", "RevealedCombination", "RevealedCombinationScore"]
     ].values.tolist() == [
         ["preflop", "High Card", 1],  # posts big blind
         ["preflop", "High Card", 1],  # checks
@@ -281,11 +279,11 @@ def test_fact_registers_the_outcome_on_every_row_of_the_player(
     owner = rows[rows["Player"] == "garciamurilo"]
     assert (owner["Result"] == "won at showdown").all()
     assert (owner["Balance"] == 40.0).all()
-    assert (owner["RevealedShowDownPokerHand"] == "a pair of Jacks").all()
+    assert (owner["RevealedPokerHand"] == "a pair of Jacks").all()
     villain = rows[rows["Player"] == "VillainB"]
     assert (villain["Result"] == "mucked at showdown").all()
     assert villain["Balance"].isna().all()
-    assert villain["RevealedShowDownPokerHand"].isna().all()
+    assert villain["RevealedPokerHand"].isna().all()
 
 
 def test_fact_stack_is_dynamic(fact: pd.DataFrame) -> None:
@@ -748,7 +746,7 @@ def test_fact_ordering_anchors_on_players_that_did_not_act() -> None:
             "Ante": [None] * 4,
             "Owner": ["utg"] * 4,
             "OwnersHand": [["Ah", "Kh"]] * 4,
-            "ShowDown": [[None, None]] * 4,
+            "RevealedCards": [[None, None]] * 4,
             "CardCombination": [None] * 4,
             "Result": ["folded", "folded", "won at showdown", "folded"],
             "Balance": [None, None, 50.0, None],

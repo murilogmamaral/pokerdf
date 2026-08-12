@@ -39,7 +39,7 @@ class ValidateInput(BaseModel):
     BoardFlop: list[tuple[str, str, str] | tuple[()]]
     BoardTurn: list[tuple[str, str, str, str] | tuple[()]]
     BoardRiver: list[tuple[str, str, str, str, str] | tuple[()]]
-    ShowDown: list[tuple[str, str | None] | tuple[None, None]]
+    RevealedCards: list[tuple[str, str | None] | tuple[None, None]]
     CardCombination: list[str | None]
     Result: list[HandResult]
     Balance: list[float | None]

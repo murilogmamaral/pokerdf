@@ -677,12 +677,13 @@ class RegexPatterns:
         self, player: str, hand: list[str]
     ) -> list[tuple[str, str | None]] | list[list[None]]:
         """
-        Get the cards of the player, if they were showed or mucked at showdown.
+        Get the cards the player revealed, at showdown or voluntarily.
 
-        The cards usually come from the summary ("showed [As Ks]" or
-        "mucked [7h Td]"). A player can also voluntarily show a single card
-        ("shows [Ah]"), which is not mirrored in the summary, so the body of
-        the hand is used as a fallback and the second card is None.
+        At showdown the cards come from the summary ("showed [As Ks]" or
+        "mucked [7h Td]"). A player who wins without showdown can still
+        show one or both cards voluntarily ("shows [Ah]", "shows [Ah Kd]"),
+        which is not mirrored in the summary, so the body of the hand is
+        used as a fallback; on single-card shows the second card is None.
 
         Args:
             player (str): Name of the player.
@@ -711,11 +712,14 @@ class RegexPatterns:
             cards: list[tuple[str, str | None]] = [(first, second if second else None)]
             return cards
 
-        # Fallback: single-card shows only appear in the body of the hand
-        body_regex = rf"{escaped}: shows \[(\S+)\]"
+        # Fallback: voluntary shows only appear in the body of the hand,
+        # since the summary line of a winner without showdown carries no
+        # cards ("collected"). The second card is optional, like above
+        body_regex = rf"{escaped}: shows \[(\S+)(?: (\S+))?\]"
         body_result = re.findall(body_regex, "\n".join(hand))
         if body_result != []:
-            cards = [(body_result[0], None)]
+            first, second = body_result[0]
+            cards = [(first, second if second else None)]
             return cards
 
         return fill_empty

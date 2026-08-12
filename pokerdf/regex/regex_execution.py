@@ -99,7 +99,7 @@ def capture_specific_data_of_the_player(
     row[Column.FLOP_ALL_IN] = r.get_allin(player, splitted_hand, stage="FLOP ***")
     row[Column.TURN_ALL_IN] = r.get_allin(player, splitted_hand, stage="TURN ***")
     row[Column.RIVER_ALL_IN] = r.get_allin(player, splitted_hand, stage="RIVER ***")
-    row[Column.SHOW_DOWN] = r.get_showed_card(player, splitted_hand)
+    row[Column.REVEALED_CARDS] = r.get_showed_card(player, splitted_hand)
     row[Column.CARD_COMBINATION] = r.get_card_combination(player, splitted_hand)
     row[Column.RESULT] = r.get_result(player, splitted_hand)
     row[Column.BALANCE] = r.get_balance(player, splitted_hand)

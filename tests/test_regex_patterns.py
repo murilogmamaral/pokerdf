@@ -293,6 +293,39 @@ def test_get_showed_card_single_card_show_ignores_other_players(
     assert r.get_showed_card("garciamurilo", single_card_show_hand) == [[None, None]]
 
 
+# A winner without showdown can also reveal both cards voluntarily: the
+# summary line carries no cards ("collected"), so only the body of the hand
+# registers the show
+TWO_CARD_SHOW_HAND = [
+    "Hand #44444: Tournament #44444, Hold'em No Limit - Level I (10/20)\n"
+    "Seat 1: VillainG (500 in chips) \n"
+    "Seat 2: VillainH (500 in chips) \n"
+    "VillainG: posts small blind 10\n"
+    "VillainH: posts big blind 20\n",
+    "HOLE CARDS ***\n"
+    "VillainG: raises 40 to 60\n"
+    "VillainH: folds \n"
+    "Uncalled bet (40) returned to VillainG\n"
+    "VillainG collected 40 from pot\n"
+    "VillainG: shows [Ah Kd]\n",
+    "SUMMARY ***\n"
+    "Total pot 40 | Rake 0 \n"
+    "Seat 1: VillainG (small blind) collected (40)\n"
+    "Seat 2: VillainH (big blind) folded before Flop\n",
+]
+
+
+def test_get_showed_card_two_card_voluntary_show() -> None:
+    expected: list[Any] = [("Ah", "Kd")]
+    assert r.get_showed_card("VillainG", TWO_CARD_SHOW_HAND) == expected
+
+
+def test_a_voluntary_show_is_still_a_win_without_showdown() -> None:
+    # Revealing cards and reaching showdown are different facts: the show
+    # fills RevealedCards, and the result keeps saying no showdown happened
+    assert r.get_result("VillainG", TWO_CARD_SHOW_HAND) == ["won without showdown"]
+
+
 def test_get_card_combination(showdown_hand: list[str]) -> None:
     assert r.get_card_combination("garciamurilo", showdown_hand) == ["a pair of Jacks"]
 
