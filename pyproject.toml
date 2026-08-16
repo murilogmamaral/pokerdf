@@ -26,12 +26,13 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
 dependencies = [
-    "joblib==1.3.2",
+    "joblib>=1.4.0",
     "pandas>=2.0.0",
     "pyarrow>=16.1.0",
     "pydantic>=2.8.0",
@@ -87,10 +88,6 @@ filterwarnings = [
     # Raised inside pandas 2.x internals by numpy 2.x (Python 3.12+ resolves
     # a newer numpy): not actionable from this codebase
     "ignore:The 'generic' unit for NumPy timedelta:DeprecationWarning",
-    # Raised inside joblib 1.3.2 on Python 3.12+ (ast.Num and its .n
-    # attribute). Both disappear in Python 3.14, so supporting 3.14 will
-    # require raising the joblib pin
-    "ignore:(ast.Num is|Attribute n is) deprecated:DeprecationWarning",
 ]
 
 [tool.flake8]
